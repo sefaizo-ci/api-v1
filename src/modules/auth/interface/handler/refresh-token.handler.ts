@@ -32,12 +32,16 @@ export class RefreshTokenHandler implements ICommandHandler<RefreshTokenCommand>
       throw new UnauthorizedException('Compte désactivé.');
     }
 
+    const roles = await this.userRepo.getRolesByUserId(user.id);
+    const primaryRole = roles[0] ?? user.role;
+
     await this.refreshRepo.revoke(token.id);
 
     const accessToken = this.tokenService.generateAccessToken({
       sub: user.id,
       phone: user.phone,
-      role: user.role,
+      role: primaryRole,
+      roles,
     });
 
     const { raw, hash: newHash } = this.tokenService.generateRefreshToken();

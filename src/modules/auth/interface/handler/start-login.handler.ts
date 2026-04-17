@@ -58,6 +58,10 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
     const codeHash = await bcrypt.hash(rawCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
+    console.log(
+      `OTP for ${cmd.phone} (purpose: ${OtpPurpose.LOGIN}): ${rawCode}`,
+    );
+
     const channel = await this.notif.sendOtp(cmd.phone, rawCode);
     await this.otpRepo.create({
       userId: user.id,

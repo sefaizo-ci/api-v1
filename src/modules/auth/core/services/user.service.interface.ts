@@ -5,6 +5,9 @@ import type { UserRole } from '../enums/auth.enums';
 export interface IUserRepository {
   findByPhone(phone: string): Promise<UserEntity | null>;
   findById(id: string): Promise<UserEntity | null>;
+  getRolesByUserId(userId: string): Promise<UserRole[]>;
+  assignRole(userId: string, role: UserRole): Promise<void>;
+  hasProfessionalProfile(userId: string): Promise<boolean>;
   create(data: {
     phone: string;
     firstName: string;

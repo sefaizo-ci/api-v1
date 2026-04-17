@@ -16,6 +16,7 @@ export class TokenService {
     sub: string;
     phone: string;
     role: UserRole;
+    roles?: UserRole[];
   }): string {
     const expiresIn = (this.config.get<string>('JWT_EXPIRES_IN') ??
       '15m') as StringValue;

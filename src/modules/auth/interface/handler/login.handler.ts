@@ -45,10 +45,14 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
 
     await this.userRepo.resetPinFail(cmd.userId);
 
+    const roles = await this.userRepo.getRolesByUserId(user.id);
+    const primaryRole = roles[0] ?? user.role;
+
     const accessToken = this.tokenService.generateAccessToken({
       sub: user.id,
       phone: user.phone,
-      role: user.role,
+      role: primaryRole,
+      roles,
     });
     const { raw, hash } = this.tokenService.generateRefreshToken();
 
@@ -80,7 +84,8 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
         id: user.id,
         phone: user.phone,
         firstName: user.firstName,
-        role: user.role,
+        role: primaryRole,
+        roles,
       },
     };
   }

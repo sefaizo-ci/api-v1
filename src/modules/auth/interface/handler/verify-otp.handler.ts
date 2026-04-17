@@ -23,6 +23,7 @@ type VerifyOtpResult = {
     phone: string;
     firstName: string;
     role: string;
+    roles: string[];
   };
 };
 
@@ -79,10 +80,14 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
         throw new UnauthorizedException('PIN non configuré.');
       }
 
+      const roles = await this.userRepo.getRolesByUserId(user.id);
+      const primaryRole = roles[0] ?? user.role;
+
       const accessToken = this.tokenService.generateAccessToken({
         sub: user.id,
         phone: user.phone,
-        role: user.role,
+        role: primaryRole,
+        roles,
       });
       const { raw, hash } = this.tokenService.generateRefreshToken();
       await this.refreshRepo.create({
@@ -114,7 +119,8 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
           id: user.id,
           phone: user.phone,
           firstName: user.firstName,
-          role: user.role,
+          role: primaryRole,
+          roles,
         },
       };
     }

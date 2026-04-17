@@ -8,7 +8,8 @@ import type { IUserRepository } from '../core/services/user.service.interface';
 export interface JwtPayload {
   sub: string;
   phone: string;
-  role: UserRole;
+  role?: UserRole;
+  roles?: UserRole[];
 }
 
 @Injectable()
@@ -30,6 +31,29 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user || !user.isAccountActive()) {
       throw new UnauthorizedException('Session invalide.');
     }
-    return { id: user.id, phone: user.phone, role: user.role };
+
+    const roles = await this.userRepo.getRolesByUserId(user.id);
+    const hasProfessionalProfile = await this.userRepo.hasProfessionalProfile(
+      user.id,
+    );
+
+    const effectiveRoles = new Set<UserRole>(roles);
+    if (hasProfessionalProfile) {
+      effectiveRoles.add('PROFESSIONAL');
+    }
+
+    const role =
+      payload.role ??
+      [...effectiveRoles][0] ??
+      user.role ??
+      ('CLIENT' as UserRole);
+
+    return {
+      id: user.id,
+      phone: user.phone,
+      role,
+      roles: [...effectiveRoles],
+      hasProfessionalProfile,
+    };
   }
 }

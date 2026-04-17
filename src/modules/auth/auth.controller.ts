@@ -83,6 +83,7 @@ type VerifyOtpResponse = {
     phone: string;
     firstName: string;
     role: UserRole;
+    roles: UserRole[];
   };
 };
 
@@ -185,6 +186,13 @@ export class AuthController {
                   type: 'string',
                   enum: ['CLIENT', 'PROFESSIONAL', 'ADMIN'],
                 },
+                roles: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    enum: ['CLIENT', 'PROFESSIONAL', 'ADMIN'],
+                  },
+                },
               },
             },
           },
@@ -198,6 +206,7 @@ export class AuthController {
               phone: '+2250700000000',
               firstName: 'Aya',
               role: 'CLIENT',
+              roles: ['CLIENT'],
             },
           },
         },
@@ -385,6 +394,13 @@ export class AuthController {
         firstName: { type: 'string' },
         lastName: { type: 'string' },
         role: { type: 'string', enum: ['CLIENT', 'PROFESSIONAL', 'ADMIN'] },
+        roles: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['CLIENT', 'PROFESSIONAL', 'ADMIN'],
+          },
+        },
         isVerified: { type: 'boolean' },
       },
       example: {
@@ -393,6 +409,7 @@ export class AuthController {
         firstName: 'Aya',
         lastName: 'Kouame',
         role: 'CLIENT',
+        roles: ['CLIENT'],
         isVerified: true,
       },
     },
