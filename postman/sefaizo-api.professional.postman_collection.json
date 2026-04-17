@@ -1,0 +1,1463 @@
+{
+  "info": {
+    "name": "Sefaizo API - Professional",
+    "description": "Postman collection for the Professional module: discovery, profile, services, availability, gallery and booking management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Discovery",
+      "item": [
+        {
+          "name": "List Professionals",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional"]
+            },
+            "description": "List public professionals with optional filters: status, isVerified, location, page, limit."
+          }
+        },
+        {
+          "name": "Search Professionals",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/search/query?q={{searchQuery}}&location={{searchLocation}}&rating={{searchRating}}&page={{page}}&limit={{limit}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "search", "query"],
+              "query": [
+                { "key": "q", "value": "{{searchQuery}}" },
+                { "key": "location", "value": "{{searchLocation}}" },
+                { "key": "rating", "value": "{{searchRating}}" },
+                { "key": "page", "value": "{{page}}" },
+                { "key": "limit", "value": "{{limit}}" }
+              ]
+            },
+            "description": "Search professionals by name, bio or services."
+          }
+        },
+        {
+          "name": "Get Professional Public Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}"]
+            },
+            "description": "Get public profile for one professional."
+          }
+        },
+        {
+          "name": "Get Professional Services (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/services?includeInactive={{includeInactive}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "services"],
+              "query": [
+                { "key": "includeInactive", "value": "{{includeInactive}}" }
+              ]
+            },
+            "description": "Get services for a professional. Set includeInactive=true to include soft-disabled services."
+          }
+        },
+        {
+          "name": "Get Professional Availability (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/availability?dayOfWeek={{dayOfWeek}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "availability"],
+              "query": [{ "key": "dayOfWeek", "value": "{{dayOfWeek}}" }]
+            },
+            "description": "Get availability for one day or the full week when dayOfWeek is empty."
+          }
+        },
+        {
+          "name": "Get Professional Gallery (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery?page={{page}}&limit={{limit}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "gallery"],
+              "query": [
+                { "key": "page", "value": "{{page}}" },
+                { "key": "limit", "value": "{{limit}}" }
+              ]
+            },
+            "description": "Get public gallery/portfolio items for a professional."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "profile", "me"]
+            },
+            "description": "Get the authenticated professional profile."
+          }
+        },
+        {
+          "name": "Get Profile Completion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/completion",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "profile",
+                "{{professionalId}}",
+                "completion"
+              ]
+            },
+            "description": "Get profile completion percentage."
+          }
+        },
+        {
+          "name": "Create Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "  pm.environment.set('professionalId', json.id);",
+                  "}",
+                  "if (json && json.professional && json.professional.id) {",
+                  "  pm.environment.set('professionalId', json.professional.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agencyName\": \"{{profileAgencyName}}\",\n  \"bio\": \"{{profileBio}}\",\n  \"avatarUrl\": \"{{profileAvatarUrl}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "profile"]
+            },
+            "description": "Create the professional profile."
+          }
+        },
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agencyName\": \"{{profileAgencyName}} - Updated\",\n  \"bio\": \"{{profileBio}}\",\n  \"avatarUrl\": \"{{profileAvatarUrl}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "profile", "{{professionalId}}"]
+            },
+            "description": "Update the professional profile."
+          }
+        },
+        {
+          "name": "Verify Profile (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "profile",
+                "{{professionalId}}",
+                "verify"
+              ]
+            },
+            "description": "Admin only: verify a professional profile."
+          }
+        },
+        {
+          "name": "Suspend Profile (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"{{professionalStatusReason}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "profile",
+                "{{professionalId}}",
+                "suspend"
+              ]
+            },
+            "description": "Admin only: suspend a professional profile."
+          }
+        },
+        {
+          "name": "Reactivate Profile (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "profile",
+                "{{professionalId}}",
+                "reactivate"
+              ]
+            },
+            "description": "Admin only: reactivate a suspended profile."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "Add Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "  pm.environment.set('serviceId', json.id);",
+                  "}",
+                  "if (json && json.service && json.service.id) {",
+                  "  pm.environment.set('serviceId', json.service.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{serviceName}}\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "services"]
+            },
+            "description": "Create a service offering for the current professional."
+          }
+        },
+        {
+          "name": "Update Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{serviceName}} - Updated\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "services", "{{serviceId}}"]
+            },
+            "description": "Update a service offering."
+          }
+        },
+        {
+          "name": "Deactivate Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "services",
+                "{{serviceId}}",
+                "deactivate"
+              ]
+            },
+            "description": "Deactivate one service."
+          }
+        },
+        {
+          "name": "Activate Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "services",
+                "{{serviceId}}",
+                "activate"
+              ]
+            },
+            "description": "Reactivate one service."
+          }
+        },
+        {
+          "name": "Delete Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "services",
+                "{{serviceId}}"
+              ]
+            },
+            "description": "Soft delete one service."
+          }
+        },
+        {
+          "name": "Set Commune Fee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commune\": \"{{commune}}\",\n  \"travelFee\": {{travelFee}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/communes",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "services",
+                "{{serviceId}}",
+                "communes"
+              ]
+            },
+            "description": "Set or update travel fee for a commune."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Availability",
+      "item": [
+        {
+          "name": "Set Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayOfWeek\": {{dayOfWeek}},\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "availability"]
+            },
+            "description": "Set a day availability slot."
+          }
+        },
+        {
+          "name": "Update Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "availability",
+                "{{dayOfWeek}}"
+              ]
+            },
+            "description": "Update the schedule of one day."
+          }
+        },
+        {
+          "name": "Set Availability Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"OPEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "availability",
+                "{{dayOfWeek}}",
+                "status"
+              ]
+            },
+            "description": "Open, close or put a day on leave."
+          }
+        },
+        {
+          "name": "Set Availability For Week",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\",\n  \"excludeDays\": [5, 6]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "availability"]
+            },
+            "description": "Set the same availability across the week."
+          }
+        },
+        {
+          "name": "Remove Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "availability",
+                "{{dayOfWeek}}"
+              ]
+            },
+            "description": "Remove one day availability."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gallery",
+      "item": [
+        {
+          "name": "Upload Gallery Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "  pm.environment.set('galleryItemId', json.id);",
+                  "}",
+                  "if (json && json.item && json.item.id) {",
+                  "  pm.environment.set('galleryItemId', json.item.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageUrl\": \"{{galleryImageUrl}}\",\n  \"caption\": \"{{galleryCaption}}\",\n  \"category\": \"{{galleryCategory}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "gallery"]
+            },
+            "description": "Upload a gallery item."
+          }
+        },
+        {
+          "name": "Update Gallery Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caption\": \"{{galleryCaption}} - Updated\",\n  \"category\": \"{{galleryCategory}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "gallery",
+                "{{galleryItemId}}"
+              ]
+            },
+            "description": "Update one gallery item."
+          }
+        },
+        {
+          "name": "Publish Gallery Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "gallery",
+                "{{galleryItemId}}",
+                "publish"
+              ]
+            },
+            "description": "Mark a gallery item as public."
+          }
+        },
+        {
+          "name": "Unpublish Gallery Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/unpublish",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "gallery",
+                "{{galleryItemId}}",
+                "unpublish"
+              ]
+            },
+            "description": "Hide a gallery item from the public feed."
+          }
+        },
+        {
+          "name": "Reorder Gallery",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemOrders\": [\n    { \"id\": \"{{galleryItemId}}\", \"order\": 0 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "gallery",
+                "reorder"
+              ]
+            },
+            "description": "Reorder professional gallery items."
+          }
+        },
+        {
+          "name": "Delete Gallery Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "gallery",
+                "{{galleryItemId}}"
+              ]
+            },
+            "description": "Soft delete a gallery item."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Get Professional Bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["professional", "{{professionalId}}", "bookings"],
+              "query": [
+                { "key": "status", "value": "{{bookingStatus}}" },
+                { "key": "page", "value": "{{page}}" },
+                { "key": "limit", "value": "{{limit}}" }
+              ]
+            },
+            "description": "List professional bookings with optional status filter."
+          }
+        },
+        {
+          "name": "Confirm Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "bookings",
+                "{{bookingId}}",
+                "confirm"
+              ]
+            },
+            "description": "Confirm a booking."
+          }
+        },
+        {
+          "name": "Reject Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"{{bookingReason}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "bookings",
+                "{{bookingId}}",
+                "reject"
+              ]
+            },
+            "description": "Reject a booking with an optional reason."
+          }
+        },
+        {
+          "name": "Complete Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{professionalAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "professional",
+                "{{professionalId}}",
+                "bookings",
+                "{{bookingId}}",
+                "complete"
+              ]
+            },
+            "description": "Mark a booking as completed."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "professionalAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "professionalId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "serviceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "galleryItemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "searchQuery",
+      "value": "coiffure",
+      "type": "string"
+    },
+    {
+      "key": "searchLocation",
+      "value": "SALON",
+      "type": "string"
+    },
+    {
+      "key": "searchRating",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "page",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "limit",
+      "value": "20",
+      "type": "string"
+    },
+    {
+      "key": "includeInactive",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "dayOfWeek",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "bookingStatus",
+      "value": "PENDING",
+      "type": "string"
+    },
+    {
+      "key": "bookingReason",
+      "value": "Horaire non disponible",
+      "type": "string"
+    },
+    {
+      "key": "commune",
+      "value": "Cocody",
+      "type": "string"
+    },
+    {
+      "key": "travelFee",
+      "value": "2000",
+      "type": "string"
+    },
+    {
+      "key": "profileAgencyName",
+      "value": "Salon Excellence",
+      "type": "string"
+    },
+    {
+      "key": "profileBio",
+      "value": "Coiffure premium et soins capillaires.",
+      "type": "string"
+    },
+    {
+      "key": "profileAvatarUrl",
+      "value": "https://cdn.example.com/avatar.jpg",
+      "type": "string"
+    },
+    {
+      "key": "profileLocation",
+      "value": "SALON",
+      "type": "string"
+    },
+    {
+      "key": "profileAddress",
+      "value": "Cocody, Abidjan",
+      "type": "string"
+    },
+    {
+      "key": "profileLatitude",
+      "value": "5.3517",
+      "type": "string"
+    },
+    {
+      "key": "profileLongitude",
+      "value": "-4.0012",
+      "type": "string"
+    },
+    {
+      "key": "professionalStatusReason",
+      "value": "Documents incomplets",
+      "type": "string"
+    },
+    {
+      "key": "serviceName",
+      "value": "Brushing",
+      "type": "string"
+    },
+    {
+      "key": "serviceDescription",
+      "value": "Brushing rapide 30 minutes",
+      "type": "string"
+    },
+    {
+      "key": "serviceDurationMin",
+      "value": "30",
+      "type": "string"
+    },
+    {
+      "key": "serviceBasePrice",
+      "value": "8000",
+      "type": "string"
+    },
+    {
+      "key": "serviceCategory",
+      "value": "Coiffage",
+      "type": "string"
+    },
+    {
+      "key": "availabilityStartTime",
+      "value": "08:00",
+      "type": "string"
+    },
+    {
+      "key": "availabilityEndTime",
+      "value": "17:00",
+      "type": "string"
+    },
+    {
+      "key": "breakStartTime",
+      "value": "12:00",
+      "type": "string"
+    },
+    {
+      "key": "breakEndTime",
+      "value": "13:00",
+      "type": "string"
+    },
+    {
+      "key": "galleryImageUrl",
+      "value": "https://cdn.example.com/gallery.jpg",
+      "type": "string"
+    },
+    {
+      "key": "galleryCaption",
+      "value": "Avant / Après",
+      "type": "string"
+    },
+    {
+      "key": "galleryCategory",
+      "value": "Portfolio",
+      "type": "string"
+    }
+  ],
+  "event": [],
+  "protocolProfileBehavior": {}
+}
