@@ -47,7 +47,6 @@ import {
   AddServiceDto,
   CreateProfessionalProfileDto,
   RejectBookingDto,
-  ReorderGalleryDto,
   SetAvailabilityDto,
   SetAvailabilityForWeekDto,
   SetAvailabilityStatusDto,
@@ -59,6 +58,7 @@ import {
   UpdateServiceDto,
   UploadGalleryItemDto,
 } from '../dtos';
+import { ReorderGalleryDto } from '../dtos/gallery.dto';
 import {
   GetMyProfessionalProfileQuery,
   GetProfessionalAvailabilityQuery,
@@ -75,6 +75,7 @@ type AuthenticatedRequest = Request & {
   user: {
     id: string;
     role: string;
+    roles?: string[];
   };
 };
 
@@ -91,7 +92,7 @@ export class ProfessionalController {
    */
   @Post('profile')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
+  @Roles('CLIENT', 'PROFESSIONAL')
   async createProfile(
     @Req() req: AuthenticatedRequest,
     @Body() body: CreateProfessionalProfileDto,
@@ -489,6 +490,18 @@ export class ProfessionalController {
     );
   }
 
+  @Put(':professionalId/gallery/reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async reorderGallery(
+    @Param('professionalId') professionalId: string,
+    @Body() body: ReorderGalleryDto,
+  ) {
+    return this.commandBus.execute<ReorderGalleryCommand, unknown>(
+      new ReorderGalleryCommand(professionalId, body.itemOrders),
+    );
+  }
+
   @Put(':professionalId/gallery/:itemId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
@@ -528,18 +541,6 @@ export class ProfessionalController {
   ) {
     return this.commandBus.execute<UnpublishGalleryItemCommand, unknown>(
       new UnpublishGalleryItemCommand(itemId, professionalId),
-    );
-  }
-
-  @Put(':professionalId/gallery/reorder')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async reorderGallery(
-    @Param('professionalId') professionalId: string,
-    @Body() body: ReorderGalleryDto,
-  ) {
-    return this.commandBus.execute<ReorderGalleryCommand, unknown>(
-      new ReorderGalleryCommand(professionalId, body.itemOrders),
     );
   }
 
