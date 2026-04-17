@@ -1,0 +1,731 @@
+{
+  "info": {
+    "name": "Sefaizo API",
+    "description": "Complete Postman collection for Sefaizo Auth flow with metadata tracking, dual-branch flows (NEW USER vs EXISTING USER), and state machine tracking.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Verify API is running."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/",
+                  "host": ["{{baseUrl}}"],
+                  "path": [""]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Sefaizo API is running\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AUTH FLOW",
+      "item": [
+        {
+          "name": "1️⃣ Init Flow (Detect Account)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && typeof json.hasAccount !== 'undefined') {",
+                  "  pm.environment.set('hasAccount', String(json.hasAccount));",
+                  "}",
+                  "if (json && json.nextStep) {",
+                  "  pm.environment.set('nextStep', json.nextStep);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/flow/init",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "flow", "init"]
+            },
+            "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` → User has PIN, proceed with LOGIN flow\n- `hasAccount: false` → New user, proceed with REGISTRATION flow\n- Includes `metadata.authFlow` tracking with `currentStep`, `status`, `timestamps`"
+          },
+          "response": [
+            {
+              "name": "200 - New User (No Account)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000000\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/flow/init",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "flow", "init"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"hasAccount\": false,\n  \"nextStep\": \"SEND_OTP\",\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"FLOW_INIT\",\n      \"status\": \"pending\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"flowStart\": \"2026-04-13T12:00:00Z\"\n      }\n    }\n  }\n}"
+            },
+            {
+              "name": "200 - Existing User (Has Account)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000001\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/flow/init",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "flow", "init"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"hasAccount\": true,\n  \"nextStep\": \"ENTER_PIN\",\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"FLOW_INIT\",\n      \"status\": \"pending\",\n      \"userPath\": \"EXISTING_USER\",\n      \"timestamps\": {\n        \"flowStart\": \"2026-04-13T12:00:00Z\"\n      }\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AUTH REGISTRATION (NEW USER PATH)",
+      "item": [
+        {
+          "name": "2️⃣ Send OTP for Registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"purpose\": \"REGISTRATION\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/otp/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "send"]
+            },
+            "description": "Send OTP via WhatsApp/SMS for account registration.\n\n**Allowed for:**\n- New users (no account)\n- Incomplete registrations (created but no PIN)\n\n**Blocked for:**\n- Completed accounts (have PIN) → returns 400 \"Account already active\""
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/send",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "otp", "send"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OTP sent\",\n  \"expiresIn\": 10,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_SENT\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"otpSentAt\": \"2026-04-13T12:01:00Z\"\n      }\n    }\n  }\n}"
+            },
+            {
+              "name": "400 Account Already Active",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/send",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "otp", "send"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Account already active. Please use login flow.\",\n  \"error\": \"ACCOUNT_ACTIVE\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "3️⃣ Verify OTP (Registration)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.userId) {",
+                  "  pm.environment.set('userId', json.userId);",
+                  "}",
+                  "if (json && json.isNewUser) {",
+                  "  pm.environment.set('isNewUser', String(json.isNewUser));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"REGISTRATION\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "verify"]
+            },
+            "description": "Verify OTP for account registration. Returns `userId` and `isNewUser` flag for profile completion step.\n\n**On Success:**\n- Returns `userId` (save for next step)\n- Sets `currentStep: OTP_VERIFIED` in metadata\n- User must proceed to Complete Registration"
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"123456\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/verify",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "otp", "verify"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"isNewUser\": true,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_VERIFIED\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"otpVerifiedAt\": \"2026-04-13T12:02:00Z\"\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "4️⃣ Complete Registration (Set Profile + PIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.user && json.user.id) {",
+                  "  pm.environment.set('registeredUserId', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "complete"]
+            },
+            "description": "Finalize registration: set user profile (firstName, lastName) and PIN code.\n\n**On Success:**\n- Account becomes active\n- Sets `currentStep: REGISTRATION_COMPLETE` in metadata\n- User can now use login flow"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"1234\",\n  \"confirmPin\": \"1234\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/complete",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register", "complete"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"role\": \"CLIENT\",\n    \"isVerified\": true,\n    \"isActive\": true,\n    \"metadata\": {\n      \"authFlow\": {\n        \"currentStep\": \"REGISTRATION_COMPLETE\",\n        \"status\": \"completed\",\n        \"userPath\": \"NEW_USER\",\n        \"timestamps\": {\n          \"registrationCompletedAt\": \"2026-04-13T12:03:00Z\"\n        }\n      }\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AUTH LOGIN (EXISTING USER PATH)",
+      "item": [
+        {
+          "name": "2️⃣ Start Login (PIN Verification)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login", "start"]
+            },
+            "description": "Validate PIN for existing user and initiate LOGIN OTP.\n\n**Required:**\n- User must have completed registration (have PIN set)\n- Correct PIN must be provided\n\n**On Success:**\n- Sends LOGIN OTP\n- Sets `currentStep: OTP_SENT` with `purpose: LOGIN` in metadata"
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"1234\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login/start",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login", "start"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OTP sent\",\n  \"expiresIn\": 10,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_SENT\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"EXISTING_USER\",\n      \"purpose\": \"LOGIN\",\n      \"timestamps\": {\n        \"otpSentAt\": \"2026-04-13T12:05:00Z\"\n      }\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Incomplete Registration",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"pin\": \"1234\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login/start",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login", "start"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"message\": \"PIN not configured. Complete registration first.\",\n  \"error\": \"INCOMPLETE_REGISTRATION\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "3️⃣ Verify OTP (Login -> Tokens)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.accessToken) {",
+                  "  pm.environment.set('accessToken', json.accessToken);",
+                  "}",
+                  "if (json && json.refreshToken) {",
+                  "  pm.environment.set('refreshToken', json.refreshToken);",
+                  "}",
+                  "if (json && json.user && json.user.id) {",
+                  "  pm.environment.set('userId', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "verify"]
+            },
+            "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**On Success:**\n- Returns `accessToken` (for API calls)\n- Returns `refreshToken` (for token rotation)\n- Returns `user` object\n- Sets `currentStep: LOGIN_COMPLETE` in metadata"
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"123456\",\n  \"purpose\": \"LOGIN\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/verify",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "otp", "verify"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"phone\": \"+2250700000001\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"role\": \"CLIENT\",\n    \"isVerified\": true,\n    \"isActive\": true,\n    \"metadata\": {\n      \"authFlow\": {\n        \"currentStep\": \"LOGIN_COMPLETE\",\n        \"status\": \"completed\",\n        \"userPath\": \"EXISTING_USER\",\n        \"timestamps\": {\n          \"loginCompletedAt\": \"2026-04-13T12:06:00Z\"\n        }\n      }\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TOKEN MANAGEMENT",
+      "item": [
+        {
+          "name": "Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.accessToken) {",
+                  "  pm.environment.set('accessToken', json.accessToken);",
+                  "}",
+                  "if (json && json.refreshToken) {",
+                  "  pm.environment.set('refreshToken', json.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/token/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "token", "refresh"]
+            },
+            "description": "Rotate tokens: invalidate old refreshToken and issue new pair.\n\n**Use when:**\n- Access token expires\n- Updating device info\n- Rolling session forward"
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/token/refresh",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "token", "refresh"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PROTECTED ROUTES",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-api-key", "value": "{{apiKey}}" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Retrieve authenticated user profile including metadata."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  { "key": "x-api-key", "value": "{{apiKey}}" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"phone\": \"+2250700000001\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"CLIENT\",\n  \"isVerified\": true,\n  \"isActive\": true,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"LOGIN_COMPLETE\",\n      \"status\": \"completed\",\n      \"userPath\": \"EXISTING_USER\",\n      \"timestamps\": {\n        \"loginCompletedAt\": \"2026-04-13T12:06:00Z\"\n      }\n    }\n  },\n  \"createdAt\": \"2026-04-10T15:30:00Z\",\n  \"updatedAt\": \"2026-04-13T12:06:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key", "value": "{{apiKey}}" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\",\n  \"allDevices\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout current session or all sessions.\n\n**Parameters:**\n- `refreshToken`: (required) Token to invalidate\n- `allDevices`: (optional) Set to `true` to logout all sessions, `false` to logout current device only"
+          },
+          "response": [
+            {
+              "name": "200 Success (Single Device)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"allDevices\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Logged out successfully\",\n  \"devicesRevoked\": 1\n}"
+            },
+            {
+              "name": "200 Success (All Devices)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-api-key", "value": "{{apiKey}}" },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"allDevices\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Logged out successfully from all devices\",\n  \"devicesRevoked\": 3\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "ixj225grzz+mTb4gxfPqCmCG5Ky7R3stYv2Qd5j18tY=",
+      "type": "string"
+    },
+    { "key": "phone", "value": "+2250700000000", "type": "string" },
+    { "key": "pin", "value": "1234", "type": "string" },
+    { "key": "otpCode", "value": "123456", "type": "string" },
+    { "key": "hasAccount", "value": "", "type": "string" },
+    { "key": "nextStep", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "registeredUserId", "value": "", "type": "string" },
+    { "key": "isNewUser", "value": "", "type": "string" }
+  ]
+}

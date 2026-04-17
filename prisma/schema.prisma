@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+enum Role {
+  CLIENT
+  PROFESSIONAL
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum ServiceLocation {
+  HOME
+  SALON
+  BOTH
+}
+
+enum OtpChannel {
+  WHATSAPP
+  SMS
+}
+
+enum OtpPurpose {
+  REGISTRATION    
+  LOGIN           
+  PHONE_CHANGE    
+  PIN_RESET       
+}
+
+
+model User {
+  id          String   @id @default(uuid())
+  phone       String   @unique
+  firstName    String
+  lastName    String
+  role        Role     @default(CLIENT)
+  isVerified   Boolean  @default(false) 
+  isActive    Boolean  @default(true)  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? 
+  metadata    Json?
+
+  pinHash          String?   
+  pinFailCount     Int       @default(0)  
+  pinBlockedUntil  DateTime? 
+
+  otpCodes      OtpCode[]
+  refreshTokens RefreshToken[]
+  authLogs      AuthLog[]
+
+  professional     Professional?
+  bookingsAsClient Booking[]     @relation("ClientBookings")
+
+  @@map("users")
+}
+
+
+
+model OtpCode {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code        String     
+  purpose     OtpPurpose
+  channel     OtpChannel 
+  isUsed      Boolean    @default(false)
+  failCount   Int        @default(0)   
+  blockedUntil DateTime? 
+  metadata    Json?
+  expiresAt   DateTime  
+  createdAt   DateTime   @default(now())
+  deletedAt   DateTime?
+
+  @@map("otp_codes")
+}
+
+
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique 
+  deviceInfo  String?  
+  ipAddress   String?
+  isRevoked   Boolean  @default(false)
+  expiresAt   DateTime 
+  platform    String?  
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+  deletedAt   DateTime?
+
+  @@map("refresh_tokens")
+}
+
+
+model AuthLog {
+  id        String   @id @default(uuid())
+  userId    String?  
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  event     String   
+  channel   String?  
+  ipAddress String?
+  deviceInfo String?
+  metadata  Json?    
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  @@map("auth_logs")
+}
+
+
+
+model Professional {
+  id          String          @id @default(uuid())
+  userId      String          @unique
+  user        User            @relation(fields: [userId], references: [id])
+  bio         String?
+  avatarUrl   String?
+  location    ServiceLocation @default(BOTH)
+  isActive    Boolean         @default(true)
+  rating      Float           @default(0)
+  reviewCount Int             @default(0)
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+
+  services       ServiceOffering[]
+  availabilities Availability[]
+  bookings       Booking[]        @relation("ProfessionalBookings")
+  reviews        Review[]
+
+  @@map("professionals")
+}
+
+
+
+model ServiceOffering {
+  id             String       @id @default(uuid())
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  name           String
+  description    String?
+  durationMin    Int
+  basePrice      Float
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  communeFees CommuneFee[]
+  bookings    Booking[]
+
+  @@map("service_offerings")
+}
+
+model CommuneFee {
+  id                String          @id @default(uuid())
+  serviceOfferingId String
+  serviceOffering   ServiceOffering @relation(fields: [serviceOfferingId], references: [id])
+  commune           String
+  travelFee         Float
+  metadata           Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  isAvailable       Boolean         @default(true)
+  deletedAt         DateTime?
+
+  @@unique([serviceOfferingId, commune])
+  @@map("commune_fees")
+}
+
+
+
+model Availability {
+  id             String       @id @default(uuid())
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  dayOfWeek      Int
+  startTime      String
+  endTime        String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  isActive       Boolean      @default(true)
+  deletedAt      DateTime?
+
+  @@map("availabilities")
+}
+
+
+
+model Booking {
+  id             String          @id @default(uuid())
+  clientId       String
+  client         User            @relation("ClientBookings", fields: [clientId], references: [id])
+  professionalId String
+  professional   Professional    @relation("ProfessionalBookings", fields: [professionalId], references: [id])
+  serviceId      String
+  service        ServiceOffering @relation(fields: [serviceId], references: [id])
+  status         BookingStatus   @default(PENDING)
+  scheduledAt    DateTime
+  durationMin    Int
+  totalPrice     Float
+  travelFee      Float           @default(0)
+  commune        String
+  address        String?
+  clientNotes    String?
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  cancellationNote String?
+  metadata         Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+
+  review Review?
+
+  @@map("bookings")
+}
+
+
+model Review {
+  id             String       @id @default(uuid())
+  bookingId      String       @unique
+  booking        Booking      @relation(fields: [bookingId], references: [id])
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  rating         Int
+  comment        String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+
+  @@map("reviews")
+}
