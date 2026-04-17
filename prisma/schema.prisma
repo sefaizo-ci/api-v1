@@ -46,7 +46,8 @@ enum OtpPurpose {
 
 model User {
   id          String   @id @default(uuid())
-  phone       String   @unique
+  phoneId     String   @unique
+  phone       Phone    @relation(fields: [phoneId], references: [id], onDelete: Restrict)
   firstName   String
   lastName    String
   role        Role     @default(CLIENT)
@@ -64,11 +65,43 @@ model User {
   otpCodes      OtpCode[]
   refreshTokens RefreshToken[]
   authLogs      AuthLog[]
+  phoneRoles    PhoneRole[]
 
   professional     Professional?
   bookingsAsClient Booking[]     @relation("ClientBookings")
 
   @@map("users")
+}
+
+model Phone {
+  id         String      @id @default(uuid())
+  number     String      @unique
+  isVerified Boolean     @default(false)
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
+
+  roles      PhoneRole[]
+  user       User?
+
+  @@map("phones")
+}
+
+model PhoneRole {
+  id        String   @id @default(uuid())
+  phoneId   String
+  phone     Phone    @relation(fields: [phoneId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([phoneId, role])
+  @@index([userId])
+  @@map("phone_roles")
 }
 
 model OtpCode {
