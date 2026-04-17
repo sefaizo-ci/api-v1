@@ -21,30 +21,30 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { AUTH } from '../../../../common/constants/routes';
-import type { UserRole } from '../../core/enums/auth.enums';
-import { OtpPurpose } from '../../core/enums/auth.enums';
+import { AUTH } from '../../common/constants/routes';
+import type { UserRole } from './core/enums/auth.enums';
+import { OtpPurpose } from './core/enums/auth.enums';
 
-import { CreatePinCommand } from '../commands/create-pin.command';
-import { LogoutCommand } from '../commands/logout.command';
-import { RefreshTokenCommand } from '../commands/refresh-token.command';
-import { SendOtpCommand } from '../commands/send-otp.command';
-import { StartLoginCommand } from '../commands/start-login.command';
-import { VerifyOtpCommand } from '../commands/verify-otp.command';
-import { GetMeQuery } from '../queries/get-me.query';
-import { InitAuthFlowQuery } from '../queries/init-auth-flow.query';
+import { CreatePinCommand } from './interface/commands/create-pin.command';
+import { LogoutCommand } from './interface/commands/logout.command';
+import { RefreshTokenCommand } from './interface/commands/refresh-token.command';
+import { SendOtpCommand } from './interface/commands/send-otp.command';
+import { StartLoginCommand } from './interface/commands/start-login.command';
+import { VerifyOtpCommand } from './interface/commands/verify-otp.command';
+import { GetMeQuery } from './interface/queries/get-me.query';
+import { InitAuthFlowQuery } from './interface/queries/init-auth-flow.query';
 
-import { CompleteRegistrationDto } from '../dtos/complete-registration.dto';
-import { InitAuthFlowDto } from '../dtos/init-auth-flow.dto';
-import { LogoutDto } from '../dtos/logout.dto';
-import { RefreshTokenDto } from '../dtos/refresh-token.dto';
-import { SendOtpDto } from '../dtos/send-otp.dto';
-import { StartLoginDto } from '../dtos/start-login.dto';
-import { VerifyOtpDto } from '../dtos/verify-otp.dto';
+import { CompleteRegistrationDto } from './interface/dtos/complete-registration.dto';
+import { InitAuthFlowDto } from './interface/dtos/init-auth-flow.dto';
+import { LogoutDto } from './interface/dtos/logout.dto';
+import { RefreshTokenDto } from './interface/dtos/refresh-token.dto';
+import { SendOtpDto } from './interface/dtos/send-otp.dto';
+import { StartLoginDto } from './interface/dtos/start-login.dto';
+import { VerifyOtpDto } from './interface/dtos/verify-otp.dto';
 
-import { CurrentUser } from '../../../../libs/decorators/current-user.decorator';
-import { ApiKeyGuard } from '../../infrastructure/guards/api-key.guard';
-import { JwtAuthGuard } from '../../infrastructure/guards/jwt-auth.guard';
+import { CurrentUser } from '../../libs/decorators/current-user.decorator';
+import { ApiKeyGuard } from './infrastructure/guards/api-key.guard';
+import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -116,7 +116,9 @@ export class AuthController {
     },
   })
   initFlow(@Body() dto: InitAuthFlowDto) {
-    return this.queryBus.execute(new InitAuthFlowQuery(dto.phone));
+    return this.queryBus.execute<InitAuthFlowQuery>(
+      new InitAuthFlowQuery(dto.phone),
+    );
   }
 
   @Post(AUTH.OTP.SEND)
@@ -138,7 +140,7 @@ export class AuthController {
     },
   })
   sendOtp(@Body() dto: SendOtpDto, @Req() req: Request) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<SendOtpCommand>(
       new SendOtpCommand(dto.phone, dto.purpose, req.headers['user-agent']),
     );
   }
@@ -206,9 +208,10 @@ export class AuthController {
     @Body() dto: VerifyOtpDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result: VerifyOtpResponse = await this.commandBus.execute(
-      new VerifyOtpCommand(dto.phone, dto.code, dto.purpose),
-    );
+    const result: VerifyOtpResponse = await this.commandBus.execute<
+      VerifyOtpCommand,
+      VerifyOtpResponse
+    >(new VerifyOtpCommand(dto.phone, dto.code, dto.purpose));
 
     if (dto.purpose === OtpPurpose.LOGIN && result.refreshToken) {
       res.cookie(AUTH.COOKIE.REFRESH.NAME, result.refreshToken, {
@@ -239,7 +242,7 @@ export class AuthController {
     },
   })
   completeRegistration(@Body() dto: CompleteRegistrationDto) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<CreatePinCommand>(
       new CreatePinCommand(
         dto.userId,
         dto.pin,
@@ -271,7 +274,7 @@ export class AuthController {
     },
   })
   startLogin(@Body() dto: StartLoginDto, @Req() req: Request) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<StartLoginCommand>(
       new StartLoginCommand(dto.phone, dto.pin, req.headers['user-agent']),
     );
   }
@@ -309,9 +312,10 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token manquant.');
     }
 
-    const result: RefreshResponse = await this.commandBus.execute(
-      new RefreshTokenCommand(refreshToken),
-    );
+    const result: RefreshResponse = await this.commandBus.execute<
+      RefreshTokenCommand,
+      RefreshResponse
+    >(new RefreshTokenCommand(refreshToken));
 
     res.cookie(AUTH.COOKIE.REFRESH.NAME, result.refreshToken, {
       httpOnly: true,
@@ -359,7 +363,7 @@ export class AuthController {
       path: AUTH.COOKIE.REFRESH.PATH,
     });
 
-    return this.commandBus.execute(
+    return this.commandBus.execute<LogoutCommand>(
       new LogoutCommand(user.id, refreshToken, dto.allDevices),
     );
   }
@@ -395,6 +399,6 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
   getMe(@CurrentUser() user: { id: string }) {
-    return this.queryBus.execute(new GetMeQuery(user.id));
+    return this.queryBus.execute<GetMeQuery>(new GetMeQuery(user.id));
   }
 }

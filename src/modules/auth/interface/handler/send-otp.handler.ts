@@ -72,8 +72,6 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
 
     const channel = await this.notif.sendOtp(phone, rawCode);
 
-    // confirm OTP sending before saving to DB
-
     await this.otpRepo.create({
       userId: user.id,
       code: codeHash,
