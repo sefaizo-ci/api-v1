@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '@prisma/client';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '../../../../../libs/database/prisma.service';
 import { OtpEntity } from '../../../core/entities/otp.entity';
 import {
   IOtpRepository,
@@ -12,7 +12,7 @@ import { OtpMapper } from '../../mappers/otp.mapper';
 
 @Injectable()
 export class OtpRepository implements IOtpRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: {
     userId: string;

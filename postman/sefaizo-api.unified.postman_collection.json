@@ -1,0 +1,2708 @@
+{
+  "info": {
+    "name": "sefaizo-api",
+    "description": "Unified Postman collection for Sefaizo API with Auth and Professional folders.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "System",
+          "item": [
+            {
+              "name": "Health Check",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    ""
+                  ]
+                },
+                "description": "Verify API is running."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        ""
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"Sefaizo API is running\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AUTH FLOW",
+          "item": [
+            {
+              "name": "1️⃣ Init Flow (Detect Account)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "if (json && typeof json.hasAccount !== 'undefined') {",
+                      "  pm.environment.set('hasAccount', String(json.hasAccount));",
+                      "}",
+                      "if (json && json.nextStep) {",
+                      "  pm.environment.set('nextStep', json.nextStep);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/flow/init",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "flow",
+                    "init"
+                  ]
+                },
+                "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` → User has PIN, proceed with LOGIN flow\n- `hasAccount: false` → New user, proceed with REGISTRATION flow\n- Includes `metadata.authFlow` tracking with `currentStep`, `status`, `timestamps`"
+              },
+              "response": [
+                {
+                  "name": "200 - New User (No Account)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/flow/init",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "flow",
+                        "init"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"hasAccount\": false,\n  \"nextStep\": \"SEND_OTP\",\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"FLOW_INIT\",\n      \"status\": \"pending\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"flowStart\": \"2026-04-13T12:00:00Z\"\n      }\n    }\n  }\n}"
+                },
+                {
+                  "name": "200 - Existing User (Has Account)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/flow/init",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "flow",
+                        "init"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"hasAccount\": true,\n  \"nextStep\": \"ENTER_PIN\",\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"FLOW_INIT\",\n      \"status\": \"pending\",\n      \"userPath\": \"EXISTING_USER\",\n      \"timestamps\": {\n        \"flowStart\": \"2026-04-13T12:00:00Z\"\n      }\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AUTH REGISTRATION (NEW USER PATH)",
+          "item": [
+            {
+              "name": "2️⃣ Send OTP for Registration",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/send",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "otp",
+                    "send"
+                  ]
+                },
+                "description": "Send OTP via WhatsApp/SMS for account registration.\n\n**Allowed for:**\n- New users (no account)\n- Incomplete registrations (created but no PIN)\n\n**Blocked for:**\n- Completed accounts (have PIN) → returns 400 \"Account already active\""
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/otp/send",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "otp",
+                        "send"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"OTP sent\",\n  \"expiresIn\": 10,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_SENT\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"otpSentAt\": \"2026-04-13T12:01:00Z\"\n      }\n    }\n  }\n}"
+                },
+                {
+                  "name": "400 Account Already Active",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/otp/send",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "otp",
+                        "send"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "body": "{\n  \"message\": \"Account already active. Please use login flow.\",\n  \"error\": \"ACCOUNT_ACTIVE\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "3️⃣ Verify OTP (Registration)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "if (json && json.userId) {",
+                      "  pm.environment.set('userId', json.userId);",
+                      "}",
+                      "if (json && json.isNewUser) {",
+                      "  pm.environment.set('isNewUser', String(json.isNewUser));",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "otp",
+                    "verify"
+                  ]
+                },
+                "description": "Verify OTP for account registration. Returns `userId` and `isNewUser` flag for profile completion step.\n\n**On Success:**\n- Returns `userId` (save for next step)\n- Sets `currentStep: OTP_VERIFIED` in metadata\n- User must proceed to Complete Registration"
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"123456\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"isNewUser\": true,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_VERIFIED\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"otpVerifiedAt\": \"2026-04-13T12:02:00Z\"\n      }\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4️⃣ Complete Registration (Set Profile + PIN)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "if (json && json.user && json.user.id) {",
+                      "  pm.environment.set('registeredUserId', json.user.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/complete",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register",
+                    "complete"
+                  ]
+                },
+                "description": "Finalize registration: set user profile (firstName, lastName) and PIN code.\n\n**On Success:**\n- Account becomes active\n- Sets `currentStep: REGISTRATION_COMPLETE` in metadata\n- User can now use login flow"
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"1234\",\n  \"confirmPin\": \"1234\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/register/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "register",
+                        "complete"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "body": "{\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"role\": \"CLIENT\",\n    \"isVerified\": true,\n    \"isActive\": true,\n    \"metadata\": {\n      \"authFlow\": {\n        \"currentStep\": \"REGISTRATION_COMPLETE\",\n        \"status\": \"completed\",\n        \"userPath\": \"NEW_USER\",\n        \"timestamps\": {\n          \"registrationCompletedAt\": \"2026-04-13T12:03:00Z\"\n        }\n      }\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AUTH LOGIN (EXISTING USER PATH)",
+          "item": [
+            {
+              "name": "2️⃣ Start Login (PIN Verification)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login/start",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login",
+                    "start"
+                  ]
+                },
+                "description": "Validate PIN for existing user and initiate LOGIN OTP.\n\n**Required:**\n- User must have completed registration (have PIN set)\n- Correct PIN must be provided\n\n**On Success:**\n- Sends LOGIN OTP\n- Sets `currentStep: OTP_SENT` with `purpose: LOGIN` in metadata"
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"1234\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/login/start",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "login",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"OTP sent\",\n  \"expiresIn\": 10,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_SENT\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"EXISTING_USER\",\n      \"purpose\": \"LOGIN\",\n      \"timestamps\": {\n        \"otpSentAt\": \"2026-04-13T12:05:00Z\"\n      }\n    }\n  }\n}"
+                },
+                {
+                  "name": "401 Incomplete Registration",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"pin\": \"1234\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/login/start",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "login",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"PIN not configured. Complete registration first.\",\n  \"error\": \"INCOMPLETE_REGISTRATION\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "3️⃣ Verify OTP (Login -> Tokens)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "if (json && json.accessToken) {",
+                      "  pm.environment.set('accessToken', json.accessToken);",
+                      "}",
+                      "if (json && json.refreshToken) {",
+                      "  pm.environment.set('refreshToken', json.refreshToken);",
+                      "}",
+                      "if (json && json.user && json.user.id) {",
+                      "  pm.environment.set('userId', json.user.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/otp/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "otp",
+                    "verify"
+                  ]
+                },
+                "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**On Success:**\n- Returns `accessToken` (for API calls)\n- Returns `refreshToken` (for token rotation)\n- Returns `user` object\n- Sets `currentStep: LOGIN_COMPLETE` in metadata"
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"123456\",\n  \"purpose\": \"LOGIN\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"phone\": \"+2250700000001\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"role\": \"CLIENT\",\n    \"isVerified\": true,\n    \"isActive\": true,\n    \"metadata\": {\n      \"authFlow\": {\n        \"currentStep\": \"LOGIN_COMPLETE\",\n        \"status\": \"completed\",\n        \"userPath\": \"EXISTING_USER\",\n        \"timestamps\": {\n          \"loginCompletedAt\": \"2026-04-13T12:06:00Z\"\n        }\n      }\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "TOKEN MANAGEMENT",
+          "item": [
+            {
+              "name": "Refresh Access Token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "if (json && json.accessToken) {",
+                      "  pm.environment.set('accessToken', json.accessToken);",
+                      "}",
+                      "if (json && json.refreshToken) {",
+                      "  pm.environment.set('refreshToken', json.refreshToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/token/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "token",
+                    "refresh"
+                  ]
+                },
+                "description": "Rotate tokens: invalidate old refreshToken and issue new pair.\n\n**Use when:**\n- Access token expires\n- Updating device info\n- Rolling session forward"
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/token/refresh",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "token",
+                        "refresh"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "PROTECTED ROUTES",
+          "item": [
+            {
+              "name": "Get Current User Profile",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                },
+                "description": "Retrieve authenticated user profile including metadata."
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "me"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"phone\": \"+2250700000001\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"CLIENT\",\n  \"isVerified\": true,\n  \"isActive\": true,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"LOGIN_COMPLETE\",\n      \"status\": \"completed\",\n      \"userPath\": \"EXISTING_USER\",\n      \"timestamps\": {\n        \"loginCompletedAt\": \"2026-04-13T12:06:00Z\"\n      }\n    }\n  },\n  \"createdAt\": \"2026-04-10T15:30:00Z\",\n  \"updatedAt\": \"2026-04-13T12:06:00Z\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Logout",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\",\n  \"allDevices\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "description": "Logout current session or all sessions.\n\n**Parameters:**\n- `refreshToken`: (required) Token to invalidate\n- `allDevices`: (optional) Set to `true` to logout all sessions, `false` to logout current device only"
+              },
+              "response": [
+                {
+                  "name": "200 Success (Single Device)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"allDevices\": false\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "logout"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"Logged out successfully\",\n  \"devicesRevoked\": 1\n}"
+                },
+                {
+                  "name": "200 Success (All Devices)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"allDevices\": true\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "logout"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"Logged out successfully from all devices\",\n  \"devicesRevoked\": 3\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Professional",
+      "item": [
+        {
+          "name": "Discovery",
+          "item": [
+            {
+              "name": "List Professionals",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional"
+                  ]
+                },
+                "description": "List public professionals with optional filters: status, isVerified, location, page, limit."
+              }
+            },
+            {
+              "name": "Search Professionals",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/search/query?q={{searchQuery}}&location={{searchLocation}}&rating={{searchRating}}&page={{page}}&limit={{limit}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "search",
+                    "query"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "{{searchQuery}}"
+                    },
+                    {
+                      "key": "location",
+                      "value": "{{searchLocation}}"
+                    },
+                    {
+                      "key": "rating",
+                      "value": "{{searchRating}}"
+                    },
+                    {
+                      "key": "page",
+                      "value": "{{page}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    }
+                  ]
+                },
+                "description": "Search professionals by name, bio or services."
+              }
+            },
+            {
+              "name": "Get Professional Public Profile",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}"
+                  ]
+                },
+                "description": "Get public profile for one professional."
+              }
+            },
+            {
+              "name": "Get Professional Services (Public)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services?includeInactive={{includeInactive}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services"
+                  ],
+                  "query": [
+                    {
+                      "key": "includeInactive",
+                      "value": "{{includeInactive}}"
+                    }
+                  ]
+                },
+                "description": "Get services for a professional. Set includeInactive=true to include soft-disabled services."
+              }
+            },
+            {
+              "name": "Get Professional Availability (Public)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability?dayOfWeek={{dayOfWeek}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability"
+                  ],
+                  "query": [
+                    {
+                      "key": "dayOfWeek",
+                      "value": "{{dayOfWeek}}"
+                    }
+                  ]
+                },
+                "description": "Get availability for one day or the full week when dayOfWeek is empty."
+              }
+            },
+            {
+              "name": "Get Professional Gallery (Public)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery?page={{page}}&limit={{limit}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "{{page}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    }
+                  ]
+                },
+                "description": "Get public gallery/portfolio items for a professional."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Profile",
+          "item": [
+            {
+              "name": "Get My Profile",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "me"
+                  ]
+                },
+                "description": "Get the authenticated professional profile."
+              }
+            },
+            {
+              "name": "Get Profile Completion",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/completion",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "{{professionalId}}",
+                    "completion"
+                  ]
+                },
+                "description": "Get profile completion percentage."
+              }
+            },
+            {
+              "name": "Create Profile",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.id) {",
+                      "  pm.environment.set('professionalId', json.id);",
+                      "}",
+                      "if (json && json.professional && json.professional.id) {",
+                      "  pm.environment.set('professionalId', json.professional.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"agencyName\": \"{{profileAgencyName}}\",\n  \"bio\": \"{{profileBio}}\",\n  \"avatarUrl\": \"{{profileAvatarUrl}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile"
+                  ]
+                },
+                "description": "Create the professional profile."
+              }
+            },
+            {
+              "name": "Update Profile",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"agencyName\": \"{{profileAgencyName}} - Updated\",\n  \"bio\": \"{{profileBio}}\",\n  \"avatarUrl\": \"{{profileAvatarUrl}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "{{professionalId}}"
+                  ]
+                },
+                "description": "Update the professional profile."
+              }
+            },
+            {
+              "name": "Verify Profile (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "{{professionalId}}",
+                    "verify"
+                  ]
+                },
+                "description": "Admin only: verify a professional profile."
+              }
+            },
+            {
+              "name": "Suspend Profile (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"{{professionalStatusReason}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "{{professionalId}}",
+                    "suspend"
+                  ]
+                },
+                "description": "Admin only: suspend a professional profile."
+              }
+            },
+            {
+              "name": "Reactivate Profile (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "{{professionalId}}",
+                    "reactivate"
+                  ]
+                },
+                "description": "Admin only: reactivate a suspended profile."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Services",
+          "item": [
+            {
+              "name": "Add Service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.id) {",
+                      "  pm.environment.set('serviceId', json.id);",
+                      "}",
+                      "if (json && json.service && json.service.id) {",
+                      "  pm.environment.set('serviceId', json.service.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{serviceName}}\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services"
+                  ]
+                },
+                "description": "Create a service offering for the current professional."
+              }
+            },
+            {
+              "name": "Update Service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{serviceName}} - Updated\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "services",
+                    "{{serviceId}}"
+                  ]
+                },
+                "description": "Update a service offering."
+              }
+            },
+            {
+              "name": "Deactivate Service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/deactivate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}",
+                    "deactivate"
+                  ]
+                },
+                "description": "Deactivate one service."
+              }
+            },
+            {
+              "name": "Activate Service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}",
+                    "activate"
+                  ]
+                },
+                "description": "Reactivate one service."
+              }
+            },
+            {
+              "name": "Delete Service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}"
+                  ]
+                },
+                "description": "Soft delete one service."
+              }
+            },
+            {
+              "name": "Set Commune Fee",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"commune\": \"{{commune}}\",\n  \"travelFee\": {{travelFee}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/communes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}",
+                    "communes"
+                  ]
+                },
+                "description": "Set or update travel fee for a commune."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Availability",
+          "item": [
+            {
+              "name": "Set Availability",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dayOfWeek\": {{dayOfWeek}},\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability"
+                  ]
+                },
+                "description": "Set a day availability slot."
+              }
+            },
+            {
+              "name": "Update Availability",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability",
+                    "{{dayOfWeek}}"
+                  ]
+                },
+                "description": "Update the schedule of one day."
+              }
+            },
+            {
+              "name": "Set Availability Status",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"OPEN\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability",
+                    "{{dayOfWeek}}",
+                    "status"
+                  ]
+                },
+                "description": "Open, close or put a day on leave."
+              }
+            },
+            {
+              "name": "Set Availability For Week",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\",\n  \"excludeDays\": [5, 6]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability"
+                  ]
+                },
+                "description": "Set the same availability across the week."
+              }
+            },
+            {
+              "name": "Remove Availability",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability",
+                    "{{dayOfWeek}}"
+                  ]
+                },
+                "description": "Remove one day availability."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gallery",
+          "item": [
+            {
+              "name": "Upload Gallery Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.id) {",
+                      "  pm.environment.set('galleryItemId', json.id);",
+                      "}",
+                      "if (json && json.item && json.item.id) {",
+                      "  pm.environment.set('galleryItemId', json.item.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"imageUrl\": \"{{galleryImageUrl}}\",\n  \"caption\": \"{{galleryCaption}}\",\n  \"category\": \"{{galleryCategory}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery"
+                  ]
+                },
+                "description": "Upload a gallery item."
+              }
+            },
+            {
+              "name": "Update Gallery Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"caption\": \"{{galleryCaption}} - Updated\",\n  \"category\": \"{{galleryCategory}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery",
+                    "{{galleryItemId}}"
+                  ]
+                },
+                "description": "Update one gallery item."
+              }
+            },
+            {
+              "name": "Publish Gallery Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/publish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery",
+                    "{{galleryItemId}}",
+                    "publish"
+                  ]
+                },
+                "description": "Mark a gallery item as public."
+              }
+            },
+            {
+              "name": "Unpublish Gallery Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/unpublish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery",
+                    "{{galleryItemId}}",
+                    "unpublish"
+                  ]
+                },
+                "description": "Hide a gallery item from the public feed."
+              }
+            },
+            {
+              "name": "Reorder Gallery",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"itemOrders\": [\n    { \"id\": \"{{galleryItemId}}\", \"order\": 0 }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/reorder",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery",
+                    "reorder"
+                  ]
+                },
+                "description": "Reorder professional gallery items."
+              }
+            },
+            {
+              "name": "Delete Gallery Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery",
+                    "{{galleryItemId}}"
+                  ]
+                },
+                "description": "Soft delete a gallery item."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bookings",
+          "item": [
+            {
+              "name": "Get Professional Bookings",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "bookings"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "{{bookingStatus}}"
+                    },
+                    {
+                      "key": "page",
+                      "value": "{{page}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    }
+                  ]
+                },
+                "description": "List professional bookings with optional status filter."
+              }
+            },
+            {
+              "name": "Confirm Booking",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/confirm",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "bookings",
+                    "{{bookingId}}",
+                    "confirm"
+                  ]
+                },
+                "description": "Confirm a booking."
+              }
+            },
+            {
+              "name": "Reject Booking",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"{{bookingReason}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/reject",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "bookings",
+                    "{{bookingId}}",
+                    "reject"
+                  ]
+                },
+                "description": "Reject a booking with an optional reason."
+              }
+            },
+            {
+              "name": "Complete Booking",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/complete",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "bookings",
+                    "{{bookingId}}",
+                    "complete"
+                  ]
+                },
+                "description": "Mark a booking as completed."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "ixj225grzz+mTb4gxfPqCmCG5Ky7R3stYv2Qd5j18tY=",
+      "type": "string"
+    },
+    {
+      "key": "phone",
+      "value": "+2250700000000",
+      "type": "string"
+    },
+    {
+      "key": "pin",
+      "value": "1234",
+      "type": "string"
+    },
+    {
+      "key": "otpCode",
+      "value": "123456",
+      "type": "string"
+    },
+    {
+      "key": "hasAccount",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nextStep",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registeredUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "isNewUser",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "professionalAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "professionalId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "serviceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "galleryItemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "searchQuery",
+      "value": "coiffure",
+      "type": "string"
+    },
+    {
+      "key": "searchLocation",
+      "value": "SALON",
+      "type": "string"
+    },
+    {
+      "key": "searchRating",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "page",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "limit",
+      "value": "20",
+      "type": "string"
+    },
+    {
+      "key": "includeInactive",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "dayOfWeek",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "bookingStatus",
+      "value": "PENDING",
+      "type": "string"
+    },
+    {
+      "key": "bookingReason",
+      "value": "Horaire non disponible",
+      "type": "string"
+    },
+    {
+      "key": "commune",
+      "value": "Cocody",
+      "type": "string"
+    },
+    {
+      "key": "travelFee",
+      "value": "2000",
+      "type": "string"
+    },
+    {
+      "key": "profileAgencyName",
+      "value": "Salon Excellence",
+      "type": "string"
+    },
+    {
+      "key": "profileBio",
+      "value": "Coiffure premium et soins capillaires.",
+      "type": "string"
+    },
+    {
+      "key": "profileAvatarUrl",
+      "value": "https://cdn.example.com/avatar.jpg",
+      "type": "string"
+    },
+    {
+      "key": "profileLocation",
+      "value": "SALON",
+      "type": "string"
+    },
+    {
+      "key": "profileAddress",
+      "value": "Cocody, Abidjan",
+      "type": "string"
+    },
+    {
+      "key": "profileLatitude",
+      "value": "5.3517",
+      "type": "string"
+    },
+    {
+      "key": "profileLongitude",
+      "value": "-4.0012",
+      "type": "string"
+    },
+    {
+      "key": "professionalStatusReason",
+      "value": "Documents incomplets",
+      "type": "string"
+    },
+    {
+      "key": "serviceName",
+      "value": "Brushing",
+      "type": "string"
+    },
+    {
+      "key": "serviceDescription",
+      "value": "Brushing rapide 30 minutes",
+      "type": "string"
+    },
+    {
+      "key": "serviceDurationMin",
+      "value": "30",
+      "type": "string"
+    },
+    {
+      "key": "serviceBasePrice",
+      "value": "8000",
+      "type": "string"
+    },
+    {
+      "key": "serviceCategory",
+      "value": "Coiffage",
+      "type": "string"
+    },
+    {
+      "key": "availabilityStartTime",
+      "value": "08:00",
+      "type": "string"
+    },
+    {
+      "key": "availabilityEndTime",
+      "value": "17:00",
+      "type": "string"
+    },
+    {
+      "key": "breakStartTime",
+      "value": "12:00",
+      "type": "string"
+    },
+    {
+      "key": "breakEndTime",
+      "value": "13:00",
+      "type": "string"
+    },
+    {
+      "key": "galleryImageUrl",
+      "value": "https://cdn.example.com/gallery.jpg",
+      "type": "string"
+    },
+    {
+      "key": "galleryCaption",
+      "value": "Avant / Après",
+      "type": "string"
+    },
+    {
+      "key": "galleryCategory",
+      "value": "Portfolio",
+      "type": "string"
+    }
+  ],
+  "event": [],
+  "protocolProfileBehavior": {}
+}
