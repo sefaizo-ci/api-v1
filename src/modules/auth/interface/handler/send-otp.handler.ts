@@ -1,7 +1,14 @@
-import { BadRequestException, Inject } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { RedisService } from '../../../../libs/redis/redis.service';
 import { OtpPurpose, type OtpChannel } from '../../core/enums/auth.enums';
 import type { INotificationService } from '../../core/services/notification.service.interface';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
@@ -9,17 +16,26 @@ import type { IUserRepository } from '../../core/services/user.service.interface
 import { SendOtpCommand } from '../commands/send-otp.command';
 import { withAuthFlowMetadata } from '../utils/auth-metadata.util';
 
+const OTP_SEND_COOLDOWN_SECONDS = 60;
+const OTP_SEND_RATE_WINDOW_SECONDS = 15 * 60;
+const OTP_SEND_MAX_ATTEMPTS_PER_WINDOW = 5;
+
 @CommandHandler(SendOtpCommand)
 export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
+  private readonly logger = new Logger(SendOtpHandler.name);
+
   constructor(
     @Inject('IUserRepository') private readonly userRepo: IUserRepository,
     @Inject('IOtpRepository') private readonly otpRepo: IOtpRepository,
     @Inject('INotificationService')
     private readonly notif: INotificationService,
+    private readonly redisService: RedisService,
   ) {}
 
   async execute(cmd: SendOtpCommand): Promise<{ channel: OtpChannel }> {
     const { phone, purpose } = cmd;
+
+    await this.enforceRateLimit(phone, purpose);
 
     let user = await this.userRepo.findByPhone(phone);
 
@@ -81,6 +97,74 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
       }),
     );
 
+    await this.storeCooldown(phone, purpose);
+
     return { channel };
+  }
+
+  private buildCooldownKey(phone: string, purpose: OtpPurpose): string {
+    return `auth:otp:cooldown:${purpose}:${phone}`;
+  }
+
+  private buildAttemptsKey(phone: string, purpose: OtpPurpose): string {
+    return `auth:otp:attempts:${purpose}:${phone}`;
+  }
+
+  private async enforceRateLimit(
+    phone: string,
+    purpose: OtpPurpose,
+  ): Promise<void> {
+    const cooldownKey = this.buildCooldownKey(phone, purpose);
+    const attemptsKey = this.buildAttemptsKey(phone, purpose);
+
+    try {
+      const hasCooldown = await this.redisService.exists(cooldownKey);
+      if (hasCooldown) {
+        const ttl = Math.max(await this.redisService.ttl(cooldownKey), 1);
+        throw new HttpException(
+          `Patientez ${ttl}s avant de redemander un code.`,
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      const attempts = await this.redisService.incrementWithWindow(
+        attemptsKey,
+        OTP_SEND_RATE_WINDOW_SECONDS,
+      );
+      if (attempts > OTP_SEND_MAX_ATTEMPTS_PER_WINDOW) {
+        const ttl = Math.max(await this.redisService.ttl(attemptsKey), 1);
+        throw new HttpException(
+          `Trop de demandes OTP. Réessayez dans ${ttl}s.`,
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    } catch (error) {
+      if (error instanceof HttpException && error.getStatus() === 429) {
+        throw error;
+      }
+
+      this.logger.warn(
+        'Redis indisponible, OTP envoyé sans contrôle anti-spam temporairement.',
+      );
+    }
+  }
+
+  private async storeCooldown(
+    phone: string,
+    purpose: OtpPurpose,
+  ): Promise<void> {
+    const cooldownKey = this.buildCooldownKey(phone, purpose);
+
+    try {
+      await this.redisService.setWithExpiry(
+        cooldownKey,
+        '1',
+        OTP_SEND_COOLDOWN_SECONDS,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Impossible d'écrire le cooldown OTP dans Redis: ${(error as Error).message}`,
+      );
+    }
   }
 }
