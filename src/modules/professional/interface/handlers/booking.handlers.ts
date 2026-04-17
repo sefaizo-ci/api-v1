@@ -1,0 +1,158 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { PrismaService } from '../../../../libs/database/prisma.service';
+import {
+  CancelBookingCommand,
+  CompleteBookingCommand,
+  ConfirmBookingCommand,
+  RejectBookingCommand,
+} from '../../interface/commands';
+
+@CommandHandler(ConfirmBookingCommand)
+@Injectable()
+export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: ConfirmBookingCommand): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        professionalId: command.professionalId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (booking.status !== 'PENDING') {
+      throw new BadRequestException(
+        'Seules les reservations en attente peuvent etre confirmees',
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: 'CONFIRMED',
+        confirmedAt: new Date(),
+      },
+    });
+  }
+}
+
+@CommandHandler(RejectBookingCommand)
+@Injectable()
+export class RejectBookingHandler implements ICommandHandler<RejectBookingCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: RejectBookingCommand): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        professionalId: command.professionalId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (booking.status !== 'PENDING') {
+      throw new BadRequestException(
+        'Seules les reservations en attente peuvent etre refusees',
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancellationNote: command.reason,
+      },
+    });
+  }
+}
+
+@CommandHandler(CompleteBookingCommand)
+@Injectable()
+export class CompleteBookingHandler implements ICommandHandler<CompleteBookingCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: CompleteBookingCommand): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        professionalId: command.professionalId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      throw new BadRequestException(
+        'Seules les reservations confirmees peuvent etre completees',
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: 'COMPLETED',
+      },
+    });
+  }
+}
+
+@CommandHandler(CancelBookingCommand)
+@Injectable()
+export class CancelBookingHandler implements ICommandHandler<CancelBookingCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: CancelBookingCommand): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (
+      booking.clientId !== command.userId &&
+      booking.professionalId !== command.userId
+    ) {
+      throw new BadRequestException(
+        'Vous ne pouvez pas annuler cette reservation',
+      );
+    }
+
+    if (!['PENDING', 'CONFIRMED'].includes(booking.status)) {
+      throw new BadRequestException(
+        'Cette reservation ne peut plus etre annulee',
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancellationNote: command.reason,
+      },
+    });
+  }
+}

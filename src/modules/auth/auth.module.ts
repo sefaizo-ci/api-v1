@@ -3,11 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
 import type { StringValue } from 'ms';
 
-import { AuthController } from './interface/controllers/auth.controller';
+import { AuthController } from './auth.controller';
 import { CreatePinHandler } from './interface/handler/create-pin.handler';
 import { LoginHandler } from './interface/handler/login.handler';
 import { RefreshTokenHandler } from './interface/handler/refresh-token.handler';
@@ -59,16 +57,6 @@ const QueryHandlers = [GetMeHandler, InitAuthFlowHandler];
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,
-    {
-      provide: PrismaClient,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const adapter = new PrismaPg({
-          connectionString: config.getOrThrow<string>('DATABASE_URL'),
-        });
-        return new PrismaClient({ adapter });
-      },
-    },
     JwtStrategy,
     ApiKeyGuard,
     JwtAuthGuard,
