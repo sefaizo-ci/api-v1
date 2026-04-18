@@ -43,7 +43,8 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
       purpose === OtpPurpose.REGISTRATION &&
       user &&
       user.hasPin() &&
-      user.isAccountActive()
+      user.isAccountActive() &&
+      user.deletedAt === null
     ) {
       throw new BadRequestException('Ce numéro est déjà enregistré.');
     }
@@ -64,7 +65,11 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
       });
     }
 
-    await this.otpRepo.invalidatePrevious(user.id, purpose);
+    await this.otpRepo.invalidatePrevious(
+      user.id,
+      purpose,
+      'new OTP requested',
+    );
 
     const rawCode = crypto.randomInt(100000, 999999).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);

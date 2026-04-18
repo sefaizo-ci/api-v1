@@ -6,7 +6,11 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { OtpPurpose, type OtpChannel } from '../../core/enums/auth.enums';
+import {
+  OtpPurpose,
+  type LoginApp,
+  type OtpChannel,
+} from '../../core/enums/auth.enums';
 import type { INotificationService } from '../../core/services/notification.service.interface';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IUserRepository } from '../../core/services/user.service.interface';
@@ -24,6 +28,8 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
 
   async execute(cmd: StartLoginCommand): Promise<{ channel: OtpChannel }> {
     const user = await this.userRepo.findByPhone(cmd.phone);
+    const loginApp: LoginApp = cmd.app;
+
     if (!user || !user.isAccountActive()) {
       throw new BadRequestException('Numéro introuvable.');
     }
@@ -51,15 +57,27 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
       );
     }
 
+    const roles = await this.userRepo.getRolesByUserId(user.id);
+    if (!roles.includes(loginApp)) {
+      throw new UnauthorizedException(
+        `Ce compte ne possède pas le profil ${loginApp}.`,
+      );
+    }
+
     await this.userRepo.resetPinFail(user.id);
-    await this.otpRepo.invalidatePrevious(user.id, OtpPurpose.LOGIN);
+    await this.otpRepo.invalidatePrevious(
+      user.id,
+      OtpPurpose.LOGIN,
+      'new LOGIN OTP requested',
+      loginApp,
+    );
 
     const rawCode = crypto.randomInt(100000, 999999).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     console.log(
-      `OTP for ${cmd.phone} (purpose: ${OtpPurpose.LOGIN}): ${rawCode}`,
+      `OTP for ${cmd.phone} (purpose: ${OtpPurpose.LOGIN}, app: ${loginApp}): ${rawCode}`,
     );
 
     const channel = await this.notif.sendOtp(cmd.phone, rawCode);
@@ -70,6 +88,7 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
       channel,
       metadata: {
         source: 'start_login',
+        app: loginApp,
         deviceInfo: cmd.deviceInfo ?? null,
       },
       expiresAt,
@@ -81,6 +100,7 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
         status: 'ACTIVE',
         currentStep: 'LOGIN_OTP_SENT',
         otpPurpose: OtpPurpose.LOGIN,
+        app: loginApp,
       }),
     );
 

@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
+import { LOGIN_APPS, type LoginApp } from '../../core/enums/auth.enums';
 
 export class StartLoginDto {
   @ApiProperty({
@@ -19,4 +20,14 @@ export class StartLoginDto {
   @IsString()
   @Matches(/^\d{4,6}$/, { message: 'PIN invalide.' })
   pin!: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Application context for login OTP. Defaults to CLIENT when omitted.',
+    enum: LOGIN_APPS,
+    example: 'PROFESSIONAL',
+  })
+  @IsOptional()
+  @IsIn(LOGIN_APPS)
+  app?: LoginApp;
 }

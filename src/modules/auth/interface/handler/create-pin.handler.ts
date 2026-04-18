@@ -43,20 +43,29 @@ export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
     }
 
     const user = await this.userRepo.findById(cmd.userId);
-    if (!user) {
+    if (!user || user.deletedAt !== null) {
       throw new BadRequestException('Utilisateur introuvable.');
     }
 
     const pinHash = await bcrypt.hash(cmd.pin, 12);
     await this.userRepo.updatePin(cmd.userId, pinHash);
-    await this.userRepo.update(cmd.userId, {
+
+    const updateData: {
+      firstName?: string;
+      lastName?: string;
+      metadata?: any;
+    } = {
       firstName: cmd.firstName,
       lastName: cmd.lastName,
       metadata: {
         profileCompleted: true,
         profileCompletedAt: new Date().toISOString(),
       },
-    });
+    };
+
+    await this.userRepo.update(cmd.userId, updateData);
+
+    await this.userRepo.assignRole(cmd.userId, cmd.role);
 
     await this.userRepo.updateMetadata(
       cmd.userId,

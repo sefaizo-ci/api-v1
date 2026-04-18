@@ -1,3 +1,5 @@
+import { UserRole } from '../../core/enums/auth.enums';
+
 export class CreatePinCommand {
   constructor(
     public readonly userId: string,
@@ -5,5 +7,6 @@ export class CreatePinCommand {
     public readonly confirmPin: string,
     public readonly firstName: string,
     public readonly lastName: string,
+    public readonly role: UserRole = 'CLIENT' as UserRole,
   ) {}
 }

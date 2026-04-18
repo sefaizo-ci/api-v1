@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../../libs/database/prisma.service';
 import { OtpEntity } from '../../../core/entities/otp.entity';
+import type { LoginApp } from '../../../core/enums/auth.enums';
 import {
   IOtpRepository,
   OtpChannel,
@@ -29,9 +30,16 @@ export class OtpRepository implements IOtpRepository {
   async findLatestValid(
     userId: string,
     purpose: OtpPurpose,
+    app?: LoginApp,
   ): Promise<OtpEntity | null> {
     const raw = await this.prisma.otpCode.findFirst({
-      where: { userId, purpose, isUsed: false, deletedAt: null },
+      where: {
+        userId,
+        purpose,
+        isUsed: false,
+        deletedAt: null,
+        ...(app ? { metadata: { path: ['app'], equals: app } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
     });
     return raw ? OtpMapper.toDomain(raw) : null;
@@ -58,10 +66,26 @@ export class OtpRepository implements IOtpRepository {
     });
   }
 
-  async invalidatePrevious(userId: string, purpose: OtpPurpose): Promise<void> {
+  async invalidatePrevious(
+    userId: string,
+    purpose: OtpPurpose,
+    reason?: string,
+    app?: LoginApp,
+  ): Promise<void> {
     await this.prisma.otpCode.updateMany({
-      where: { userId, purpose, isUsed: false, deletedAt: null },
-      data: { isUsed: true },
+      where: {
+        userId,
+        purpose,
+        isUsed: false,
+        deletedAt: null,
+        ...(app ? { metadata: { path: ['app'], equals: app } } : {}),
+      },
+      data: {
+        isUsed: true,
+        metadata: {
+          reason: !reason ? 'unknown' : reason,
+        },
+      },
     });
   }
 }

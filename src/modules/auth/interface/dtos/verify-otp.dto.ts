@@ -1,7 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsString, Length, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsOptional, IsString, Length, Matches } from 'class-validator';
 import {
+  LOGIN_APPS,
   OTP_PUBLIC_PURPOSES,
+  type LoginApp,
   type PublicOtpPurpose,
 } from '../../core/enums/auth.enums';
 
@@ -32,4 +34,14 @@ export class VerifyOtpDto {
   })
   @IsIn(OTP_PUBLIC_PURPOSES)
   purpose!: PublicOtpPurpose;
+
+  @ApiPropertyOptional({
+    description:
+      'Application context for LOGIN OTP verification. Defaults to CLIENT when omitted.',
+    enum: LOGIN_APPS,
+    example: 'PROFESSIONAL',
+  })
+  @IsOptional()
+  @IsIn(LOGIN_APPS)
+  app?: LoginApp;
 }
