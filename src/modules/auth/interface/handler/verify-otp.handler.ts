@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
-import { OtpPurpose, type LoginApp } from '../../core/enums/auth.enums';
+import { OtpPurpose } from '../../core/enums/auth.enums';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
 import type { IUserRepository } from '../../core/services/user.service.interface';
@@ -41,12 +41,10 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
     const user = await this.userRepo.findByPhone(cmd.phone);
     if (!user) throw new BadRequestException('Numéro introuvable.');
 
-    const loginApp: LoginApp = cmd.app;
-
     const otp = await this.otpRepo.findLatestValid(
       user.id,
       cmd.purpose,
-      cmd.purpose === OtpPurpose.LOGIN ? loginApp : undefined,
+      cmd.purpose === OtpPurpose.LOGIN ? cmd.app : undefined,
     );
     if (!otp || otp.isUsed)
       throw new BadRequestException(
@@ -87,13 +85,13 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
       }
 
       const roles = await this.userRepo.getRolesByUserId(user.id);
-      if (!roles.includes(loginApp)) {
+      if (!roles.includes(cmd.app)) {
         throw new UnauthorizedException(
-          `Ce compte ne possède pas le profil ${loginApp}.`,
+          `Ce compte ne possède pas le profil ${cmd.app}.`,
         );
       }
 
-      const primaryRole = loginApp;
+      const primaryRole = cmd.app;
 
       const accessToken = this.tokenService.generateAccessToken({
         sub: user.id,
@@ -108,7 +106,7 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
         metadata: {
           source: 'verify_otp_login',
           otpId: otp.id,
-          app: loginApp,
+          app: cmd.app,
         },
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       });
@@ -120,7 +118,7 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
           currentStep: 'AUTHENTICATED',
           lastLoginAt: new Date().toISOString(),
           otpPurpose: OtpPurpose.LOGIN,
-          app: loginApp,
+          app: cmd.app,
         }),
       );
 
