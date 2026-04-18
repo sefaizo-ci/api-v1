@@ -13,9 +13,9 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { Request } from 'express';
-import { Roles } from '../../../../libs/decorators/roles.decorator';
-import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../auth/infrastructure/guards/roles.guard';
+import { Roles } from '../../libs/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/infrastructure/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/infrastructure/guards/roles.guard';
 import {
   ActivateServiceCommand,
   AddServiceCommand,
@@ -42,7 +42,7 @@ import {
   UpdateServiceCommand,
   UploadGalleryItemCommand,
   VerifyProfessionalCommand,
-} from '../commands';
+} from './interface/commands';
 import {
   AddServiceDto,
   CreateProfessionalProfileDto,
@@ -57,8 +57,8 @@ import {
   UpdateProfessionalProfileDto,
   UpdateServiceDto,
   UploadGalleryItemDto,
-} from '../dtos';
-import { ReorderGalleryDto } from '../dtos/gallery.dto';
+} from './interface/dtos';
+import { ReorderGalleryDto } from './interface/dtos/gallery.dto';
 import {
   GetMyProfessionalProfileQuery,
   GetProfessionalAvailabilityQuery,
@@ -69,7 +69,7 @@ import {
   GetProfileCompletionQuery,
   ListProfessionalsQuery,
   SearchProfessionalsQuery,
-} from '../queries';
+} from './interface/queries';
 
 type AuthenticatedRequest = Request & {
   user: {
