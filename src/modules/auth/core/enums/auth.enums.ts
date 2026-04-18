@@ -21,7 +21,10 @@ export const OTP_SEND_PURPOSES = [
   OtpPurpose.PIN_RESET,
 ] as const;
 
+export const LOGIN_APPS = [Role.CLIENT, Role.PROFESSIONAL] as const;
+
 export type PublicOtpPurpose = (typeof OTP_PUBLIC_PURPOSES)[number];
 export type OtpSendPurpose = (typeof OTP_SEND_PURPOSES)[number];
+export type LoginApp = (typeof LOGIN_APPS)[number];
 
 export { OtpChannel, OtpPurpose, Role as UserRole };

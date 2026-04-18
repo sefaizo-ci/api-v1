@@ -22,8 +22,12 @@ import {
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AUTH } from '../../common/constants/routes';
-import type { UserRole } from './core/enums/auth.enums';
-import { OtpPurpose } from './core/enums/auth.enums';
+import {
+  LOGIN_APPS,
+  OtpPurpose,
+  type LoginApp,
+  type UserRole,
+} from './core/enums/auth.enums';
 
 import { CreatePinCommand } from './interface/commands/create-pin.command';
 import { LogoutCommand } from './interface/commands/logout.command';
@@ -47,6 +51,10 @@ import { ApiKeyGuard } from './infrastructure/guards/api-key.guard';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function resolveLoginApp(app: unknown): LoginApp {
+  return LOGIN_APPS.includes(app as LoginApp) ? (app as LoginApp) : 'CLIENT';
+}
 
 function readRefreshTokenFromCookies(req?: Request): string | undefined {
   const rawCookieHeader = req?.headers?.cookie;
@@ -220,7 +228,14 @@ export class AuthController {
     const result: VerifyOtpResponse = await this.commandBus.execute<
       VerifyOtpCommand,
       VerifyOtpResponse
-    >(new VerifyOtpCommand(dto.phone, dto.code, dto.purpose));
+    >(
+      new VerifyOtpCommand(
+        dto.phone,
+        dto.code,
+        dto.purpose,
+        resolveLoginApp(dto.app),
+      ),
+    );
 
     if (dto.purpose === OtpPurpose.LOGIN && result.refreshToken) {
       res.cookie(AUTH.COOKIE.REFRESH.NAME, result.refreshToken, {
@@ -258,6 +273,7 @@ export class AuthController {
         dto.confirmPin,
         dto.firstName,
         dto.lastName,
+        dto.role,
       ),
     );
   }
@@ -284,7 +300,12 @@ export class AuthController {
   })
   startLogin(@Body() dto: StartLoginDto, @Req() req: Request) {
     return this.commandBus.execute<StartLoginCommand>(
-      new StartLoginCommand(dto.phone, dto.pin, req.headers['user-agent']),
+      new StartLoginCommand(
+        dto.phone,
+        dto.pin,
+        req.headers['user-agent'],
+        resolveLoginApp(dto.app),
+      ),
     );
   }
 

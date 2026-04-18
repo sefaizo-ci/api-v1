@@ -1,5 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+
+export enum RegistrationRole {
+  CLIENT = 'CLIENT',
+  PROFESSIONAL = 'PROFESSIONAL',
+}
 
 export class CompleteRegistrationDto {
   @ApiProperty({
@@ -20,6 +31,14 @@ export class CompleteRegistrationDto {
   @MinLength(2)
   @MaxLength(50)
   lastName!: string;
+
+  @ApiProperty({
+    description: 'User role: CLIENT or PROFESSIONAL',
+    enum: RegistrationRole,
+    example: 'CLIENT',
+  })
+  @IsEnum(RegistrationRole)
+  role!: RegistrationRole;
 
   @ApiProperty({
     description: 'PIN code (4 to 6 digits)',
