@@ -71,8 +71,14 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -83,7 +89,7 @@
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "flow", "init"]
                 },
-                "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` → User has PIN, proceed with LOGIN flow\n- `hasAccount: false` → New user, proceed with REGISTRATION flow\n- Includes `metadata.authFlow` tracking with `currentStep`, `status`, `timestamps`"
+                "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` → User has PIN, proceed with LOGIN flow\n- `hasAccount: false` → New user, proceed with REGISTRATION flow\n- `nextStep` is `PIN_THEN_OTP` or `OTP`"
               },
               "response": [
                 {
@@ -91,8 +97,14 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -106,15 +118,21 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"hasAccount\": false,\n  \"nextStep\": \"SEND_OTP\",\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"FLOW_INIT\",\n      \"status\": \"pending\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"flowStart\": \"2026-04-13T12:00:00Z\"\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"hasAccount\": false,\n  \"nextStep\": \"OTP\"\n}"
                 },
                 {
                   "name": "200 - Existing User (Has Account)",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -128,7 +146,7 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"hasAccount\": true,\n  \"nextStep\": \"ENTER_PIN\",\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"FLOW_INIT\",\n      \"status\": \"pending\",\n      \"userPath\": \"EXISTING_USER\",\n      \"timestamps\": {\n        \"flowStart\": \"2026-04-13T12:00:00Z\"\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"hasAccount\": true,\n  \"nextStep\": \"PIN_THEN_OTP\"\n}"
                 }
               ]
             }
@@ -155,8 +173,14 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -175,8 +199,14 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -190,15 +220,21 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"message\": \"OTP sent\",\n  \"expiresIn\": 10,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_SENT\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"otpSentAt\": \"2026-04-13T12:01:00Z\"\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"channel\": \"WHATSAPP\"\n}"
                 },
                 {
                   "name": "400 Account Already Active",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -212,7 +248,7 @@
                   },
                   "status": "Bad Request",
                   "code": 400,
-                  "body": "{\n  \"message\": \"Account already active. Please use login flow.\",\n  \"error\": \"ACCOUNT_ACTIVE\"\n}"
+                  "body": "{\n  \"message\": \"Ce numéro est déjà enregistré.\"\n}"
                 }
               ]
             },
@@ -241,8 +277,14 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -261,8 +303,14 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -276,7 +324,7 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"isNewUser\": true,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_VERIFIED\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"NEW_USER\",\n      \"timestamps\": {\n        \"otpVerifiedAt\": \"2026-04-13T12:02:00Z\"\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"isNewUser\": true\n}"
                 }
               ]
             },
@@ -290,11 +338,7 @@
                     "exec": [
                       "pm.test('Status is 201', function () {",
                       "  pm.response.to.have.status(201);",
-                      "});",
-                      "var json = pm.response.json();",
-                      "if (json && json.user && json.user.id) {",
-                      "  pm.environment.set('registeredUserId', json.user.id);",
-                      "}"
+                      "});"
                     ]
                   }
                 }
@@ -302,12 +346,18 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\"\n}"
+                  "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\",\n  \"role\": \"CLIENT\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/register/complete",
@@ -322,12 +372,18 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"1234\",\n  \"confirmPin\": \"1234\"\n}"
+                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"1234\",\n  \"confirmPin\": \"1234\",\n  \"role\": \"CLIENT\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/auth/register/complete",
@@ -337,9 +393,10 @@
                   },
                   "status": "Created",
                   "code": 201,
-                  "body": "{\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"role\": \"CLIENT\",\n    \"isVerified\": true,\n    \"isActive\": true,\n    \"metadata\": {\n      \"authFlow\": {\n        \"currentStep\": \"REGISTRATION_COMPLETE\",\n        \"status\": \"completed\",\n        \"userPath\": \"NEW_USER\",\n        \"timestamps\": {\n          \"registrationCompletedAt\": \"2026-04-13T12:03:00Z\"\n        }\n      }\n    }\n  }\n}"
+                  "body": "null"
                 }
-              ]
+              ],
+              "description": "Finalize registration: set user profile (firstName, lastName), PIN code and role.\n\n**On Success:**\n- Account becomes active\n- Returns null (HTTP 201)"
             }
           ]
         },
@@ -364,19 +421,25 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\"\n}"
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\",\n  \"app\": \"CLIENT\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/login/start",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "login", "start"]
                 },
-                "description": "Validate PIN for existing user and initiate LOGIN OTP.\n\n**Required:**\n- User must have completed registration (have PIN set)\n- Correct PIN must be provided\n\n**On Success:**\n- Sends LOGIN OTP\n- Sets `currentStep: OTP_SENT` with `purpose: LOGIN` in metadata"
+                "description": "Validate phone + PIN and initiate LOGIN OTP.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n\n**On Success:**\n- Sends LOGIN OTP scoped to the selected app\n- Server metadata step is `LOGIN_OTP_SENT`"
               },
               "response": [
                 {
@@ -384,12 +447,18 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"1234\"\n}"
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"1234\",\n  \"app\": \"CLIENT\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/auth/login/start",
@@ -399,19 +468,25 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"message\": \"OTP sent\",\n  \"expiresIn\": 10,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"OTP_SENT\",\n      \"status\": \"in_progress\",\n      \"userPath\": \"EXISTING_USER\",\n      \"purpose\": \"LOGIN\",\n      \"timestamps\": {\n        \"otpSentAt\": \"2026-04-13T12:05:00Z\"\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"channel\": \"WHATSAPP\"\n}"
                 },
                 {
                   "name": "401 Incomplete Registration",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"pin\": \"1234\"\n}"
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"pin\": \"1234\",\n  \"app\": \"CLIENT\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/auth/login/start",
@@ -421,7 +496,7 @@
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"PIN not configured. Complete registration first.\",\n  \"error\": \"INCOMPLETE_REGISTRATION\"\n}"
+                  "body": "{\n  \"message\": \"PIN non configuré.\"\n}"
                 }
               ]
             },
@@ -453,19 +528,25 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\"\n}"
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"CLIENT\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/otp/verify",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "otp", "verify"]
                 },
-                "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**On Success:**\n- Returns `accessToken` (for API calls)\n- Returns `refreshToken` (for token rotation)\n- Returns `user` object\n- Sets `currentStep: LOGIN_COMPLETE` in metadata"
+                "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n- LOGIN OTP verification is scoped by app"
               },
               "response": [
                 {
@@ -473,12 +554,18 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"123456\",\n  \"purpose\": \"LOGIN\"\n}"
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"123456\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"CLIENT\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/auth/otp/verify",
@@ -488,7 +575,7 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"phone\": \"+2250700000001\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"role\": \"CLIENT\",\n    \"isVerified\": true,\n    \"isActive\": true,\n    \"metadata\": {\n      \"authFlow\": {\n        \"currentStep\": \"LOGIN_COMPLETE\",\n        \"status\": \"completed\",\n        \"userPath\": \"EXISTING_USER\",\n        \"timestamps\": {\n          \"loginCompletedAt\": \"2026-04-13T12:06:00Z\"\n        }\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"userId\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n  \"isNewUser\": false,\n  \"accessToken\": \"jwt_access_token\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"Aya\",\n    \"role\": \"CLIENT\",\n    \"roles\": [\n      \"CLIENT\"\n    ]\n  }\n}"
                 }
               ]
             }
@@ -522,8 +609,14 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -542,8 +635,14 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" }
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      }
                     ],
                     "body": {
                       "mode": "raw",
@@ -584,8 +683,14 @@
               "request": {
                 "method": "GET",
                 "header": [
-                  { "key": "x-api-key", "value": "{{apiKey}}" },
-                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/auth/me",
@@ -600,7 +705,10 @@
                   "originalRequest": {
                     "method": "GET",
                     "header": [
-                      { "key": "x-api-key", "value": "{{apiKey}}" },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      },
                       {
                         "key": "Authorization",
                         "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -636,9 +744,18 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "x-api-key", "value": "{{apiKey}}" },
-                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{apiKey}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
                 ],
                 "body": {
                   "mode": "raw",
@@ -657,8 +774,14 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      },
                       {
                         "key": "Authorization",
                         "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -683,8 +806,14 @@
                   "originalRequest": {
                     "method": "POST",
                     "header": [
-                      { "key": "Content-Type", "value": "application/json" },
-                      { "key": "x-api-key", "value": "{{apiKey}}" },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "x-api-key",
+                        "value": "{{apiKey}}"
+                      },
                       {
                         "key": "Authorization",
                         "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -722,15 +851,55 @@
       "value": "ixj225grzz+mTb4gxfPqCmCG5Ky7R3stYv2Qd5j18tY=",
       "type": "string"
     },
-    { "key": "phone", "value": "+2250700000000", "type": "string" },
-    { "key": "pin", "value": "1234", "type": "string" },
-    { "key": "otpCode", "value": "123456", "type": "string" },
-    { "key": "hasAccount", "value": "", "type": "string" },
-    { "key": "nextStep", "value": "", "type": "string" },
-    { "key": "userId", "value": "", "type": "string" },
-    { "key": "accessToken", "value": "", "type": "string" },
-    { "key": "refreshToken", "value": "", "type": "string" },
-    { "key": "registeredUserId", "value": "", "type": "string" },
-    { "key": "isNewUser", "value": "", "type": "string" }
+    {
+      "key": "phone",
+      "value": "+2250700000000",
+      "type": "string"
+    },
+    {
+      "key": "pin",
+      "value": "1234",
+      "type": "string"
+    },
+    {
+      "key": "otpCode",
+      "value": "123456",
+      "type": "string"
+    },
+    {
+      "key": "hasAccount",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nextStep",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registeredUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "isNewUser",
+      "value": "",
+      "type": "string"
+    }
   ]
 }
