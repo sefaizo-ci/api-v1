@@ -1,0 +1,32 @@
+name: CI Quality Gate
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint (no auto-fix in CI)
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Prettier check
+        run: npx prettier --check "src/**/*.ts" "test/**/*.ts"
+
+      - name: TypeScript/Nest build check
+        run: npm run build
