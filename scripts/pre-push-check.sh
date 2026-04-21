@@ -6,19 +6,9 @@ if [[ "${SKIP_PREPUSH:-false}" == "true" ]]; then
   exit 0
 fi
 
-echo "[pre-push] Running Prisma validate..."
 npx prisma validate
-
-echo "[pre-push] Running ESLint (no fix)..."
+npm run prebuild
 npx eslint "{src,apps,libs,test}/**/*.ts"
-
-echo "[pre-push] Running Prettier check..."
 npx prettier --check "src/**/*.ts" "test/**/*.ts"
-
-echo "[pre-push] Running build..."
-npm run build
-
-echo "[pre-push] Running unit tests..."
+npx nest build
 npm run test -- --runInBand
-
-echo "[pre-push] All checks passed."

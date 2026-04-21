@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npm run prebuild
+
       - name: ESLint (no auto-fix in CI)
         run: npx eslint "{src,apps,libs,test}/**/*.ts"
 
@@ -29,4 +32,4 @@ jobs:
         run: npx prettier --check "src/**/*.ts" "test/**/*.ts"
 
       - name: TypeScript/Nest build check
-        run: npm run build
+        run: npx nest build
