@@ -157,18 +157,18 @@ export class UserRepository implements IUserRepository {
     data: {
       firstName?: string;
       lastName?: string;
-      role?: string;
       metadata?: Prisma.InputJsonValue;
     },
   ): Promise<UserEntity> {
+    const updateData: Prisma.UserUpdateInput = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      metadata: data.metadata,
+    };
+
     const raw = await this.prisma.user.update({
       where: { id: userId, deletedAt: null, isActive: true },
-      data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: (data.role ?? undefined) as any,
-        metadata: data.metadata,
-      },
+      data: updateData,
       include: { phone: true },
     });
     return UserMapper.toDomain(raw);

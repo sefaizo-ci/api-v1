@@ -9,6 +9,22 @@ import { App } from 'supertest/types';
 import { APP } from '../src/common/constants/routes';
 import { AppModule } from './../src/app.module';
 
+type RootResponse = {
+  success: boolean;
+  message: string;
+};
+
+type HealthResponse = {
+  success: boolean;
+  status: string;
+  service: string;
+};
+
+type ProfessionalListResponse = {
+  data: unknown[];
+  pagination: unknown;
+};
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -42,7 +58,7 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect(({ body }) => {
+      .expect(({ body }: { body: RootResponse }) => {
         expect(body.success).toBe(true);
         expect(body.message).toBe('Sefaizo API is running.');
       });
@@ -52,7 +68,7 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get(`/${APP.HEALTH}`)
       .expect(200)
-      .expect(({ body }) => {
+      .expect(({ body }: { body: HealthResponse }) => {
         expect(body.success).toBe(true);
         expect(body.status).toBe('ok');
         expect(body.service).toBe('sefaizo-api');
@@ -63,7 +79,7 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get(`/${APP.API.PREFIX}/professional`)
       .expect(200)
-      .expect(({ body }) => {
+      .expect(({ body }: { body: ProfessionalListResponse }) => {
         expect(Array.isArray(body.data)).toBe(true);
         expect(body.pagination).toBeDefined();
       });
