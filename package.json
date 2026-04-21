@@ -8,6 +8,10 @@
   "scripts": {
     "studio": "npx prisma studio",
     "db:sync:preprod": "bash scripts/sync-preprod-db.sh",
+    "hooks:install": "bash scripts/install-hooks.sh",
+    "postinstall": "npm run hooks:install",
+    "prestart:dev": "npm run hooks:install",
+    "prepush:check": "bash scripts/pre-push-check.sh",
     "prebuild": "prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -19,7 +23,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:debug": "node --inspect-brk -r tnsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {

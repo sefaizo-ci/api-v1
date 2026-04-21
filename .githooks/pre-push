@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Git pre-push hook: running quality checks..."
+bash scripts/pre-push-check.sh
