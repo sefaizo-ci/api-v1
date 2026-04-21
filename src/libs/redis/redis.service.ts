@@ -11,10 +11,24 @@ export class RedisService implements OnModuleDestroy {
     const redisUrl =
       this.configService.get<string>('REDIS_URL') ?? 'redis://localhost:6379';
 
+    this.logger.log(`Redis target: ${this.describeConnection(redisUrl)}`);
+
     this.client = new Redis(redisUrl, {
       lazyConnect: true,
       maxRetriesPerRequest: 2,
       enableReadyCheck: true,
+    });
+
+    this.client.on('ready', () => {
+      this.logger.log('Redis connected and ready.');
+    });
+
+    this.client.on('reconnecting', () => {
+      this.logger.warn('Redis reconnecting...');
+    });
+
+    this.client.on('end', () => {
+      this.logger.warn('Redis connection closed.');
     });
 
     this.client.on('error', (error: Error) => {
@@ -31,6 +45,7 @@ export class RedisService implements OnModuleDestroy {
   async onModuleDestroy(): Promise<void> {
     if (this.client.status !== 'end') {
       await this.client.quit();
+      this.logger.log('Redis disconnected.');
     }
   }
 
@@ -59,5 +74,14 @@ export class RedisService implements OnModuleDestroy {
       await this.client.expire(key, windowSeconds);
     }
     return value;
+  }
+
+  private describeConnection(url: string): string {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.protocol}//${parsed.hostname}:${parsed.port || '<default>'}`;
+    } catch {
+      return '<invalid REDIS_URL format>';
+    }
   }
 }

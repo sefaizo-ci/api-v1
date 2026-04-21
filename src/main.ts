@@ -1,13 +1,33 @@
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { randomUUID } from 'crypto';
+import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { APP } from './common/constants/routes';
 import { GlobalExceptionFilter } from './libs/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('HttpTrace');
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const incoming = req.header('x-request-id');
+    const requestId = incoming && incoming.trim() ? incoming : randomUUID();
+    const start = Date.now();
+
+    res.setHeader('x-request-id', requestId);
+
+    res.on('finish', () => {
+      const durationMs = Date.now() - start;
+      logger.log(
+        `[requestId=${requestId}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`,
+      );
+    });
+
+    next();
+  });
 
   app.setGlobalPrefix(APP.API.PREFIX, {
     exclude: [
@@ -56,7 +76,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log(
+  logger.log(
     `SEFAIZO API running on http://localhost:${port}/${APP.API.PREFIX}`,
   );
 }
