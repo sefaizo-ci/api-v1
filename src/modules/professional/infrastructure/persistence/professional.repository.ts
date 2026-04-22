@@ -36,19 +36,37 @@ export class ProfessionalRepository implements IProfessionalRepository {
             description: service.description,
             durationMin: service.durationMin,
             basePrice: service.basePrice,
-            category: service.category,
+            category: {
+              connect: {
+                professionalId_name: {
+                  professionalId: professional.id,
+                  name: service.category,
+                },
+              },
+            },
             isActive: service.isActive,
             deletedAt: service.deletedAt ?? null,
             updatedAt: service.updatedAt,
           },
           create: {
             id: service.id,
-            professionalId: professional.id,
+            professional: {
+              connect: {
+                id: professional.id,
+              },
+            },
             name: service.name,
             description: service.description,
             durationMin: service.durationMin,
             basePrice: service.basePrice,
-            category: service.category,
+            category: {
+              connect: {
+                professionalId_name: {
+                  professionalId: professional.id,
+                  name: service.category,
+                },
+              },
+            },
             isActive: service.isActive,
             deletedAt: service.deletedAt ?? null,
             createdAt: service.createdAt,
@@ -172,6 +190,12 @@ export class ProfessionalRepository implements IProfessionalRepository {
           where: { deletedAt: null },
           include: {
             communeFees: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         availabilities: {
@@ -195,6 +219,12 @@ export class ProfessionalRepository implements IProfessionalRepository {
           where: { deletedAt: null },
           include: {
             communeFees: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         availabilities: {
@@ -232,6 +262,12 @@ export class ProfessionalRepository implements IProfessionalRepository {
           where: { deletedAt: null },
           include: {
             communeFees: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         availabilities: {

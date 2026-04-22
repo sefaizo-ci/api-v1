@@ -23,11 +23,15 @@ type RawCommuneFee = {
 type RawServiceOffering = {
   id: string;
   professionalId: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+  };
   name: string;
   description: string | null;
   durationMin: number;
   basePrice: number;
-  category: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -163,7 +167,7 @@ export class ServiceOfferingMapper {
       description: raw.description ?? undefined,
       durationMin: raw.durationMin,
       basePrice: raw.basePrice,
-      category: raw.category,
+      category: raw.category.name,
       isActive: raw.isActive,
       communeFees,
       createdAt: raw.createdAt,
@@ -180,7 +184,14 @@ export class ServiceOfferingMapper {
       description: entity.description,
       durationMin: entity.durationMin,
       basePrice: entity.basePrice,
-      category: entity.category,
+      category: {
+        connect: {
+          professionalId_name: {
+            professionalId: entity.professionalId,
+            name: entity.category,
+          },
+        },
+      },
       isActive: entity.isActive,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

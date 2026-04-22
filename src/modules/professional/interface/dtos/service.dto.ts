@@ -84,3 +84,30 @@ export class SetCommuneFeeDto {
   @Min(0)
   travelFee!: number;
 }
+
+export class CreateServiceCategoryDto {
+  @ApiProperty({ example: 'Coiffure' })
+  @IsString()
+  @MaxLength(80)
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Prestations liees a la coiffure' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  description?: string;
+}
+
+export class UpdateServiceCategoryDto {
+  @ApiPropertyOptional({ example: 'Coiffure femme' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'Prestations de coiffure feminine' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  description?: string;
+}
