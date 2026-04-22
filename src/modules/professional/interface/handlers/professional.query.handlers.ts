@@ -12,13 +12,71 @@ import {
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
   ListProfessionalsQuery,
+  ListServiceCategoriesQuery,
   SearchProfessionalsQuery,
 } from '../../interface/queries';
 
-/**
- * GetMyProfessionalProfileHandler
- * Query handler to fetch current user's professional profile
- */
+type ServiceCategoryRecord = {
+  id: string;
+  professionalId: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  metadata: Prisma.JsonValue | null;
+};
+
+type ProfessionalQueryPrisma = {
+  serviceCategory: {
+    findMany(args: {
+      where: {
+        professionalId: string;
+        isActive: true;
+        deletedAt: null;
+      };
+      orderBy: {
+        name: 'asc';
+      };
+    }): Promise<ServiceCategoryRecord[]>;
+  };
+};
+
+function toQueryPrismaFacade(
+  prisma: PrismaService,
+): PrismaService & ProfessionalQueryPrisma {
+  return prisma as PrismaService & ProfessionalQueryPrisma;
+}
+
+@QueryHandler(ListServiceCategoriesQuery)
+@Injectable()
+export class ListServiceCategoriesHandler implements IQueryHandler<ListServiceCategoriesQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: ListServiceCategoriesQuery): Promise<{
+    data: ServiceCategoryRecord[];
+    count: number;
+  }> {
+    const prisma = toQueryPrismaFacade(this.prisma);
+    const categories = await prisma.serviceCategory.findMany({
+      where: {
+        professionalId: query.professionalId,
+        isActive: true,
+        deletedAt: null,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return {
+      data: categories,
+      count: categories.length,
+    };
+  }
+}
+
 @QueryHandler(GetMyProfessionalProfileQuery)
 @Injectable()
 export class GetMyProfessionalProfileHandler implements IQueryHandler<GetMyProfessionalProfileQuery> {
@@ -34,10 +92,6 @@ export class GetMyProfessionalProfileHandler implements IQueryHandler<GetMyProfe
   }
 }
 
-/**
- * GetProfessionalProfileHandler
- * Query handler to fetch a specific professional profile by ID
- */
 @QueryHandler(GetProfessionalProfileQuery)
 @Injectable()
 export class GetProfessionalProfileHandler implements IQueryHandler<GetProfessionalProfileQuery> {
@@ -62,10 +116,6 @@ export class GetProfessionalProfileHandler implements IQueryHandler<GetProfessio
   }
 }
 
-/**
- * ListProfessionalsHandler
- * Query handler to list professionals with filters
- */
 @QueryHandler(ListProfessionalsQuery)
 @Injectable()
 export class ListProfessionalsHandler implements IQueryHandler<ListProfessionalsQuery> {
@@ -95,10 +145,6 @@ export class ListProfessionalsHandler implements IQueryHandler<ListProfessionals
   }
 }
 
-/**
- * GetProfessionalServicesHandler
- * Query handler to fetch services for a professional
- */
 @QueryHandler(GetProfessionalServicesQuery)
 @Injectable()
 export class GetProfessionalServicesHandler implements IQueryHandler<GetProfessionalServicesQuery> {
@@ -122,10 +168,6 @@ export class GetProfessionalServicesHandler implements IQueryHandler<GetProfessi
   }
 }
 
-/**
- * GetProfessionalAvailabilityHandler
- * Query handler to fetch availability schedule
- */
 @QueryHandler(GetProfessionalAvailabilityQuery)
 @Injectable()
 export class GetProfessionalAvailabilityHandler implements IQueryHandler<GetProfessionalAvailabilityQuery> {
@@ -154,10 +196,6 @@ export class GetProfessionalAvailabilityHandler implements IQueryHandler<GetProf
   }
 }
 
-/**
- * GetProfessionalGalleryHandler
- * Query handler to fetch gallery items
- */
 @QueryHandler(GetProfessionalGalleryQuery)
 @Injectable()
 export class GetProfessionalGalleryHandler implements IQueryHandler<GetProfessionalGalleryQuery> {
@@ -188,10 +226,6 @@ export class GetProfessionalGalleryHandler implements IQueryHandler<GetProfessio
   }
 }
 
-/**
- * GetProfessionalBookingsHandler
- * Query handler to fetch bookings for professional side management
- */
 @QueryHandler(GetProfessionalBookingsQuery)
 @Injectable()
 export class GetProfessionalBookingsHandler implements IQueryHandler<GetProfessionalBookingsQuery> {
@@ -251,10 +285,6 @@ export class GetProfessionalBookingsHandler implements IQueryHandler<GetProfessi
   }
 }
 
-/**
- * GetProfileCompletionHandler
- * Query handler to get profile completion percentage
- */
 @QueryHandler(GetProfileCompletionQuery)
 @Injectable()
 export class GetProfileCompletionHandler implements IQueryHandler<GetProfileCompletionQuery> {
@@ -274,10 +304,6 @@ export class GetProfileCompletionHandler implements IQueryHandler<GetProfileComp
   }
 }
 
-/**
- * SearchProfessionalsHandler
- * Query handler for professional search
- */
 @QueryHandler(SearchProfessionalsQuery)
 @Injectable()
 export class SearchProfessionalsHandler implements IQueryHandler<SearchProfessionalsQuery> {
@@ -305,7 +331,6 @@ export class SearchProfessionalsHandler implements IQueryHandler<SearchProfessio
       ? filtered.filter((p) => p.rating >= query.rating!)
       : filtered;
 
-    // Pagination
     const page = query.page || 1;
     const limit = query.limit || 20;
     const startIndex = (page - 1) * limit;

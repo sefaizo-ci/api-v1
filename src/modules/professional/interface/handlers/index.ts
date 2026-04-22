@@ -28,6 +28,7 @@ import {
   GetProfessionalServicesHandler,
   GetProfileCompletionHandler,
   ListProfessionalsHandler,
+  ListServiceCategoriesHandler,
   SearchProfessionalsHandler,
 } from './professional.query.handlers';
 import {
@@ -40,9 +41,12 @@ import {
 import {
   ActivateServiceHandler,
   AddServiceHandler,
+  CreateServiceCategoryHandler,
   DeactivateServiceHandler,
+  DeleteServiceCategoryHandler,
   DeleteServiceHandler,
   SetServiceCommuneFeeHandler,
+  UpdateServiceCategoryHandler,
   UpdateServiceHandler,
 } from './service.handlers';
 
@@ -52,6 +56,9 @@ export const ProfessionalCommandHandlers = [
   VerifyProfessionalHandler,
   SuspendProfessionalHandler,
   ReactivateProfessionalHandler,
+  CreateServiceCategoryHandler,
+  UpdateServiceCategoryHandler,
+  DeleteServiceCategoryHandler,
   AddServiceHandler,
   UpdateServiceHandler,
   DeleteServiceHandler,
@@ -84,6 +91,7 @@ export const ProfessionalQueryHandlers = [
   GetProfessionalGalleryHandler,
   GetProfessionalBookingsHandler,
   GetProfileCompletionHandler,
+  ListServiceCategoriesHandler,
   SearchProfessionalsHandler,
 ];
 

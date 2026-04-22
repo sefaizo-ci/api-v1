@@ -1,26 +1,13 @@
 import { IQuery } from '@nestjs/cqrs';
 
-/**
- * GetMyProfessionalProfileQuery
- * Query to retrieve the authenticated user's professional profile
- */
 export class GetMyProfessionalProfileQuery implements IQuery {
   constructor(public readonly userId: string) {}
 }
 
-/**
- * GetProfessionalProfileQuery
- * Query to retrieve a specific professional profile by ID
- * (public data, available for clients to view)
- */
 export class GetProfessionalProfileQuery implements IQuery {
   constructor(public readonly professionalId: string) {}
 }
 
-/**
- * ListProfessionalsQuery
- * Query to list professionals with optional filters
- */
 export class ListProfessionalsQuery implements IQuery {
   constructor(
     public readonly filters?: {
@@ -34,10 +21,6 @@ export class ListProfessionalsQuery implements IQuery {
   ) {}
 }
 
-/**
- * GetProfessionalServicesQuery
- * Query to get services offered by a professional
- */
 export class GetProfessionalServicesQuery implements IQuery {
   constructor(
     public readonly professionalId: string,
@@ -45,10 +28,6 @@ export class GetProfessionalServicesQuery implements IQuery {
   ) {}
 }
 
-/**
- * GetProfessionalAvailabilityQuery
- * Query to get availability schedule of a professional
- */
 export class GetProfessionalAvailabilityQuery implements IQuery {
   constructor(
     public readonly professionalId: string,
@@ -56,10 +35,6 @@ export class GetProfessionalAvailabilityQuery implements IQuery {
   ) {}
 }
 
-/**
- * GetProfessionalGalleryQuery
- * Query to get gallery/portfolio items of a professional
- */
 export class GetProfessionalGalleryQuery implements IQuery {
   constructor(
     public readonly professionalId: string,
@@ -68,10 +43,6 @@ export class GetProfessionalGalleryQuery implements IQuery {
   ) {}
 }
 
-/**
- * GetProfessionalBookingsQuery
- * Query to get bookings for a professional (pro-side)
- */
 export class GetProfessionalBookingsQuery implements IQuery {
   constructor(
     public readonly professionalId: string,
@@ -81,18 +52,10 @@ export class GetProfessionalBookingsQuery implements IQuery {
   ) {}
 }
 
-/**
- * GetProfileCompletionQuery
- * Query to get professional profile completion percentage
- */
 export class GetProfileCompletionQuery implements IQuery {
   constructor(public readonly professionalId: string) {}
 }
 
-/**
- * SearchProfessionalsQuery
- * Query to search professionals by various criteria
- */
 export class SearchProfessionalsQuery implements IQuery {
   constructor(
     public readonly search: string,
@@ -101,4 +64,8 @@ export class SearchProfessionalsQuery implements IQuery {
     public readonly page?: number,
     public readonly limit?: number,
   ) {}
+}
+
+export class ListServiceCategoriesQuery implements IQuery {
+  constructor(public readonly professionalId: string) {}
 }

@@ -22,8 +22,10 @@ import {
   CompleteBookingCommand,
   ConfirmBookingCommand,
   CreateProfessionalProfileCommand,
+  CreateServiceCategoryCommand,
   DeactivateServiceCommand,
   DeleteGalleryItemCommand,
+  DeleteServiceCategoryCommand,
   DeleteServiceCommand,
   PublishGalleryItemCommand,
   ReactivateProfessionalCommand,
@@ -39,6 +41,7 @@ import {
   UpdateAvailabilityCommand,
   UpdateGalleryItemCommand,
   UpdateProfessionalProfileCommand,
+  UpdateServiceCategoryCommand,
   UpdateServiceCommand,
   UploadGalleryItemCommand,
   VerifyProfessionalCommand,
@@ -46,6 +49,7 @@ import {
 import {
   AddServiceDto,
   CreateProfessionalProfileDto,
+  CreateServiceCategoryDto,
   RejectBookingDto,
   SetAvailabilityDto,
   SetAvailabilityForWeekDto,
@@ -68,6 +72,7 @@ import {
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
   ListProfessionalsQuery,
+  ListServiceCategoriesQuery,
   SearchProfessionalsQuery,
 } from './interface/queries';
 
@@ -77,6 +82,11 @@ type AuthenticatedRequest = Request & {
     role: string;
     roles?: string[];
   };
+};
+
+type UpdateServiceCategoryBody = {
+  name?: string;
+  description?: string;
 };
 
 @Controller('professional')
@@ -252,6 +262,64 @@ export class ProfessionalController {
   ) {
     return this.queryBus.execute<SearchProfessionalsQuery, unknown>(
       new SearchProfessionalsQuery(q, location, rating, page, limit),
+    );
+  }
+
+  @Get(':professionalId/services/categories')
+  async listServiceCategories(@Param('professionalId') professionalId: string) {
+    return this.queryBus.execute<ListServiceCategoriesQuery, unknown>(
+      new ListServiceCategoriesQuery(professionalId),
+    );
+  }
+
+  @Post(':professionalId/services/categories')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async createServiceCategory(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: CreateServiceCategoryDto,
+  ) {
+    return this.commandBus.execute<CreateServiceCategoryCommand, unknown>(
+      new CreateServiceCategoryCommand(
+        professionalId,
+        body.name,
+        body.description,
+        req.user.id,
+      ),
+    );
+  }
+
+  @Put(':professionalId/services/categories/:categoryId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async updateServiceCategory(
+    @Param('professionalId') professionalId: string,
+    @Param('categoryId') categoryId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateServiceCategoryBody,
+  ) {
+    return this.commandBus.execute<UpdateServiceCategoryCommand, unknown>(
+      new UpdateServiceCategoryCommand(
+        professionalId,
+        categoryId,
+        body.name,
+        body.description,
+        req.user.id,
+      ),
+    );
+  }
+
+  @Delete(':professionalId/services/categories/:categoryId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async deleteServiceCategory(
+    @Param('professionalId') professionalId: string,
+    @Param('categoryId') categoryId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.commandBus.execute<DeleteServiceCategoryCommand, unknown>(
+      new DeleteServiceCategoryCommand(professionalId, categoryId, req.user.id),
     );
   }
 
