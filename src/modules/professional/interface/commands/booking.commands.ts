@@ -45,3 +45,26 @@ export class CancelBookingCommand implements ICommand {
     public readonly reason?: string,
   ) {}
 }
+
+/**
+ * ApproveBookingCancellationRequestCommand
+ * Command for professional to approve a client's cancellation request
+ */
+export class ApproveBookingCancellationRequestCommand implements ICommand {
+  constructor(
+    public readonly bookingId: string,
+    public readonly professionalId: string,
+  ) {}
+}
+
+/**
+ * RejectBookingCancellationRequestCommand
+ * Command for professional to reject a client's cancellation request
+ */
+export class RejectBookingCancellationRequestCommand implements ICommand {
+  constructor(
+    public readonly bookingId: string,
+    public readonly professionalId: string,
+    public readonly reason?: string,
+  ) {}
+}

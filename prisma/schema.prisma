@@ -26,6 +26,13 @@ enum BookingStatus {
   NO_SHOW
 }
 
+enum BookingCancellationRequestStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ServiceLocation {
   HOME
   SALON
@@ -305,6 +312,10 @@ model Booking {
   confirmedAt    DateTime?
   cancelledAt    DateTime?
   cancellationNote String?
+  cancellationRequestStatus BookingCancellationRequestStatus @default(NONE)
+  cancellationRequestedAt DateTime?
+  cancellationReviewedAt DateTime?
+  cancellationRequestReason String?
   
   metadata       Json?
   createdAt      DateTime        @default(now())

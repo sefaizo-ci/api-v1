@@ -47,10 +47,15 @@ import {
   VerifyProfessionalCommand,
 } from './interface/commands';
 import {
+  ApproveBookingCancellationRequestCommand,
+  RejectBookingCancellationRequestCommand,
+} from './interface/commands/booking.commands';
+import {
   AddServiceDto,
   CreateProfessionalProfileDto,
   CreateServiceCategoryDto,
   RejectBookingDto,
+  ReviewCancellationRequestDto,
   SetAvailabilityDto,
   SetAvailabilityForWeekDto,
   SetAvailabilityStatusDto,
@@ -75,6 +80,7 @@ import {
   ListServiceCategoriesQuery,
   SearchProfessionalsQuery,
 } from './interface/queries';
+import { ListBookingCancellationRequestsQuery } from './interface/queries/professional.queries';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -641,6 +647,19 @@ export class ProfessionalController {
     );
   }
 
+  @Get(':professionalId/bookings/cancellation-requests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL', 'ADMIN')
+  async listCancellationRequests(
+    @Param('professionalId') professionalId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.queryBus.execute<ListBookingCancellationRequestsQuery, unknown>(
+      new ListBookingCancellationRequestsQuery(professionalId, page, limit),
+    );
+  }
+
   @Put(':professionalId/bookings/:bookingId/confirm')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
@@ -675,6 +694,39 @@ export class ProfessionalController {
   ) {
     return this.commandBus.execute<CompleteBookingCommand, unknown>(
       new CompleteBookingCommand(bookingId, professionalId),
+    );
+  }
+
+  @Put(':professionalId/bookings/:bookingId/cancellation-request/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async approveCancellationRequest(
+    @Param('professionalId') professionalId: string,
+    @Param('bookingId') bookingId: string,
+  ) {
+    return this.commandBus.execute<
+      ApproveBookingCancellationRequestCommand,
+      unknown
+    >(new ApproveBookingCancellationRequestCommand(bookingId, professionalId));
+  }
+
+  @Put(':professionalId/bookings/:bookingId/cancellation-request/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async rejectCancellationRequest(
+    @Param('professionalId') professionalId: string,
+    @Param('bookingId') bookingId: string,
+    @Body() body: ReviewCancellationRequestDto,
+  ) {
+    return this.commandBus.execute<
+      RejectBookingCancellationRequestCommand,
+      unknown
+    >(
+      new RejectBookingCancellationRequestCommand(
+        bookingId,
+        professionalId,
+        body.reason,
+      ),
     );
   }
 }

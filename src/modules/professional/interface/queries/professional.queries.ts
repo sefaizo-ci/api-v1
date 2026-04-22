@@ -52,6 +52,14 @@ export class GetProfessionalBookingsQuery implements IQuery {
   ) {}
 }
 
+export class ListBookingCancellationRequestsQuery implements IQuery {
+  constructor(
+    public readonly professionalId: string,
+    public readonly page?: number,
+    public readonly limit?: number,
+  ) {}
+}
+
 export class GetProfileCompletionQuery implements IQuery {
   constructor(public readonly professionalId: string) {}
 }

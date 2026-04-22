@@ -11,10 +11,13 @@ import {
   GetProfessionalProfileQuery,
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
+  ListBookingCancellationRequestsQuery,
   ListProfessionalsQuery,
   ListServiceCategoriesQuery,
   SearchProfessionalsQuery,
 } from '../../interface/queries';
+
+const BOOKING_CANCELLATION_REQUEST_STATUS_PENDING = 'PENDING' as const;
 
 type ServiceCategoryRecord = {
   id: string;
@@ -267,6 +270,63 @@ export class GetProfessionalBookingsHandler implements IQueryHandler<GetProfessi
           },
         },
         orderBy: { scheduledAt: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.booking.count({ where }),
+    ]);
+
+    return {
+      data: bookings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+}
+
+@QueryHandler(ListBookingCancellationRequestsQuery)
+@Injectable()
+export class ListBookingCancellationRequestsHandler implements IQueryHandler<ListBookingCancellationRequestsQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: ListBookingCancellationRequestsQuery) {
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.BookingWhereInput = {
+      professionalId: query.professionalId,
+      status: BookingStatus.CONFIRMED,
+      cancellationRequestStatus: BOOKING_CANCELLATION_REQUEST_STATUS_PENDING,
+      deletedAt: null,
+    };
+
+    const [bookings, total] = await Promise.all([
+      this.prisma.booking.findMany({
+        where,
+        include: {
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
+          },
+          service: {
+            select: {
+              id: true,
+              name: true,
+              durationMin: true,
+              basePrice: true,
+            },
+          },
+        },
+        orderBy: { cancellationRequestedAt: 'asc' },
         skip,
         take: limit,
       }),
