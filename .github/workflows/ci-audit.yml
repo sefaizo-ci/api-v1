@@ -26,4 +26,6 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Validate Prisma schema
+        env:
+          DATABASE_URL: ${{ vars.PROD_DATABASE_URL }}
         run: npx prisma validate
