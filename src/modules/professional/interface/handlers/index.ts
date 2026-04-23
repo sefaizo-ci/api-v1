@@ -6,9 +6,11 @@ import {
   UpdateAvailabilityHandler,
 } from './availability.handlers';
 import {
+  ApproveBookingCancellationRequestHandler,
   CancelBookingHandler,
   CompleteBookingHandler,
   ConfirmBookingHandler,
+  RejectBookingCancellationRequestHandler,
   RejectBookingHandler,
 } from './booking.handlers';
 import {
@@ -27,6 +29,7 @@ import {
   GetProfessionalProfileHandler,
   GetProfessionalServicesHandler,
   GetProfileCompletionHandler,
+  ListBookingCancellationRequestsHandler,
   ListProfessionalsHandler,
   ListServiceCategoriesHandler,
   SearchProfessionalsHandler,
@@ -80,6 +83,8 @@ export const ProfessionalCommandHandlers = [
   RejectBookingHandler,
   CompleteBookingHandler,
   CancelBookingHandler,
+  ApproveBookingCancellationRequestHandler,
+  RejectBookingCancellationRequestHandler,
 ];
 
 export const ProfessionalQueryHandlers = [
@@ -90,6 +95,7 @@ export const ProfessionalQueryHandlers = [
   GetProfessionalAvailabilityHandler,
   GetProfessionalGalleryHandler,
   GetProfessionalBookingsHandler,
+  ListBookingCancellationRequestsHandler,
   GetProfileCompletionHandler,
   ListServiceCategoriesHandler,
   SearchProfessionalsHandler,

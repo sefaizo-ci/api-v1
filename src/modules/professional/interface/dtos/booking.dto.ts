@@ -8,3 +8,13 @@ export class RejectBookingDto {
   @MaxLength(500)
   reason?: string;
 }
+
+export class ReviewCancellationRequestDto {
+  @ApiPropertyOptional({
+    example: 'Intervention imminente, impossible a annuler',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}

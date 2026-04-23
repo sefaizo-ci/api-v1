@@ -6,11 +6,13 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import {
+  ApproveBookingCancellationRequestCommand,
   CancelBookingCommand,
   CompleteBookingCommand,
   ConfirmBookingCommand,
+  RejectBookingCancellationRequestCommand,
   RejectBookingCommand,
-} from '../../interface/commands';
+} from '../../interface/commands/booking.commands';
 
 @CommandHandler(ConfirmBookingCommand)
 @Injectable()
@@ -146,11 +148,104 @@ export class CancelBookingHandler implements ICommandHandler<CancelBookingComman
       );
     }
 
+    if (booking.status === 'CONFIRMED' && booking.clientId === command.userId) {
+      throw new BadRequestException(
+        "Le client ne peut pas annuler directement une reservation confirmee. Envoyez une demande d'annulation.",
+      );
+    }
+
     await this.prisma.booking.update({
       where: { id: booking.id },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
+        cancellationNote: command.reason,
+      },
+    });
+  }
+}
+
+@CommandHandler(ApproveBookingCancellationRequestCommand)
+@Injectable()
+export class ApproveBookingCancellationRequestHandler implements ICommandHandler<ApproveBookingCancellationRequestCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(
+    command: ApproveBookingCancellationRequestCommand,
+  ): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        professionalId: command.professionalId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      throw new BadRequestException(
+        "Seules les reservations confirmees peuvent recevoir une validation d'annulation",
+      );
+    }
+
+    if (booking.cancellationRequestStatus !== 'PENDING') {
+      throw new BadRequestException(
+        "Aucune demande d'annulation en attente pour cette reservation",
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancellationRequestStatus: 'APPROVED',
+        cancellationReviewedAt: new Date(),
+      },
+    });
+  }
+}
+
+@CommandHandler(RejectBookingCancellationRequestCommand)
+@Injectable()
+export class RejectBookingCancellationRequestHandler implements ICommandHandler<RejectBookingCancellationRequestCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(
+    command: RejectBookingCancellationRequestCommand,
+  ): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        professionalId: command.professionalId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      throw new BadRequestException(
+        "Seules les reservations confirmees peuvent recevoir un refus d'annulation",
+      );
+    }
+
+    if (booking.cancellationRequestStatus !== 'PENDING') {
+      throw new BadRequestException(
+        "Aucune demande d'annulation en attente pour cette reservation",
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        cancellationRequestStatus: 'REJECTED',
+        cancellationReviewedAt: new Date(),
         cancellationNote: command.reason,
       },
     });

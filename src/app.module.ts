@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './libs/database/database.module';
 import { RedisModule } from './libs/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ClientModule } from './modules/client/client.module';
 import { ProfessionalModule } from './modules/professional/professional.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { ProfessionalModule } from './modules/professional/professional.module';
     DatabaseModule,
     RedisModule,
     AuthModule,
+    ClientModule,
     ProfessionalModule,
   ],
   controllers: [AppController],
