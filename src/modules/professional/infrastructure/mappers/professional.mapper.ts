@@ -186,10 +186,7 @@ export class ServiceOfferingMapper {
       basePrice: entity.basePrice,
       category: {
         connect: {
-          professionalId_name: {
-            professionalId: entity.professionalId,
-            name: entity.category,
-          },
+          name: entity.category,
         },
       },
       isActive: entity.isActive,

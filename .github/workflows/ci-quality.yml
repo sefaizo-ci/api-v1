@@ -23,6 +23,8 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: npm run prebuild
 
       - name: ESLint (no auto-fix in CI)

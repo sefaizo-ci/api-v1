@@ -32,6 +32,7 @@ import {
   ListBookingCancellationRequestsHandler,
   ListProfessionalsHandler,
   ListServiceCategoriesHandler,
+  ListServiceCategoryRequestsHandler,
   SearchProfessionalsHandler,
 } from './professional.query.handlers';
 import {
@@ -44,10 +45,13 @@ import {
 import {
   ActivateServiceHandler,
   AddServiceHandler,
+  ApproveServiceCategoryRequestHandler,
   CreateServiceCategoryHandler,
+  CreateServiceCategoryRequestHandler,
   DeactivateServiceHandler,
   DeleteServiceCategoryHandler,
   DeleteServiceHandler,
+  RejectServiceCategoryRequestHandler,
   SetServiceCommuneFeeHandler,
   UpdateServiceCategoryHandler,
   UpdateServiceHandler,
@@ -62,6 +66,9 @@ export const ProfessionalCommandHandlers = [
   CreateServiceCategoryHandler,
   UpdateServiceCategoryHandler,
   DeleteServiceCategoryHandler,
+  CreateServiceCategoryRequestHandler,
+  ApproveServiceCategoryRequestHandler,
+  RejectServiceCategoryRequestHandler,
   AddServiceHandler,
   UpdateServiceHandler,
   DeleteServiceHandler,
@@ -98,6 +105,7 @@ export const ProfessionalQueryHandlers = [
   ListBookingCancellationRequestsHandler,
   GetProfileCompletionHandler,
   ListServiceCategoriesHandler,
+  ListServiceCategoryRequestsHandler,
   SearchProfessionalsHandler,
 ];
 

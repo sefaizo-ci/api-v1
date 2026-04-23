@@ -33,6 +33,12 @@ enum BookingCancellationRequestStatus {
   REJECTED
 }
 
+enum ServiceCategoryRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ServiceLocation {
   HOME
   SALON
@@ -76,6 +82,7 @@ model User {
 
   professional     Professional?
   bookingsAsClient Booking[]     @relation("ClientBookings")
+  reviewedServiceCategoryRequests ServiceCategoryRequest[] @relation("ServiceCategoryRequestReviewer")
 
   @@map("users")
 }
@@ -189,7 +196,7 @@ model Professional {
   metadata    Json?
   
   services       ServiceOffering[]
-  serviceCategories ServiceCategory[]
+  serviceCategoryRequests ServiceCategoryRequest[]
   availabilities Availability[]
   gallery        GalleryItem[]
   bookings       Booking[]        @relation("ProfessionalBookings")
@@ -227,9 +234,8 @@ model ServiceOffering {
 
 model ServiceCategory {
   id          String   @id @default(uuid())
-  professionalId String
-  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   name        String
+  slug        String   @unique
   description String?
   isActive    Boolean  @default(true)
 
@@ -240,10 +246,35 @@ model ServiceCategory {
   metadata    Json?
 
   services    ServiceOffering[]
+  requests    ServiceCategoryRequest[]
 
-  @@unique([professionalId, name])
-  @@index([professionalId])
+  @@unique([name])
+  @@index([name])
   @@map("service_categories")
+}
+
+model ServiceCategoryRequest {
+  id                    String                      @id @default(uuid())
+  professionalId        String
+  professional          Professional                @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  proposedName          String
+  proposedDescription   String?
+  status                ServiceCategoryRequestStatus @default(PENDING)
+  reviewedByUserId      String?
+  reviewedByUser        User?                       @relation("ServiceCategoryRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedAt            DateTime?
+  reviewNote            String?
+  approvedCategoryId    String?
+  approvedCategory      ServiceCategory?            @relation(fields: [approvedCategoryId], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  deletedAt             DateTime?
+  metadata              Json?
+
+  @@index([professionalId, status])
+  @@index([status, createdAt])
+  @@map("service_category_requests")
 }
 
 model CommuneFee {
