@@ -1,4 +1,4 @@
-name: Production Database Migration
+name: Production Database Migration and Seed
 
 on:
   push:
@@ -29,3 +29,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: npx prisma migrate deploy
+
+      - name: Seed production database
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: npx prisma db seed
