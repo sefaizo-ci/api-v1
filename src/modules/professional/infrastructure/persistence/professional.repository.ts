@@ -38,10 +38,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
             basePrice: service.basePrice,
             category: {
               connect: {
-                professionalId_name: {
-                  professionalId: professional.id,
-                  name: service.category,
-                },
+                name: service.category,
               },
             },
             isActive: service.isActive,
@@ -61,10 +58,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
             basePrice: service.basePrice,
             category: {
               connect: {
-                professionalId_name: {
-                  professionalId: professional.id,
-                  name: service.category,
-                },
+                name: service.category,
               },
             },
             isActive: service.isActive,

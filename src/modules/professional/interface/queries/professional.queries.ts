@@ -75,5 +75,18 @@ export class SearchProfessionalsQuery implements IQuery {
 }
 
 export class ListServiceCategoriesQuery implements IQuery {
-  constructor(public readonly professionalId: string) {}
+  constructor(
+    public readonly page?: number,
+    public readonly limit?: number,
+  ) {}
+}
+
+export class ListServiceCategoryRequestsQuery implements IQuery {
+  constructor(
+    public readonly professionalId?: string,
+    public readonly status?: 'PENDING' | 'APPROVED' | 'REJECTED',
+    public readonly page?: number,
+    public readonly limit?: number,
+    public readonly requesterUserId?: string,
+  ) {}
 }

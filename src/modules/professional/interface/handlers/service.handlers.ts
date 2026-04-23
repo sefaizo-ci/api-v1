@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Prisma } from '@prisma/client';
+import { ServiceCategoryRequestStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ServiceOfferingEntity } from '../../core/entities/service-offering.entity';
@@ -14,134 +14,27 @@ import { ProfessionalRepository } from '../../infrastructure/persistence/profess
 import {
   ActivateServiceCommand,
   AddServiceCommand,
+  ApproveServiceCategoryRequestCommand,
   CreateServiceCategoryCommand,
+  CreateServiceCategoryRequestCommand,
   DeactivateServiceCommand,
   DeleteServiceCategoryCommand,
   DeleteServiceCommand,
+  RejectServiceCategoryRequestCommand,
   SetServiceCommuneFeeCommand,
   UpdateServiceCategoryCommand,
   UpdateServiceCommand,
 } from '../../interface/commands';
 
-type ProfessionalOwnerRecord = {
-  id: string;
-  userId: string;
-};
-
-type ServiceCategoryRecord = {
-  id: string;
-  professionalId: string;
-  name: string;
-  description: string | null;
-  isActive: boolean;
-};
-
-type ServiceCategoryCreateData = {
-  professionalId: string;
-  name: string;
-  description?: string | null;
-  metadata?: Prisma.InputJsonValue;
-};
-
-type ProfessionalCategoryPrisma = {
-  professional: {
-    findFirst(args: {
-      where: {
-        id: string;
-        deletedAt: null;
-      };
-      select: {
-        id: true;
-        userId: true;
-      };
-    }): Promise<ProfessionalOwnerRecord | null>;
-  };
-  serviceCategory: {
-    findFirst(args: {
-      where: {
-        professionalId: string;
-        name: {
-          equals: string;
-          mode: 'insensitive';
-        };
-        deletedAt: null;
-        isActive?: boolean;
-      };
-    }): Promise<ServiceCategoryRecord | null>;
-    create(args: {
-      data: ServiceCategoryCreateData;
-    }): Promise<ServiceCategoryRecord>;
-    update(args: {
-      where: {
-        id: string;
-      };
-      data: {
-        name?: string;
-        description?: string | null;
-        isActive?: boolean;
-        deletedAt?: Date | null;
-        metadata?: Prisma.InputJsonValue;
-      };
-    }): Promise<ServiceCategoryRecord>;
-    updateMany(args: {
-      where: {
-        categoryId: string;
-      };
-      data: {
-        categoryId: string;
-      };
-    }): Promise<{ count: number }>;
-  };
-  serviceOffering: {
-    updateMany(args: {
-      where: {
-        categoryId: string;
-      };
-      data: {
-        categoryId: string;
-      };
-    }): Promise<{ count: number }>;
-  };
-};
-
-function toPrismaFacade(
-  prisma: PrismaService,
-): PrismaService & ProfessionalCategoryPrisma {
-  return prisma as PrismaService & ProfessionalCategoryPrisma;
-}
-
-const DEFAULT_CATEGORY_NAME = 'Sans catégorie';
-
-async function ensureDefaultCategory(
-  prisma: PrismaService & ProfessionalCategoryPrisma,
-  professionalId: string,
-): Promise<ServiceCategoryRecord> {
-  const existing = await prisma.serviceCategory.findFirst({
-    where: {
-      professionalId,
-      name: {
-        equals: DEFAULT_CATEGORY_NAME,
-        mode: 'insensitive',
-      },
-      deletedAt: null,
-      isActive: true,
-    },
-  });
-
-  if (existing) {
-    return existing;
-  }
-
-  return prisma.serviceCategory.create({
-    data: {
-      professionalId,
-      name: DEFAULT_CATEGORY_NAME,
-      description: 'Catégorie par défaut',
-      metadata: {
-        defaultCategory: true,
-      },
-    },
-  });
+function toCategorySlug(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' et ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
 }
 
 @CommandHandler(CreateServiceCategoryCommand)
@@ -149,39 +42,14 @@ async function ensureDefaultCategory(
 export class CreateServiceCategoryHandler implements ICommandHandler<CreateServiceCategoryCommand> {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    command: CreateServiceCategoryCommand,
-  ): Promise<ServiceCategoryRecord> {
-    const prisma = toPrismaFacade(this.prisma);
+  async execute(command: CreateServiceCategoryCommand) {
     const categoryName = command.name.trim();
     if (!categoryName) {
       throw new BadRequestException('Le nom de la categorie est requis');
     }
 
-    const professional = await prisma.professional.findFirst({
+    const existing = await this.prisma.serviceCategory.findFirst({
       where: {
-        id: command.professionalId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        userId: true,
-      },
-    });
-
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouve');
-    }
-
-    if (command.createdBy && professional.userId !== command.createdBy) {
-      throw new ForbiddenException(
-        'Vous ne pouvez pas creer une categorie pour ce profil',
-      );
-    }
-
-    const existing = await prisma.serviceCategory.findFirst({
-      where: {
-        professionalId: command.professionalId,
         name: {
           equals: categoryName,
           mode: 'insensitive',
@@ -194,10 +62,10 @@ export class CreateServiceCategoryHandler implements ICommandHandler<CreateServi
       throw new ConflictException('Cette categorie existe deja');
     }
 
-    const created = await prisma.serviceCategory.create({
+    return this.prisma.serviceCategory.create({
       data: {
-        professionalId: command.professionalId,
         name: categoryName,
+        slug: toCategorySlug(categoryName),
         description: command.description?.trim() || null,
         metadata: command.createdBy
           ? {
@@ -206,8 +74,6 @@ export class CreateServiceCategoryHandler implements ICommandHandler<CreateServi
           : undefined,
       },
     });
-
-    return created;
   }
 }
 
@@ -216,14 +82,10 @@ export class CreateServiceCategoryHandler implements ICommandHandler<CreateServi
 export class UpdateServiceCategoryHandler implements ICommandHandler<UpdateServiceCategoryCommand> {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    command: UpdateServiceCategoryCommand,
-  ): Promise<ServiceCategoryRecord> {
-    const prisma = toPrismaFacade(this.prisma);
-    const category = await prisma.serviceCategory.findFirst({
+  async execute(command: UpdateServiceCategoryCommand) {
+    const category = await this.prisma.serviceCategory.findFirst({
       where: {
         id: command.categoryId,
-        professionalId: command.professionalId,
         deletedAt: null,
       },
     });
@@ -232,38 +94,10 @@ export class UpdateServiceCategoryHandler implements ICommandHandler<UpdateServi
       throw new NotFoundException('Categorie non trouvee');
     }
 
-    const professional = await prisma.professional.findFirst({
-      where: {
-        id: command.professionalId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        userId: true,
-      },
-    });
-
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouve');
-    }
-
-    if (command.updatedBy && professional.userId !== command.updatedBy) {
-      throw new ForbiddenException(
-        'Vous ne pouvez pas modifier une categorie pour ce profil',
-      );
-    }
-
-    if (category.name.toLowerCase() === DEFAULT_CATEGORY_NAME.toLowerCase()) {
-      throw new BadRequestException(
-        'La categorie par defaut ne peut pas etre modifiee',
-      );
-    }
-
     const nextName = command.name?.trim();
     if (nextName) {
-      const duplicate = await prisma.serviceCategory.findFirst({
+      const duplicate = await this.prisma.serviceCategory.findFirst({
         where: {
-          professionalId: command.professionalId,
           name: {
             equals: nextName,
             mode: 'insensitive',
@@ -277,10 +111,11 @@ export class UpdateServiceCategoryHandler implements ICommandHandler<UpdateServi
       }
     }
 
-    return prisma.serviceCategory.update({
+    return this.prisma.serviceCategory.update({
       where: { id: category.id },
       data: {
         name: nextName ?? category.name,
+        slug: nextName ? toCategorySlug(nextName) : category.slug,
         description:
           command.description !== undefined
             ? command.description.trim() || null
@@ -296,11 +131,9 @@ export class DeleteServiceCategoryHandler implements ICommandHandler<DeleteServi
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: DeleteServiceCategoryCommand): Promise<void> {
-    const prisma = toPrismaFacade(this.prisma);
-    const category = await prisma.serviceCategory.findFirst({
+    const category = await this.prisma.serviceCategory.findFirst({
       where: {
         id: command.categoryId,
-        professionalId: command.professionalId,
         deletedAt: null,
       },
     });
@@ -309,7 +142,41 @@ export class DeleteServiceCategoryHandler implements ICommandHandler<DeleteServi
       throw new NotFoundException('Categorie non trouvee');
     }
 
-    const professional = await prisma.professional.findFirst({
+    const attachedServices = await this.prisma.serviceOffering.count({
+      where: {
+        categoryId: category.id,
+        deletedAt: null,
+      },
+    });
+
+    if (attachedServices > 0) {
+      throw new BadRequestException(
+        'Impossible de supprimer une categorie associee a des services actifs',
+      );
+    }
+
+    await this.prisma.serviceCategory.update({
+      where: { id: category.id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    });
+  }
+}
+
+@CommandHandler(CreateServiceCategoryRequestCommand)
+@Injectable()
+export class CreateServiceCategoryRequestHandler implements ICommandHandler<CreateServiceCategoryRequestCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: CreateServiceCategoryRequestCommand) {
+    const proposedName = command.proposedName.trim();
+    if (!proposedName) {
+      throw new BadRequestException('Le nom propose est requis');
+    }
+
+    const professional = await this.prisma.professional.findFirst({
       where: {
         id: command.professionalId,
         deletedAt: null,
@@ -324,36 +191,140 @@ export class DeleteServiceCategoryHandler implements ICommandHandler<DeleteServi
       throw new NotFoundException('Professionnel non trouve');
     }
 
-    if (command.deletedBy && professional.userId !== command.deletedBy) {
+    if (command.requestedBy && command.requestedBy !== professional.userId) {
       throw new ForbiddenException(
-        'Vous ne pouvez pas supprimer une categorie pour ce profil',
+        'Vous ne pouvez pas soumettre une demande pour ce profil',
       );
     }
 
-    if (category.name.toLowerCase() === DEFAULT_CATEGORY_NAME.toLowerCase()) {
-      throw new BadRequestException(
-        'La categorie par defaut ne peut pas etre supprimee',
-      );
+    return this.prisma.serviceCategoryRequest.create({
+      data: {
+        professionalId: command.professionalId,
+        proposedName,
+        proposedDescription: command.proposedDescription?.trim() || null,
+        metadata: command.requestedBy
+          ? {
+              requestedBy: command.requestedBy,
+            }
+          : undefined,
+      },
+    });
+  }
+}
+
+@CommandHandler(ApproveServiceCategoryRequestCommand)
+@Injectable()
+export class ApproveServiceCategoryRequestHandler implements ICommandHandler<ApproveServiceCategoryRequestCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: ApproveServiceCategoryRequestCommand) {
+    const request = await this.prisma.serviceCategoryRequest.findFirst({
+      where: {
+        id: command.requestId,
+        deletedAt: null,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Demande de categorie non trouvee');
     }
 
-    const defaultCategory = await ensureDefaultCategory(
-      prisma,
-      command.professionalId,
-    );
+    if (request.status !== ServiceCategoryRequestStatus.PENDING) {
+      throw new BadRequestException('Cette demande a deja ete traitee');
+    }
 
-    await prisma.$transaction([
-      prisma.serviceOffering.updateMany({
-        where: { categoryId: category.id },
-        data: { categoryId: defaultCategory.id },
-      }),
-      prisma.serviceCategory.update({
-        where: { id: category.id },
-        data: {
-          isActive: false,
-          deletedAt: new Date(),
+    const approvedName =
+      command.approvedName?.trim() || request.proposedName.trim();
+    if (!approvedName) {
+      throw new BadRequestException('Le nom approuve est requis');
+    }
+
+    const approvedDescription =
+      command.approvedDescription !== undefined
+        ? command.approvedDescription.trim() || null
+        : request.proposedDescription;
+
+    const existingCategory = await this.prisma.serviceCategory.findFirst({
+      where: {
+        name: {
+          equals: approvedName,
+          mode: 'insensitive',
         },
-      }),
-    ]);
+        deletedAt: null,
+      },
+    });
+
+    let categoryId: string;
+
+    if (existingCategory) {
+      categoryId = existingCategory.id;
+      if (command.approvedDescription !== undefined) {
+        await this.prisma.serviceCategory.update({
+          where: { id: existingCategory.id },
+          data: {
+            description: approvedDescription,
+          },
+        });
+      }
+    } else {
+      const createdCategory = await this.prisma.serviceCategory.create({
+        data: {
+          name: approvedName,
+          slug: toCategorySlug(approvedName),
+          description: approvedDescription,
+          metadata: {
+            approvedFromRequestId: request.id,
+          },
+        },
+      });
+      categoryId = createdCategory.id;
+    }
+
+    return this.prisma.serviceCategoryRequest.update({
+      where: { id: request.id },
+      data: {
+        status: ServiceCategoryRequestStatus.APPROVED,
+        reviewedByUserId: command.reviewedBy,
+        reviewedAt: new Date(),
+        approvedCategoryId: categoryId,
+      },
+      include: {
+        approvedCategory: true,
+      },
+    });
+  }
+}
+
+@CommandHandler(RejectServiceCategoryRequestCommand)
+@Injectable()
+export class RejectServiceCategoryRequestHandler implements ICommandHandler<RejectServiceCategoryRequestCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: RejectServiceCategoryRequestCommand) {
+    const request = await this.prisma.serviceCategoryRequest.findFirst({
+      where: {
+        id: command.requestId,
+        deletedAt: null,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Demande de categorie non trouvee');
+    }
+
+    if (request.status !== ServiceCategoryRequestStatus.PENDING) {
+      throw new BadRequestException('Cette demande a deja ete traitee');
+    }
+
+    return this.prisma.serviceCategoryRequest.update({
+      where: { id: request.id },
+      data: {
+        status: ServiceCategoryRequestStatus.REJECTED,
+        reviewedByUserId: command.reviewedBy,
+        reviewedAt: new Date(),
+        reviewNote: command.reviewNote?.trim() || null,
+      },
+    });
   }
 }
 
@@ -370,10 +341,9 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
   ) {}
 
   async execute(command: AddServiceCommand): Promise<ServiceOfferingEntity> {
-    const prisma = toPrismaFacade(this.prisma);
     const professional = await this.repository.findById(command.professionalId);
     if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
+      throw new NotFoundException('Professionnel non trouve');
     }
 
     const categoryName = command.category.trim();
@@ -381,9 +351,8 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
       throw new BadRequestException('Le nom de la categorie est requis');
     }
 
-    let category = await prisma.serviceCategory.findFirst({
+    const category = await this.prisma.serviceCategory.findFirst({
       where: {
-        professionalId: command.professionalId,
         name: {
           equals: categoryName,
           mode: 'insensitive',
@@ -394,15 +363,9 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
     });
 
     if (!category) {
-      category = await prisma.serviceCategory.create({
-        data: {
-          professionalId: command.professionalId,
-          name: categoryName,
-          metadata: {
-            autoCreatedByService: true,
-          },
-        },
-      });
+      throw new NotFoundException(
+        'Categorie introuvable. Choisissez une categorie valide du catalogue global.',
+      );
     }
 
     const service = ServiceOfferingEntity.create({
@@ -416,7 +379,6 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
     });
 
     professional.addService(service);
-
     await this.repository.save(professional);
 
     return service;
@@ -436,7 +398,6 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
   ) {}
 
   async execute(command: UpdateServiceCommand): Promise<ServiceOfferingEntity> {
-    const prisma = toPrismaFacade(this.prisma);
     const professionals = await this.repository.findAll();
     const owner = professionals.find((p) =>
       p.services.some((s) => s.id === command.serviceId && !s.deletedAt),
@@ -471,15 +432,15 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
     if (command.basePrice !== undefined) {
       service.basePrice = command.basePrice;
     }
+
     if (command.category !== undefined) {
       const categoryName = command.category.trim();
       if (!categoryName) {
         throw new BadRequestException('Le nom de la categorie est requis');
       }
 
-      let category = await prisma.serviceCategory.findFirst({
+      const category = await this.prisma.serviceCategory.findFirst({
         where: {
-          professionalId: owner.id,
           name: {
             equals: categoryName,
             mode: 'insensitive',
@@ -490,15 +451,9 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
       });
 
       if (!category) {
-        category = await prisma.serviceCategory.create({
-          data: {
-            professionalId: owner.id,
-            name: categoryName,
-            metadata: {
-              autoCreatedByService: true,
-            },
-          },
-        });
+        throw new NotFoundException(
+          'Categorie introuvable. Choisissez une categorie valide du catalogue global.',
+        );
       }
 
       service.category = category.name;
@@ -523,7 +478,7 @@ export class DeleteServiceHandler implements ICommandHandler<DeleteServiceComman
   async execute(command: DeleteServiceCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
     if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
+      throw new NotFoundException('Professionnel non trouve');
     }
 
     professional.removeService(command.serviceId);
@@ -543,12 +498,12 @@ export class SetServiceCommuneFeeHandler implements ICommandHandler<SetServiceCo
   async execute(command: SetServiceCommuneFeeCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
     if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
+      throw new NotFoundException('Professionnel non trouve');
     }
 
     const service = professional.getService(command.serviceId);
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service non trouve');
     }
 
     if (command.travelFee < 0) {
@@ -572,12 +527,12 @@ export class ActivateServiceHandler implements ICommandHandler<ActivateServiceCo
   async execute(command: ActivateServiceCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
     if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
+      throw new NotFoundException('Professionnel non trouve');
     }
 
     const service = professional.getService(command.serviceId);
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service non trouve');
     }
 
     service.activate();
@@ -597,12 +552,12 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
   async execute(command: DeactivateServiceCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
     if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
+      throw new NotFoundException('Professionnel non trouve');
     }
 
     const service = professional.getService(command.serviceId);
     if (!service) {
-      throw new NotFoundException('Service non trouvé');
+      throw new NotFoundException('Service non trouve');
     }
 
     service.deactivate();

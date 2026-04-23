@@ -111,3 +111,44 @@ export class UpdateServiceCategoryDto {
   @MaxLength(255)
   description?: string;
 }
+
+export class CreateServiceCategoryRequestDto {
+  @ApiProperty({ example: 'Extensions et lace frontal HD' })
+  @IsString()
+  @MaxLength(80)
+  proposedName!: string;
+
+  @ApiPropertyOptional({
+    example: 'Pose, customisation et entretien lace frontal HD',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  proposedDescription?: string;
+}
+
+export class ApproveServiceCategoryRequestDto {
+  @ApiPropertyOptional({ example: 'Extensions et lace frontal' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  approvedName?: string;
+
+  @ApiPropertyOptional({
+    example: 'Prestations de pose et entretien lace frontal',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  approvedDescription?: string;
+}
+
+export class RejectServiceCategoryRequestDto {
+  @ApiPropertyOptional({
+    example: "Categorie trop proche d'une categorie existante",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reviewNote?: string;
+}

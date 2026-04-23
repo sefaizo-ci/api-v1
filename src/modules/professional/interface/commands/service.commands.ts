@@ -13,7 +13,6 @@ export class AddServiceCommand implements ICommand {
 
 export class CreateServiceCategoryCommand implements ICommand {
   constructor(
-    public readonly professionalId: string,
     public readonly name: string,
     public readonly description?: string,
     public readonly createdBy?: string,
@@ -22,7 +21,6 @@ export class CreateServiceCategoryCommand implements ICommand {
 
 export class UpdateServiceCategoryCommand implements ICommand {
   constructor(
-    public readonly professionalId: string,
     public readonly categoryId: string,
     public readonly name?: string,
     public readonly description?: string,
@@ -32,9 +30,34 @@ export class UpdateServiceCategoryCommand implements ICommand {
 
 export class DeleteServiceCategoryCommand implements ICommand {
   constructor(
-    public readonly professionalId: string,
     public readonly categoryId: string,
     public readonly deletedBy?: string,
+  ) {}
+}
+
+export class CreateServiceCategoryRequestCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly proposedName: string,
+    public readonly proposedDescription?: string,
+    public readonly requestedBy?: string,
+  ) {}
+}
+
+export class ApproveServiceCategoryRequestCommand implements ICommand {
+  constructor(
+    public readonly requestId: string,
+    public readonly reviewedBy: string,
+    public readonly approvedName?: string,
+    public readonly approvedDescription?: string,
+  ) {}
+}
+
+export class RejectServiceCategoryRequestCommand implements ICommand {
+  constructor(
+    public readonly requestId: string,
+    public readonly reviewedBy: string,
+    public readonly reviewNote?: string,
   ) {}
 }
 

@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { BookingStatus, Prisma } from '@prisma/client';
+import {
+  BookingStatus,
+  Prisma,
+  ServiceCategoryRequestStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
@@ -14,6 +22,7 @@ import {
   ListBookingCancellationRequestsQuery,
   ListProfessionalsQuery,
   ListServiceCategoriesQuery,
+  ListServiceCategoryRequestsQuery,
   SearchProfessionalsQuery,
 } from '../../interface/queries';
 
@@ -21,7 +30,6 @@ const BOOKING_CANCELLATION_REQUEST_STATUS_PENDING = 'PENDING' as const;
 
 type ServiceCategoryRecord = {
   id: string;
-  professionalId: string;
   name: string;
   description: string | null;
   isActive: boolean;
@@ -35,14 +43,21 @@ type ProfessionalQueryPrisma = {
   serviceCategory: {
     findMany(args: {
       where: {
-        professionalId: string;
         isActive: true;
         deletedAt: null;
       };
       orderBy: {
         name: 'asc';
       };
+      skip?: number;
+      take?: number;
     }): Promise<ServiceCategoryRecord[]>;
+    count(args: {
+      where: {
+        isActive: true;
+        deletedAt: null;
+      };
+    }): Promise<number>;
   };
 };
 
@@ -59,23 +74,128 @@ export class ListServiceCategoriesHandler implements IQueryHandler<ListServiceCa
 
   async execute(query: ListServiceCategoriesQuery): Promise<{
     data: ServiceCategoryRecord[];
-    count: number;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
   }> {
     const prisma = toQueryPrismaFacade(this.prisma);
-    const categories = await prisma.serviceCategory.findMany({
-      where: {
-        professionalId: query.professionalId,
-        isActive: true,
-        deletedAt: null,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: { isActive: true; deletedAt: null } = {
+      isActive: true,
+      deletedAt: null,
+    };
+
+    const [categories, total] = await Promise.all([
+      prisma.serviceCategory.findMany({
+        where,
+        orderBy: {
+          name: 'asc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.serviceCategory.count({ where }),
+    ]);
 
     return {
       data: categories,
-      count: categories.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+}
+
+@QueryHandler(ListServiceCategoryRequestsQuery)
+@Injectable()
+export class ListServiceCategoryRequestsHandler implements IQueryHandler<ListServiceCategoryRequestsQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: ListServiceCategoryRequestsQuery) {
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ServiceCategoryRequestWhereInput = {
+      deletedAt: null,
+    };
+
+    if (query.professionalId) {
+      if (query.requesterUserId) {
+        const ownedProfessional = await this.prisma.professional.findFirst({
+          where: {
+            id: query.professionalId,
+            userId: query.requesterUserId,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+
+        if (!ownedProfessional) {
+          throw new ForbiddenException(
+            'Vous ne pouvez consulter que vos propres demandes',
+          );
+        }
+      }
+
+      where.professionalId = query.professionalId;
+    }
+
+    if (query.status) {
+      where.status = query.status as ServiceCategoryRequestStatus;
+    }
+
+    const [requests, total] = await Promise.all([
+      this.prisma.serviceCategoryRequest.findMany({
+        where,
+        include: {
+          professional: {
+            select: {
+              id: true,
+              agencyName: true,
+            },
+          },
+          reviewedByUser: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          approvedCategory: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.serviceCategoryRequest.count({ where }),
+    ]);
+
+    return {
+      data: requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }
