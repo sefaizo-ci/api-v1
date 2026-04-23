@@ -19,35 +19,27 @@ import { RolesGuard } from '../auth/infrastructure/guards/roles.guard';
 import {
   ActivateServiceCommand,
   AddServiceCommand,
-  ApproveServiceCategoryRequestCommand,
   CompleteBookingCommand,
   ConfirmBookingCommand,
   CreateProfessionalProfileCommand,
-  CreateServiceCategoryCommand,
   CreateServiceCategoryRequestCommand,
   DeactivateServiceCommand,
   DeleteGalleryItemCommand,
-  DeleteServiceCategoryCommand,
   DeleteServiceCommand,
   PublishGalleryItemCommand,
-  ReactivateProfessionalCommand,
   RejectBookingCommand,
-  RejectServiceCategoryRequestCommand,
   RemoveAvailabilityCommand,
   ReorderGalleryCommand,
   SetAvailabilityCommand,
   SetAvailabilityForAllWeekCommand,
   SetAvailabilityStatusCommand,
   SetServiceCommuneFeeCommand,
-  SuspendProfessionalCommand,
   UnpublishGalleryItemCommand,
   UpdateAvailabilityCommand,
   UpdateGalleryItemCommand,
   UpdateProfessionalProfileCommand,
-  UpdateServiceCategoryCommand,
   UpdateServiceCommand,
   UploadGalleryItemCommand,
-  VerifyProfessionalCommand,
 } from './interface/commands';
 import {
   ApproveBookingCancellationRequestCommand,
@@ -55,22 +47,17 @@ import {
 } from './interface/commands/booking.commands';
 import {
   AddServiceDto,
-  ApproveServiceCategoryRequestDto,
   CreateProfessionalProfileDto,
-  CreateServiceCategoryDto,
   CreateServiceCategoryRequestDto,
   RejectBookingDto,
-  RejectServiceCategoryRequestDto,
   ReviewCancellationRequestDto,
   SetAvailabilityDto,
   SetAvailabilityForWeekDto,
   SetAvailabilityStatusDto,
   SetCommuneFeeDto,
-  SuspendProfessionalDto,
   UpdateAvailabilityDto,
   UpdateGalleryItemDto,
   UpdateProfessionalProfileDto,
-  UpdateServiceCategoryDto,
   UpdateServiceDto,
   UploadGalleryItemDto,
 } from './interface/dtos';
@@ -151,47 +138,6 @@ export class ProfessionalController {
         body.latitude,
         body.longitude,
       ),
-    );
-  }
-
-  /**
-   * Verify professional (admin only)
-   */
-  @Put('profile/:professionalId/verify')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async verifyProfessional(@Param('professionalId') professionalId: string) {
-    return this.commandBus.execute<VerifyProfessionalCommand, unknown>(
-      new VerifyProfessionalCommand(professionalId),
-    );
-  }
-
-  /**
-   * Suspend professional (admin only)
-   */
-  @Put('profile/:professionalId/suspend')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async suspendProfessional(
-    @Param('professionalId') professionalId: string,
-    @Body() body: SuspendProfessionalDto,
-  ) {
-    return this.commandBus.execute<SuspendProfessionalCommand, unknown>(
-      new SuspendProfessionalCommand(professionalId, body.reason),
-    );
-  }
-
-  /**
-   * Reactivate professional (admin only)
-   */
-  @Put('profile/:professionalId/reactivate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async reactivateProfessional(
-    @Param('professionalId') professionalId: string,
-  ) {
-    return this.commandBus.execute<ReactivateProfessionalCommand, unknown>(
-      new ReactivateProfessionalCommand(professionalId),
     );
   }
 
@@ -284,55 +230,6 @@ export class ProfessionalController {
     );
   }
 
-  @Post('services/categories')
-  @Post('admin/services/categories')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async createServiceCategory(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: CreateServiceCategoryDto,
-  ) {
-    return this.commandBus.execute<CreateServiceCategoryCommand, unknown>(
-      new CreateServiceCategoryCommand(
-        body.name,
-        body.description,
-        req.user.id,
-      ),
-    );
-  }
-
-  @Put('services/categories/:categoryId')
-  @Put('admin/services/categories/:categoryId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async updateServiceCategory(
-    @Param('categoryId') categoryId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: UpdateServiceCategoryDto,
-  ) {
-    return this.commandBus.execute<UpdateServiceCategoryCommand, unknown>(
-      new UpdateServiceCategoryCommand(
-        categoryId,
-        body.name,
-        body.description,
-        req.user.id,
-      ),
-    );
-  }
-
-  @Delete('services/categories/:categoryId')
-  @Delete('admin/services/categories/:categoryId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async deleteServiceCategory(
-    @Param('categoryId') categoryId: string,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.commandBus.execute<DeleteServiceCategoryCommand, unknown>(
-      new DeleteServiceCategoryCommand(categoryId, req.user.id),
-    );
-  }
-
   @Post(':professionalId/services/category-requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
@@ -371,60 +268,6 @@ export class ProfessionalController {
         page,
         limit,
         req.user.id,
-      ),
-    );
-  }
-
-  @Get('services/category-requests/admin')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async listAllServiceCategoryRequests(
-    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED',
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    return this.queryBus.execute<ListServiceCategoryRequestsQuery, unknown>(
-      new ListServiceCategoryRequestsQuery(undefined, status, page, limit),
-    );
-  }
-
-  @Put('services/category-requests/admin/:requestId/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async approveServiceCategoryRequest(
-    @Param('requestId') requestId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: ApproveServiceCategoryRequestDto,
-  ) {
-    return this.commandBus.execute<
-      ApproveServiceCategoryRequestCommand,
-      unknown
-    >(
-      new ApproveServiceCategoryRequestCommand(
-        requestId,
-        req.user.id,
-        body.approvedName,
-        body.approvedDescription,
-      ),
-    );
-  }
-
-  @Put('services/category-requests/admin/:requestId/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  async rejectServiceCategoryRequest(
-    @Param('requestId') requestId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: RejectServiceCategoryRequestDto,
-  ) {
-    return this.commandBus.execute<
-      RejectServiceCategoryRequestCommand,
-      unknown
-    >(
-      new RejectServiceCategoryRequestCommand(
-        requestId,
-        req.user.id,
-        body.reviewNote,
       ),
     );
   }
