@@ -1205,122 +1205,6 @@
                 },
                 "description": "Update the professional profile."
               }
-            },
-            {
-              "name": "Verify Profile (Admin)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminAccessToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "professional",
-                    "profile",
-                    "{{professionalId}}",
-                    "verify"
-                  ]
-                },
-                "description": "Admin only: verify a professional profile."
-              }
-            },
-            {
-              "name": "Suspend Profile (Admin)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminAccessToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"reason\": \"{{professionalStatusReason}}\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "professional",
-                    "profile",
-                    "{{professionalId}}",
-                    "suspend"
-                  ]
-                },
-                "description": "Admin only: suspend a professional profile."
-              }
-            },
-            {
-              "name": "Reactivate Profile (Admin)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminAccessToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "professional",
-                    "profile",
-                    "{{professionalId}}",
-                    "reactivate"
-                  ]
-                },
-                "description": "Admin only: reactivate a suspended profile."
-              }
             }
           ]
         },
@@ -1350,16 +1234,21 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/categories",
+                  "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "services",
-                    "categories"
+                  "path": ["professional", "services", "categories"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
                   ]
                 },
-                "description": "List active service categories for one professional. Public endpoint."
+                "description": "List active global service categories with pagination. Public endpoint."
               }
             },
             {
@@ -1390,7 +1279,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{professionalAccessToken}}"
+                    "value": "Bearer {{adminAccessToken}}"
                   }
                 ],
                 "body": {
@@ -1398,16 +1287,11 @@
                   "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"Category for premium services\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/categories",
+                  "raw": "{{baseUrl}}/professional/services/categories",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "services",
-                    "categories"
-                  ]
+                  "path": ["professional", "services", "categories"]
                 },
-                "description": "Create a category scoped to the authenticated professional."
+                "description": "Admin only: create a new global category directly (no professional request required)."
               }
             },
             {
@@ -1434,7 +1318,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{professionalAccessToken}}"
+                    "value": "Bearer {{adminAccessToken}}"
                   }
                 ],
                 "body": {
@@ -1442,17 +1326,16 @@
                   "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"Updated category description\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/categories/{{serviceCategoryId}}",
+                  "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
                   "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
-                    "{{professionalId}}",
                     "services",
                     "categories",
                     "{{serviceCategoryId}}"
                   ]
                 },
-                "description": "Update one professional service category by id."
+                "description": "Admin only: update one global category by id."
               }
             },
             {
@@ -1475,21 +1358,105 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{professionalAccessToken}}"
+                    "value": "Bearer {{adminAccessToken}}"
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/categories/{{serviceCategoryId}}",
+                  "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
                   "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
-                    "{{professionalId}}",
                     "services",
                     "categories",
                     "{{serviceCategoryId}}"
                   ]
                 },
-                "description": "Delete a category. Services linked to it are reassigned to the default fallback category."
+                "description": "Admin only: soft-delete a global category (fails if linked to active services)."
+              }
+            },
+            {
+              "name": "Create Category Request (Professional)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.id) {",
+                      "  pm.environment.set('serviceCategoryRequestId', json.id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"proposedName\": \"Lissage bresilien premium\",\n  \"proposedDescription\": \"Technique specialisee de lissage et soin intensif\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services",
+                    "category-requests"
+                  ]
+                },
+                "description": "Professional only: submit a category creation request for admin review."
+              }
+            },
+            {
+              "name": "List My Category Requests (Professional)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests?status=PENDING&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services",
+                    "category-requests"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "PENDING"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Professional only: list own category requests."
               }
             },
             {
@@ -2357,6 +2324,240 @@
                 },
                 "description": "Mark a booking as completed."
               }
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Professional Profile Moderation",
+              "item": [
+                {
+                  "name": "Verify Profile (Admin)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status is 200', function () {",
+                          "  pm.response.to.have.status(200);",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "professional",
+                        "profile",
+                        "{{professionalId}}",
+                        "verify"
+                      ]
+                    },
+                    "description": "Admin only: verify a professional profile."
+                  }
+                },
+                {
+                  "name": "Suspend Profile (Admin)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status is 200', function () {",
+                          "  pm.response.to.have.status(200);",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reason\": \"{{professionalStatusReason}}\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "professional",
+                        "profile",
+                        "{{professionalId}}",
+                        "suspend"
+                      ]
+                    },
+                    "description": "Admin only: suspend a professional profile."
+                  }
+                },
+                {
+                  "name": "Reactivate Profile (Admin)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status is 200', function () {",
+                          "  pm.response.to.have.status(200);",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "professional",
+                        "profile",
+                        "{{professionalId}}",
+                        "reactivate"
+                      ]
+                    },
+                    "description": "Admin only: reactivate a suspended profile."
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Category Governance",
+              "item": [
+                {
+                  "name": "List Category Requests (Admin)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/services/category-requests/admin?status=PENDING&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "professional",
+                        "services",
+                        "category-requests",
+                        "admin"
+                      ],
+                      "query": [
+                        {
+                          "key": "status",
+                          "value": "PENDING"
+                        },
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    },
+                    "description": "Admin only: list all category requests with optional status filter."
+                  }
+                },
+                {
+                  "name": "Approve Category Request (Admin)",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"approvedName\": \"Lissage bresilien\",\n  \"approvedDescription\": \"Categorie validee par admin\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/approve",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "professional",
+                        "services",
+                        "category-requests",
+                        "admin",
+                        "{{serviceCategoryRequestId}}",
+                        "approve"
+                      ]
+                    },
+                    "description": "Admin only: approve request and optionally edit final category name/description."
+                  }
+                },
+                {
+                  "name": "Reject Category Request (Admin)",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"reviewNote\": \"Trop proche d'une categorie existante\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/reject",
+                      "host": ["{{baseUrl}}"],
+                      "path": [
+                        "professional",
+                        "services",
+                        "category-requests",
+                        "admin",
+                        "{{serviceCategoryRequestId}}",
+                        "reject"
+                      ]
+                    },
+                    "description": "Admin only: reject request, optional note."
+                  }
+                }
+              ]
             }
           ]
         }
