@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import {
   ApproveBookingCancellationRequestCommand,
@@ -13,11 +13,22 @@ import {
   RejectBookingCancellationRequestCommand,
   RejectBookingCommand,
 } from '../../interface/commands/booking.commands';
+import {
+  BookingCancellationRequestApprovedEvent,
+  BookingCancellationRequestRejectedEvent,
+  BookingCancelledEvent,
+  BookingCompletedEvent,
+  BookingConfirmedEvent,
+  BookingRejectedEvent,
+} from '../events/booking.events';
 
 @CommandHandler(ConfirmBookingCommand)
 @Injectable()
 export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: ConfirmBookingCommand): Promise<void> {
     const booking = await this.prisma.booking.findFirst({
@@ -45,13 +56,18 @@ export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingComm
         confirmedAt: new Date(),
       },
     });
+
+    this.eventBus.publish(new BookingConfirmedEvent(booking.id));
   }
 }
 
 @CommandHandler(RejectBookingCommand)
 @Injectable()
 export class RejectBookingHandler implements ICommandHandler<RejectBookingCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: RejectBookingCommand): Promise<void> {
     const booking = await this.prisma.booking.findFirst({
@@ -80,13 +96,18 @@ export class RejectBookingHandler implements ICommandHandler<RejectBookingComman
         cancellationNote: command.reason,
       },
     });
+
+    this.eventBus.publish(new BookingRejectedEvent(booking.id));
   }
 }
 
 @CommandHandler(CompleteBookingCommand)
 @Injectable()
 export class CompleteBookingHandler implements ICommandHandler<CompleteBookingCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: CompleteBookingCommand): Promise<void> {
     const booking = await this.prisma.booking.findFirst({
@@ -113,13 +134,18 @@ export class CompleteBookingHandler implements ICommandHandler<CompleteBookingCo
         status: 'COMPLETED',
       },
     });
+
+    this.eventBus.publish(new BookingCompletedEvent(booking.id));
   }
 }
 
 @CommandHandler(CancelBookingCommand)
 @Injectable()
 export class CancelBookingHandler implements ICommandHandler<CancelBookingCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: CancelBookingCommand): Promise<void> {
     const booking = await this.prisma.booking.findFirst({
@@ -162,13 +188,20 @@ export class CancelBookingHandler implements ICommandHandler<CancelBookingComman
         cancellationNote: command.reason,
       },
     });
+
+    this.eventBus.publish(
+      new BookingCancelledEvent(booking.id, command.userId),
+    );
   }
 }
 
 @CommandHandler(ApproveBookingCancellationRequestCommand)
 @Injectable()
 export class ApproveBookingCancellationRequestHandler implements ICommandHandler<ApproveBookingCancellationRequestCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: ApproveBookingCancellationRequestCommand,
@@ -206,13 +239,20 @@ export class ApproveBookingCancellationRequestHandler implements ICommandHandler
         cancellationReviewedAt: new Date(),
       },
     });
+
+    this.eventBus.publish(
+      new BookingCancellationRequestApprovedEvent(booking.id),
+    );
   }
 }
 
 @CommandHandler(RejectBookingCancellationRequestCommand)
 @Injectable()
 export class RejectBookingCancellationRequestHandler implements ICommandHandler<RejectBookingCancellationRequestCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: RejectBookingCancellationRequestCommand,
@@ -249,5 +289,9 @@ export class RejectBookingCancellationRequestHandler implements ICommandHandler<
         cancellationNote: command.reason,
       },
     });
+
+    this.eventBus.publish(
+      new BookingCancellationRequestRejectedEvent(booking.id),
+    );
   }
 }

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import {
   CommandHandler,
+  EventBus,
   ICommandHandler,
   IQueryHandler,
   QueryHandler,
@@ -16,6 +17,10 @@ import {
   RequestBookingCancellationCommand,
   UpdatePendingBookingCommand,
 } from '../commands';
+import {
+  BookingCancellationRequestedEvent,
+  BookingCreatedEvent,
+} from '../events/booking.events';
 import { GetMyBookingByIdQuery, GetMyBookingsQuery } from '../queries';
 
 const BOOKING_CANCELLATION_REQUEST_STATUS_NONE = 'NONE' as const;
@@ -24,7 +29,10 @@ const BOOKING_CANCELLATION_REQUEST_STATUS_PENDING = 'PENDING' as const;
 @CommandHandler(CreateClientBookingCommand)
 @Injectable()
 export class CreateClientBookingHandler implements ICommandHandler<CreateClientBookingCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: CreateClientBookingCommand) {
     const service = await this.prisma.serviceOffering.findFirst({
@@ -113,6 +121,8 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
         },
       },
     });
+
+    this.eventBus.publish(new BookingCreatedEvent(booking.id));
 
     return {
       data: booking,
@@ -221,7 +231,10 @@ export class UpdatePendingBookingHandler implements ICommandHandler<UpdatePendin
 @CommandHandler(RequestBookingCancellationCommand)
 @Injectable()
 export class RequestBookingCancellationHandler implements ICommandHandler<RequestBookingCancellationCommand> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: RequestBookingCancellationCommand) {
     const booking = await this.prisma.booking.findFirst({
@@ -251,7 +264,7 @@ export class RequestBookingCancellationHandler implements ICommandHandler<Reques
       );
     }
 
-    return this.prisma.booking.update({
+    const updatedBooking = await this.prisma.booking.update({
       where: { id: booking.id },
       data: {
         cancellationRequestStatus: BOOKING_CANCELLATION_REQUEST_STATUS_PENDING,
@@ -260,6 +273,12 @@ export class RequestBookingCancellationHandler implements ICommandHandler<Reques
         cancellationRequestReason: command.reason,
       },
     });
+
+    this.eventBus.publish(
+      new BookingCancellationRequestedEvent(updatedBooking.id),
+    );
+
+    return updatedBooking;
   }
 }
 
