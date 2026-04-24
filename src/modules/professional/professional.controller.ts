@@ -16,6 +16,7 @@ import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/infrastructure/guards/roles.guard';
+import { PROFESSIONAL } from '../../common/constants/routes';
 import {
   ActivateServiceCommand,
   AddServiceCommand,
@@ -79,7 +80,7 @@ type AuthenticatedRequest = Request & {
   };
 };
 
-@Controller('professional')
+@Controller(PROFESSIONAL.BASE)
 export class ProfessionalController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -90,7 +91,7 @@ export class ProfessionalController {
    * Create professional profile
    * Constraint: one user can only create one profile
    */
-  @Post('profile')
+  @Post(PROFESSIONAL.PROFILE.CREATE)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('CLIENT', 'PROFESSIONAL')
   async createProfile(
@@ -111,10 +112,25 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Update my profile
-   */
-  @Put('profile/:professionalId')
+  @Get(PROFESSIONAL.PROFILE.ME)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async getMyProfile(@Req() req: AuthenticatedRequest) {
+    return this.queryBus.execute<GetMyProfessionalProfileQuery, unknown>(
+      new GetMyProfessionalProfileQuery(req.user.id),
+    );
+  }
+
+  @Get(PROFESSIONAL.PROFILE.COMPLETION())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL', 'ADMIN')
+  async getProfileCompletion(@Param('professionalId') professionalId: string) {
+    return this.queryBus.execute<GetProfileCompletionQuery, unknown>(
+      new GetProfileCompletionQuery(professionalId),
+    );
+  }
+
+  @Put(PROFESSIONAL.PROFILE.BY_ID())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async updateProfile(
@@ -135,10 +151,7 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Verify professional (admin only)
-   */
-  @Put('profile/:professionalId/verify')
+  @Put(PROFESSIONAL.PROFILE.VERIFY())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   async verifyProfessional(@Param('professionalId') professionalId: string) {
@@ -147,10 +160,7 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Suspend professional (admin only)
-   */
-  @Put('profile/:professionalId/suspend')
+  @Put(PROFESSIONAL.PROFILE.SUSPEND())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   async suspendProfessional(
@@ -162,10 +172,7 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Reactivate professional (admin only)
-   */
-  @Put('profile/:professionalId/reactivate')
+  @Put(PROFESSIONAL.PROFILE.REACTIVATE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   async reactivateProfessional(
@@ -176,46 +183,11 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Get my professional profile
-   */
-  @Get('profile/me')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async getMyProfile(@Req() req: AuthenticatedRequest) {
-    return this.queryBus.execute<GetMyProfessionalProfileQuery, unknown>(
-      new GetMyProfessionalProfileQuery(req.user.id),
-    );
-  }
+  // ─────────────────────────────────────────
+  // LIST / SEARCH / PUBLIC PROFILE
+  // ─────────────────────────────────────────
 
-  /**
-   * Get profile completion
-   */
-  @Get('profile/:professionalId/completion')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL', 'ADMIN')
-  async getProfileCompletion(@Param('professionalId') professionalId: string) {
-    return this.queryBus.execute<GetProfileCompletionQuery, unknown>(
-      new GetProfileCompletionQuery(professionalId),
-    );
-  }
-
-  /**
-   * Get professional public profile
-   */
-  @Get(':professionalId')
-  async getProfessionalProfile(
-    @Param('professionalId') professionalId: string,
-  ) {
-    return this.queryBus.execute<GetProfessionalProfileQuery, unknown>(
-      new GetProfessionalProfileQuery(professionalId),
-    );
-  }
-
-  /**
-   * List professionals
-   */
-  @Get()
+  @Get(PROFESSIONAL.LIST)
   async listProfessionals(
     @Query('status') status?: string,
     @Query('isVerified') isVerified?: string,
@@ -226,11 +198,7 @@ export class ProfessionalController {
     const filters = {
       status,
       isVerified:
-        isVerified === 'true'
-          ? true
-          : isVerified === 'false'
-            ? false
-            : undefined,
+        isVerified === 'true' ? true : isVerified === 'false' ? false : undefined,
       location,
     };
 
@@ -239,10 +207,7 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Search professionals
-   */
-  @Get('search/query')
+  @Get(PROFESSIONAL.SEARCH)
   async searchProfessionals(
     @Query('q') q: string,
     @Query('location') location?: string,
@@ -255,10 +220,20 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Get professional services
-   */
-  @Get(':professionalId/services')
+  @Get(PROFESSIONAL.BY_ID())
+  async getProfessionalProfile(
+    @Param('professionalId') professionalId: string,
+  ) {
+    return this.queryBus.execute<GetProfessionalProfileQuery, unknown>(
+      new GetProfessionalProfileQuery(professionalId),
+    );
+  }
+
+  // ─────────────────────────────────────────
+  // SERVICES
+  // ─────────────────────────────────────────
+
+  @Get(PROFESSIONAL.SERVICES.LIST())
   async getProfessionalServices(
     @Param('professionalId') professionalId: string,
     @Query('includeInactive') includeInactive?: string,
@@ -271,7 +246,7 @@ export class ProfessionalController {
     );
   }
 
-  @Post(':professionalId/services')
+  @Post(PROFESSIONAL.SERVICES.ADD())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async addService(
@@ -290,7 +265,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put('services/:serviceId')
+  @Put(PROFESSIONAL.SERVICES.UPDATE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async updateService(
@@ -309,19 +284,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/services/:serviceId/deactivate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async deactivateService(
-    @Param('professionalId') professionalId: string,
-    @Param('serviceId') serviceId: string,
-  ) {
-    return this.commandBus.execute<DeactivateServiceCommand, unknown>(
-      new DeactivateServiceCommand(serviceId, professionalId),
-    );
-  }
-
-  @Put(':professionalId/services/:serviceId/activate')
+  @Put(PROFESSIONAL.SERVICES.ACTIVATE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async activateService(
@@ -333,7 +296,19 @@ export class ProfessionalController {
     );
   }
 
-  @Delete(':professionalId/services/:serviceId')
+  @Put(PROFESSIONAL.SERVICES.DEACTIVATE())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async deactivateService(
+    @Param('professionalId') professionalId: string,
+    @Param('serviceId') serviceId: string,
+  ) {
+    return this.commandBus.execute<DeactivateServiceCommand, unknown>(
+      new DeactivateServiceCommand(serviceId, professionalId),
+    );
+  }
+
+  @Delete(PROFESSIONAL.SERVICES.DELETE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async deleteService(
@@ -345,7 +320,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/services/:serviceId/communes')
+  @Put(PROFESSIONAL.SERVICES.SET_COMMUNE_FEE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async setCommuneFee(
@@ -363,10 +338,11 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Get professional availability
-   */
-  @Get(':professionalId/availability')
+  // ─────────────────────────────────────────
+  // AVAILABILITY
+  // ─────────────────────────────────────────
+
+  @Get(PROFESSIONAL.AVAILABILITY.GET())
   async getProfessionalAvailability(
     @Param('professionalId') professionalId: string,
     @Query('dayOfWeek') dayOfWeek?: number,
@@ -376,7 +352,7 @@ export class ProfessionalController {
     );
   }
 
-  @Post(':professionalId/availability')
+  @Post(PROFESSIONAL.AVAILABILITY.SET())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async setAvailability(
@@ -395,7 +371,26 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/availability/:dayOfWeek')
+  @Put(PROFESSIONAL.AVAILABILITY.SET_WEEK())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async setAvailabilityForWeek(
+    @Param('professionalId') professionalId: string,
+    @Body() body: SetAvailabilityForWeekDto,
+  ) {
+    return this.commandBus.execute<SetAvailabilityForAllWeekCommand, unknown>(
+      new SetAvailabilityForAllWeekCommand(
+        professionalId,
+        body.startTime,
+        body.endTime,
+        body.breakStartTime,
+        body.breakEndTime,
+        body.excludeDays,
+      ),
+    );
+  }
+
+  @Put(PROFESSIONAL.AVAILABILITY.UPDATE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async updateAvailability(
@@ -415,7 +410,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/availability/:dayOfWeek/status')
+  @Put(PROFESSIONAL.AVAILABILITY.SET_STATUS())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async setAvailabilityStatus(
@@ -428,26 +423,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/availability')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async setAvailabilityForWeek(
-    @Param('professionalId') professionalId: string,
-    @Body() body: SetAvailabilityForWeekDto,
-  ) {
-    return this.commandBus.execute<SetAvailabilityForAllWeekCommand, unknown>(
-      new SetAvailabilityForAllWeekCommand(
-        professionalId,
-        body.startTime,
-        body.endTime,
-        body.breakStartTime,
-        body.breakEndTime,
-        body.excludeDays,
-      ),
-    );
-  }
-
-  @Delete(':professionalId/availability/:dayOfWeek')
+  @Delete(PROFESSIONAL.AVAILABILITY.REMOVE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async removeAvailability(
@@ -459,10 +435,11 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Get professional gallery
-   */
-  @Get(':professionalId/gallery')
+  // ─────────────────────────────────────────
+  // GALLERY
+  // ─────────────────────────────────────────
+
+  @Get(PROFESSIONAL.GALLERY.LIST())
   async getProfessionalGallery(
     @Param('professionalId') professionalId: string,
     @Query('page') page?: number,
@@ -473,7 +450,7 @@ export class ProfessionalController {
     );
   }
 
-  @Post(':professionalId/gallery')
+  @Post(PROFESSIONAL.GALLERY.UPLOAD())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async uploadGalleryItem(
@@ -490,7 +467,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/gallery/reorder')
+  @Put(PROFESSIONAL.GALLERY.REORDER())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async reorderGallery(
@@ -502,7 +479,31 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/gallery/:itemId')
+  @Put(PROFESSIONAL.GALLERY.PUBLISH())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async publishGalleryItem(
+    @Param('professionalId') professionalId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return this.commandBus.execute<PublishGalleryItemCommand, unknown>(
+      new PublishGalleryItemCommand(itemId, professionalId),
+    );
+  }
+
+  @Put(PROFESSIONAL.GALLERY.UNPUBLISH())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async unpublishGalleryItem(
+    @Param('professionalId') professionalId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return this.commandBus.execute<UnpublishGalleryItemCommand, unknown>(
+      new UnpublishGalleryItemCommand(itemId, professionalId),
+    );
+  }
+
+  @Put(PROFESSIONAL.GALLERY.UPDATE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async updateGalleryItem(
@@ -520,31 +521,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/gallery/:itemId/publish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async publishGalleryItem(
-    @Param('professionalId') professionalId: string,
-    @Param('itemId') itemId: string,
-  ) {
-    return this.commandBus.execute<PublishGalleryItemCommand, unknown>(
-      new PublishGalleryItemCommand(itemId, professionalId),
-    );
-  }
-
-  @Put(':professionalId/gallery/:itemId/unpublish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async unpublishGalleryItem(
-    @Param('professionalId') professionalId: string,
-    @Param('itemId') itemId: string,
-  ) {
-    return this.commandBus.execute<UnpublishGalleryItemCommand, unknown>(
-      new UnpublishGalleryItemCommand(itemId, professionalId),
-    );
-  }
-
-  @Delete(':professionalId/gallery/:itemId')
+  @Delete(PROFESSIONAL.GALLERY.DELETE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async deleteGalleryItem(
@@ -556,10 +533,11 @@ export class ProfessionalController {
     );
   }
 
-  /**
-   * Get bookings for professional management
-   */
-  @Get(':professionalId/bookings')
+  // ─────────────────────────────────────────
+  // BOOKINGS
+  // ─────────────────────────────────────────
+
+  @Get(PROFESSIONAL.BOOKINGS.LIST())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL', 'ADMIN')
   async getProfessionalBookings(
@@ -573,7 +551,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/bookings/:bookingId/confirm')
+  @Put(PROFESSIONAL.BOOKINGS.CONFIRM())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async confirmBooking(
@@ -585,7 +563,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/bookings/:bookingId/reject')
+  @Put(PROFESSIONAL.BOOKINGS.REJECT())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async rejectBooking(
@@ -598,7 +576,7 @@ export class ProfessionalController {
     );
   }
 
-  @Put(':professionalId/bookings/:bookingId/complete')
+  @Put(PROFESSIONAL.BOOKINGS.COMPLETE())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
   async completeBooking(
