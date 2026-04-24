@@ -57,6 +57,20 @@ enum OtpPurpose {
   PIN_RESET       
 }
 
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  WHATSAPP
+  SMS
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
 model User {
   id          String   @id @default(uuid())
   phoneId     String   @unique
@@ -83,6 +97,8 @@ model User {
   professional     Professional?
   bookingsAsClient Booking[]     @relation("ClientBookings")
   reviewedServiceCategoryRequests ServiceCategoryRequest[] @relation("ServiceCategoryRequestReviewer")
+  notifications Notification[]
+  notificationDevices NotificationDevice[]
 
   @@map("users")
 }
@@ -305,10 +321,8 @@ model Availability {
   startTime      String       
   endTime        String       
   
-  
   breakStartTime String?      
   breakEndTime   String?      
-  
   
   status         String       @default("OPEN") 
   isActive       Boolean      @default(true)
@@ -394,4 +408,46 @@ model GalleryItem {
   metadata       Json?
 
   @@map("gallery_items")
+}
+
+model Notification {
+  id           String             @id @default(uuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String
+  channel      NotificationChannel
+  status       NotificationStatus @default(PENDING)
+  title        String
+  body         String
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  readAt       DateTime?
+  failedReason String?
+  metadata     Json?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  deletedAt    DateTime?
+
+  @@index([userId, createdAt])
+  @@index([status, channel])
+  @@map("notifications")
+}
+
+model NotificationDevice {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform   String
+  deviceId   String
+  pushToken  String
+  isActive   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+
+  @@unique([userId, platform, deviceId])
+  @@index([userId, isActive])
+  @@map("notification_devices")
 }

@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { randomUUID } from 'node:crypto';
 import { ProfessionalEntity } from '../../core/entities/professional.entity';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
@@ -14,6 +14,11 @@ import {
   UpdateProfessionalProfileCommand,
   VerifyProfessionalCommand,
 } from '../../interface/commands';
+import {
+  ProfessionalReactivatedEvent,
+  ProfessionalSuspendedEvent,
+  ProfessionalVerifiedEvent,
+} from '../events/profile.events';
 
 /**
  * CreateProfessionalProfileHandler
@@ -97,7 +102,10 @@ export class UpdateProfessionalProfileHandler implements ICommandHandler<UpdateP
 @CommandHandler(VerifyProfessionalCommand)
 @Injectable()
 export class VerifyProfessionalHandler implements ICommandHandler<VerifyProfessionalCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: VerifyProfessionalCommand,
@@ -109,6 +117,7 @@ export class VerifyProfessionalHandler implements ICommandHandler<VerifyProfessi
 
     professional.verify();
     await this.repository.save(professional);
+    this.eventBus.publish(new ProfessionalVerifiedEvent(professional.id));
 
     return professional;
   }
@@ -121,7 +130,10 @@ export class VerifyProfessionalHandler implements ICommandHandler<VerifyProfessi
 @CommandHandler(SuspendProfessionalCommand)
 @Injectable()
 export class SuspendProfessionalHandler implements ICommandHandler<SuspendProfessionalCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: SuspendProfessionalCommand,
@@ -133,6 +145,7 @@ export class SuspendProfessionalHandler implements ICommandHandler<SuspendProfes
 
     professional.suspend();
     await this.repository.save(professional);
+    this.eventBus.publish(new ProfessionalSuspendedEvent(professional.id));
 
     return professional;
   }
@@ -145,7 +158,10 @@ export class SuspendProfessionalHandler implements ICommandHandler<SuspendProfes
 @CommandHandler(ReactivateProfessionalCommand)
 @Injectable()
 export class ReactivateProfessionalHandler implements ICommandHandler<ReactivateProfessionalCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: ReactivateProfessionalCommand,
@@ -157,6 +173,7 @@ export class ReactivateProfessionalHandler implements ICommandHandler<Reactivate
 
     professional.reactivate();
     await this.repository.save(professional);
+    this.eventBus.publish(new ProfessionalReactivatedEvent(professional.id));
 
     return professional;
   }
