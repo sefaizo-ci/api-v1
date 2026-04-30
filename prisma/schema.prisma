@@ -1,22 +1,50 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-
+  schemas  = ["public", "sentinel", "pulse"]
 }
+
+// ─────────────────────────────────────────────
+// SENTINEL — enums
+// ─────────────────────────────────────────────
 
 enum Role {
   CLIENT
   PROFESSIONAL
   ADMIN
+
+  @@schema("sentinel")
 }
+
+enum OtpChannel {
+  WHATSAPP
+  SMS
+
+  @@schema("sentinel")
+}
+
+enum OtpPurpose {
+  REGISTRATION
+  LOGIN
+  PHONE_CHANGE
+  PIN_RESET
+
+  @@schema("sentinel")
+}
+
+enum ChallengeType {
+  OTP
+  PKCE
+
+  @@schema("sentinel")
+}
+
+// ─────────────────────────────────────────────
+// PUBLIC — enums
+// ─────────────────────────────────────────────
 
 enum BookingStatus {
   PENDING
@@ -24,6 +52,8 @@ enum BookingStatus {
   CANCELLED
   COMPLETED
   NO_SHOW
+
+  @@schema("public")
 }
 
 enum BookingCancellationRequestStatus {
@@ -31,37 +61,37 @@ enum BookingCancellationRequestStatus {
   PENDING
   APPROVED
   REJECTED
+
+  @@schema("public")
 }
 
 enum ServiceCategoryRequestStatus {
   PENDING
   APPROVED
   REJECTED
+
+  @@schema("public")
 }
 
 enum ServiceLocation {
   HOME
   SALON
   BOTH
+
+  @@schema("public")
 }
 
-enum OtpChannel {
-  WHATSAPP
-  SMS
-}
-
-enum OtpPurpose {
-  REGISTRATION    
-  LOGIN           
-  PHONE_CHANGE    
-  PIN_RESET       
-}
+// ─────────────────────────────────────────────
+// PULSE — enums
+// ─────────────────────────────────────────────
 
 enum NotificationChannel {
   IN_APP
   PUSH
   WHATSAPP
   SMS
+
+  @@schema("pulse")
 }
 
 enum NotificationStatus {
@@ -69,41 +99,50 @@ enum NotificationStatus {
   SENT
   FAILED
   READ
+
+  @@schema("pulse")
 }
 
+// ─────────────────────────────────────────────
+// SENTINEL — models
+// ─────────────────────────────────────────────
+
 model User {
-  id          String   @id @default(uuid())
-  phoneId     String   @unique
-  phone       Phone    @relation(fields: [phoneId], references: [id], onDelete: Restrict)
+  id          String    @id @default(uuid())
+  phoneId     String    @unique
+  phone       PhoneNumber @relation(fields: [phoneId], references: [id], onDelete: Restrict)
   firstName   String
   lastName    String
-  role        Role     @default(CLIENT)
-  isVerified  Boolean  @default(false) 
-  isActive    Boolean  @default(true)  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime? 
+  role        Role      @default(CLIENT)
+  isVerified  Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
   metadata    Json?
 
-  pinHash          String?   
-  pinFailCount     Int       @default(0)  
-  pinBlockedUntil  DateTime? 
+  pinHash         String?
+  pinFailCount    Int       @default(0)
+  pinBlockedUntil DateTime?
 
-  otpCodes      OtpCode[]
-  refreshTokens RefreshToken[]
-  authLogs      AuthLog[]
-  phoneRoles    PhoneRole[]
+  challenges          Challenge[]
+  refreshTokens       RefreshToken[]
+  authLogs            AuthLog[]
+  phoneRoles          PhoneRole[]
+  devices             Device[]
+  deviceAuthentications DeviceAuthentication[]
 
   professional     Professional?
   bookingsAsClient Booking[]     @relation("ClientBookings")
   reviewedServiceCategoryRequests ServiceCategoryRequest[] @relation("ServiceCategoryRequestReviewer")
-  notifications Notification[]
-  notificationDevices NotificationDevice[]
+  notifications        Notification[]
+  notificationDevices  NotificationDevice[]
 
   @@map("users")
+  @@schema("sentinel")
 }
 
-model Phone {
+model PhoneNumber {
   id         String      @id @default(uuid())
   number     String      @unique
   isVerified Boolean     @default(false)
@@ -112,113 +151,182 @@ model Phone {
   updatedAt  DateTime    @updatedAt
   deletedAt  DateTime?
 
-  roles      PhoneRole[]
-  user       User?
+  roles PhoneRole[]
+  user  User?
 
-  @@map("phones")
+  @@map("phone_numbers")
+  @@schema("sentinel")
 }
 
 model PhoneRole {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   phoneId   String
-  phone     Phone    @relation(fields: [phoneId], references: [id], onDelete: Cascade)
+  phone     PhoneNumber @relation(fields: [phoneId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      Role
   metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   @@unique([phoneId, role])
   @@index([userId])
   @@map("phone_roles")
+  @@schema("sentinel")
 }
 
-model OtpCode {
-  id          String     @id @default(uuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code        String     
-  purpose     OtpPurpose
-  channel     OtpChannel 
-  isUsed      Boolean    @default(false)
-  failCount   Int        @default(0)   
-  blockedUntil DateTime? 
-  metadata    Json?
-  expiresAt   DateTime  
-  createdAt   DateTime   @default(now())
-  deletedAt   DateTime?
+model Challenge {
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId     String?
+  device       Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  type         ChallengeType @default(OTP)
+  code         String
+  purpose      OtpPurpose
+  channel      OtpChannel
+  isUsed       Boolean       @default(false)
+  failCount    Int           @default(0)
+  blockedUntil DateTime?
+  metadata     Json?
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  deletedAt    DateTime?
 
-  @@map("otp_codes")
+  @@index([userId, purpose])
+  @@map("challenges")
+  @@schema("sentinel")
 }
 
 model RefreshToken {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash   String   @unique 
-  deviceInfo  String?  
-  ipAddress   String?
-  isRevoked   Boolean  @default(false)
-  expiresAt   DateTime 
-  platform    String?  
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  lastUsedAt  DateTime @default(now())
-  deletedAt   DateTime?
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  deviceInfo String?
+  ipAddress  String?
+  isRevoked  Boolean   @default(false)
+  expiresAt  DateTime
+  platform   String?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  deletedAt  DateTime?
+
+  deviceAuthentications DeviceAuthentication[]
 
   @@map("refresh_tokens")
+  @@schema("sentinel")
 }
 
 model AuthLog {
-  id        String   @id @default(uuid())
-  userId    String?  
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  event     String   
-  channel   String?  
-  ipAddress String?
+  id         String    @id @default(uuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  event      String
+  channel    String?
+  ipAddress  String?
   deviceInfo String?
-  metadata  Json?    
-  createdAt DateTime @default(now())
-  deletedAt DateTime?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
 
   @@map("auth_logs")
+  @@schema("sentinel")
 }
 
+model Device {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fingerprint String?
+  platform    String
+  model       String?
+  osVersion   String?
+  appVersion  String?
+  isActive    Boolean   @default(true)
+  lastSeenAt  DateTime  @default(now())
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  authentications DeviceAuthentication[]
+  challenges      Challenge[]
+
+  @@index([userId, isActive])
+  @@map("devices")
+  @@schema("sentinel")
+}
+
+model DeviceAuthentication {
+  id             String        @id @default(uuid())
+  deviceId       String
+  device         Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenId String?
+  refreshToken   RefreshToken? @relation(fields: [refreshTokenId], references: [id], onDelete: SetNull)
+  lastActiveAt   DateTime      @default(now())
+  revokedAt      DateTime?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([userId, deviceId])
+  @@map("device_authentications")
+  @@schema("sentinel")
+}
+
+model ClientSecret {
+  id            String    @id @default(uuid())
+  clientId      String    @unique
+  secretHash    String
+  appPlatform   String
+  appVersionMin String?
+  isActive      Boolean   @default(true)
+  expiresAt     DateTime?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("client_secrets")
+  @@schema("sentinel")
+}
+
+// ─────────────────────────────────────────────
+// PUBLIC — models
+// ─────────────────────────────────────────────
 
 model Professional {
-  id          String          @id @default(uuid())
-  userId      String          @unique
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String          @id @default(uuid())
+  userId     String          @unique
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyName String
+  bio        String?
+  avatarUrl  String?
+  location   ServiceLocation @default(BOTH)
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  status     String          @default("PENDING")
+  isVerified Boolean         @default(false)
+  rating     Float           @default(0)
+  reviewCount Int            @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  deletedAt  DateTime?
+  metadata   Json?
 
-  agencyName  String          
-  bio         String?
-  avatarUrl   String?
-  location    ServiceLocation @default(BOTH) 
-  address     String?         
-  latitude    Float?
-  longitude   Float?
-  
-  status      String          @default("PENDING") 
-  isVerified  Boolean         @default(false)
-  
-  rating      Float           @default(0)
-  reviewCount Int             @default(0)
-  
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  deletedAt   DateTime?
-  
-  metadata    Json?
-  
-  services       ServiceOffering[]
+  services                ServiceOffering[]
   serviceCategoryRequests ServiceCategoryRequest[]
-  availabilities Availability[]
-  gallery        GalleryItem[]
-  bookings       Booking[]        @relation("ProfessionalBookings")
-  reviews        Review[]
+  availabilities          Availability[]
+  gallery                 GalleryItem[]
+  bookings                Booking[]        @relation("ProfessionalBookings")
+  reviews                 Review[]
 
   @@map("professionals")
+  @@schema("public")
 }
 
 model ServiceOffering {
@@ -227,17 +335,14 @@ model ServiceOffering {
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   categoryId     String
   category       ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  
   name           String
   description    String?
-  durationMin    Int          
-  basePrice      Float        
+  durationMin    Int
+  basePrice      Float
   isActive       Boolean      @default(true)
-  
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
-  
   metadata       Json?
 
   communeFees CommuneFee[]
@@ -246,130 +351,122 @@ model ServiceOffering {
   @@unique([professionalId, name])
   @@index([categoryId])
   @@map("service_offerings")
+  @@schema("public")
 }
 
 model ServiceCategory {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  slug        String   @unique
+  slug        String    @unique
   description String?
-  isActive    Boolean  @default(true)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
-
   metadata    Json?
 
-  services    ServiceOffering[]
-  requests    ServiceCategoryRequest[]
+  services ServiceOffering[]
+  requests ServiceCategoryRequest[]
 
   @@unique([name])
   @@index([name])
   @@map("service_categories")
+  @@schema("public")
 }
 
 model ServiceCategoryRequest {
-  id                    String                      @id @default(uuid())
-  professionalId        String
-  professional          Professional                @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  proposedName          String
-  proposedDescription   String?
-  status                ServiceCategoryRequestStatus @default(PENDING)
-  reviewedByUserId      String?
-  reviewedByUser        User?                       @relation("ServiceCategoryRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  reviewedAt            DateTime?
-  reviewNote            String?
-  approvedCategoryId    String?
-  approvedCategory      ServiceCategory?            @relation(fields: [approvedCategoryId], references: [id], onDelete: SetNull)
-
-  createdAt             DateTime                    @default(now())
-  updatedAt             DateTime                    @updatedAt
-  deletedAt             DateTime?
-  metadata              Json?
+  id                  String                       @id @default(uuid())
+  professionalId      String
+  professional        Professional                 @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  proposedName        String
+  proposedDescription String?
+  status              ServiceCategoryRequestStatus @default(PENDING)
+  reviewedByUserId    String?
+  reviewedByUser      User?                        @relation("ServiceCategoryRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedAt          DateTime?
+  reviewNote          String?
+  approvedCategoryId  String?
+  approvedCategory    ServiceCategory?             @relation(fields: [approvedCategoryId], references: [id], onDelete: SetNull)
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  deletedAt           DateTime?
+  metadata            Json?
 
   @@index([professionalId, status])
   @@index([status, createdAt])
   @@map("service_category_requests")
+  @@schema("public")
 }
 
 model CommuneFee {
   id                String          @id @default(uuid())
   serviceOfferingId String
   serviceOffering   ServiceOffering @relation(fields: [serviceOfferingId], references: [id], onDelete: Cascade)
-  
-  commune           String          
-  travelFee         Float           
+  commune           String
+  travelFee         Float
   isAvailable       Boolean         @default(true)
-  
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   deletedAt         DateTime?
-  
   metadata          Json?
 
   @@unique([serviceOfferingId, commune])
   @@map("commune_fees")
+  @@schema("public")
 }
 
 model Availability {
   id             String       @id @default(uuid())
   professionalId String
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  
-  dayOfWeek      Int          
-  startTime      String       
-  endTime        String       
-  
-  breakStartTime String?      
-  breakEndTime   String?      
-  
-  status         String       @default("OPEN") 
+  dayOfWeek      Int
+  startTime      String
+  endTime        String
+  breakStartTime String?
+  breakEndTime   String?
+  status         String       @default("OPEN")
   isActive       Boolean      @default(true)
-  
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
-  
   metadata       Json?
 
   @@map("availabilities")
+  @@schema("public")
 }
 
 model Booking {
-  id             String          @id @default(uuid())
-  clientId       String
-  client         User            @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
-  professionalId String
-  professional   Professional    @relation("ProfessionalBookings", fields: [professionalId], references: [id], onDelete: Cascade)
-  serviceId      String
-  service        ServiceOffering @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  
-  status         BookingStatus   @default(PENDING)
-  scheduledAt    DateTime        
-  durationMin    Int             
-  totalPrice     Float           
-  travelFee      Float           @default(0)
-  commune        String          
-  address        String?         
-  clientNotes    String?
-  
-  confirmedAt    DateTime?
-  cancelledAt    DateTime?
-  cancellationNote String?
-  cancellationRequestStatus BookingCancellationRequestStatus @default(NONE)
-  cancellationRequestedAt DateTime?
-  cancellationReviewedAt DateTime?
-  cancellationRequestReason String?
-  
-  metadata       Json?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
+  id                               String                           @id @default(uuid())
+  clientId                         String
+  client                           User                             @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  professionalId                   String
+  professional                     Professional                     @relation("ProfessionalBookings", fields: [professionalId], references: [id], onDelete: Cascade)
+  serviceId                        String
+  service                          ServiceOffering                  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status                           BookingStatus                    @default(PENDING)
+  scheduledAt                      DateTime
+  durationMin                      Int
+  totalPrice                       Float
+  travelFee                        Float                            @default(0)
+  commune                          String
+  address                          String?
+  clientNotes                      String?
+  confirmedAt                      DateTime?
+  cancelledAt                      DateTime?
+  cancellationNote                 String?
+  cancellationRequestStatus        BookingCancellationRequestStatus @default(NONE)
+  cancellationRequestedAt          DateTime?
+  cancellationReviewedAt           DateTime?
+  cancellationRequestReason        String?
+  metadata                         Json?
+  createdAt                        DateTime                         @default(now())
+  updatedAt                        DateTime                         @updatedAt
+  deletedAt                        DateTime?
 
   review Review?
 
   @@map("bookings")
+  @@schema("public")
 }
 
 model Review {
@@ -378,45 +475,46 @@ model Review {
   booking        Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   professionalId String
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  
-  rating         Int          
+  rating         Int
   comment        String?
-  
   metadata       Json?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
 
   @@map("reviews")
+  @@schema("public")
 }
 
 model GalleryItem {
   id             String       @id @default(uuid())
   professionalId String
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  
-  imageUrl       String       
+  imageUrl       String
   caption        String?
-  category       String?      
+  category       String?
   order          Int          @default(0)
   isPublic       Boolean      @default(true)
-  
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
-  
   metadata       Json?
 
   @@map("gallery_items")
+  @@schema("public")
 }
 
+// ─────────────────────────────────────────────
+// PULSE — models
+// ─────────────────────────────────────────────
+
 model Notification {
-  id           String             @id @default(uuid())
+  id           String              @id @default(uuid())
   userId       String
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   type         String
   channel      NotificationChannel
-  status       NotificationStatus @default(PENDING)
+  status       NotificationStatus  @default(PENDING)
   title        String
   body         String
   scheduledFor DateTime?
@@ -424,30 +522,32 @@ model Notification {
   readAt       DateTime?
   failedReason String?
   metadata     Json?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   deletedAt    DateTime?
 
   @@index([userId, createdAt])
   @@index([status, channel])
   @@map("notifications")
+  @@schema("pulse")
 }
 
 model NotificationDevice {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   platform   String
   deviceId   String
   pushToken  String
-  isActive   Boolean  @default(true)
-  lastSeenAt DateTime @default(now())
+  isActive   Boolean   @default(true)
+  lastSeenAt DateTime  @default(now())
   metadata   Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
 
   @@unique([userId, platform, deviceId])
   @@index([userId, isActive])
   @@map("notification_devices")
+  @@schema("pulse")
 }

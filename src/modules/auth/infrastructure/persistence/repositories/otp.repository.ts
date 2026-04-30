@@ -23,7 +23,7 @@ export class OtpRepository implements IOtpRepository {
     metadata?: Prisma.InputJsonValue;
     expiresAt: Date;
   }): Promise<OtpEntity> {
-    const raw = await this.prisma.otpCode.create({ data });
+    const raw = await this.prisma.challenge.create({ data });
     return OtpMapper.toDomain(raw);
   }
 
@@ -32,7 +32,7 @@ export class OtpRepository implements IOtpRepository {
     purpose: OtpPurpose,
     app?: LoginApp,
   ): Promise<OtpEntity | null> {
-    const raw = await this.prisma.otpCode.findFirst({
+    const raw = await this.prisma.challenge.findFirst({
       where: {
         userId,
         purpose,
@@ -46,21 +46,21 @@ export class OtpRepository implements IOtpRepository {
   }
 
   async markUsed(otpId: string): Promise<void> {
-    await this.prisma.otpCode.update({
+    await this.prisma.challenge.update({
       where: { id: otpId },
       data: { isUsed: true },
     });
   }
 
   async incrementFail(otpId: string): Promise<void> {
-    await this.prisma.otpCode.update({
+    await this.prisma.challenge.update({
       where: { id: otpId },
       data: { failCount: { increment: 1 } },
     });
   }
 
   async blockOtp(otpId: string, until: Date): Promise<void> {
-    await this.prisma.otpCode.update({
+    await this.prisma.challenge.update({
       where: { id: otpId },
       data: { blockedUntil: until },
     });
@@ -72,7 +72,7 @@ export class OtpRepository implements IOtpRepository {
     reason?: string,
     app?: LoginApp,
   ): Promise<void> {
-    await this.prisma.otpCode.updateMany({
+    await this.prisma.challenge.updateMany({
       where: {
         userId,
         purpose,
