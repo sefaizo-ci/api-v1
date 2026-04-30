@@ -37,7 +37,7 @@ export class UserRepository implements IUserRepository {
 
     if (!user) return;
 
-    await this.prisma.phone.update({
+    await this.prisma.phoneNumber.update({
       where: { id: user.phoneId },
       data: {
         isVerified: user.isVerified,
@@ -103,7 +103,7 @@ export class UserRepository implements IUserRepository {
     metadata?: Prisma.InputJsonValue;
   }): Promise<UserEntity> {
     const raw = await this.prisma.$transaction(async (tx) => {
-      const createdPhone = await tx.phone.upsert({
+      const createdPhone = await tx.phoneNumber.upsert({
         where: { number: data.phone },
         update: { deletedAt: null },
         create: { number: data.phone },
@@ -121,7 +121,7 @@ export class UserRepository implements IUserRepository {
         include: { phone: true },
       });
 
-      await tx.phone.update({
+      await tx.phoneNumber.update({
         where: { id: createdPhone.id },
         data: {
           isVerified: createdUser.isVerified,
@@ -209,7 +209,7 @@ export class UserRepository implements IUserRepository {
       select: { id: true, phoneId: true, isVerified: true },
     });
 
-    await this.prisma.phone.update({
+    await this.prisma.phoneNumber.update({
       where: { id: updatedUser.phoneId },
       data: {
         isVerified: true,
