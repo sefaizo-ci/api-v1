@@ -5,11 +5,12 @@ import {
   Inject,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RedisService } from '../../../../libs/redis/redis.service';
-import { OtpPurpose, type OtpChannel } from '../../core/enums/auth.enums';
+import { OtpChannel, OtpPurpose } from '../../core/enums/auth.enums';
 import type { INotificationService } from '../../core/services/notification.service.interface';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IUserRepository } from '../../core/services/user.service.interface';
@@ -30,7 +31,13 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
     @Inject('INotificationService')
     private readonly notif: INotificationService,
     private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private isDevModeEnabled(): boolean {
+    const value = this.configService.get<string>('OTP_DEV_MODE') ?? 'false';
+    return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+  }
 
   async execute(cmd: SendOtpCommand): Promise<{ channel: OtpChannel }> {
     const { phone, purpose } = cmd;
@@ -71,11 +78,18 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
       'new OTP requested',
     );
 
-    const rawCode = crypto.randomInt(100000, 999999).toString();
+    const devMode = this.isDevModeEnabled();
+    const rawCode = devMode ? '0000' : crypto.randomInt(100000, 999999).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    const channel = await this.notif.sendOtp(phone, rawCode);
+    let channel: OtpChannel;
+    if (devMode) {
+      this.logger.warn(`[OTP_DEV_MODE] code=0000 skipping notification for phone=${phone}`);
+      channel = OtpChannel.SMS;
+    } else {
+      channel = await this.notif.sendOtp(phone, rawCode);
+    }
 
     await this.otpRepo.create({
       userId: user.id,
