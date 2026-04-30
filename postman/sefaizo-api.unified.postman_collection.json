@@ -1196,15 +1196,96 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"agencyName\": \"{{profileAgencyName}} - Updated\",\n  \"bio\": \"{{profileBio}}\",\n  \"avatarUrl\": \"{{profileAvatarUrl}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
+                  "raw": "{\n  \"agencyName\": \"{{profileAgencyName}} - Updated\",\n  \"bio\": \"{{profileBio}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
                   "host": ["{{baseUrl}}"],
                   "path": ["professional", "profile", "{{professionalId}}"]
                 },
-                "description": "Update the professional profile."
+                "description": "Update the professional profile (text fields only). To update the avatar, use *Upload Avatar* instead."
               }
+            },
+            {
+              "name": "Upload Avatar",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.fileId) {",
+                      "  pm.environment.set('mediaFileId', json.fileId);",
+                      "}",
+                      "if (json && json.avatarUrl) {",
+                      "  pm.environment.set('profileAvatarUrl', json.avatarUrl);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "",
+                      "description": "Image (jpg, jpeg, png, webp — max 10 MB)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "avatar", "upload"]
+                },
+                "description": "Upload an avatar image to Appwrite and automatically update the professional profile.\n\n**Response:**\n- `avatarUrl` — public URL auto-saved to `profileAvatarUrl`\n- `fileId` — Appwrite file ID saved to `mediaFileId`\n\nNo need to call *Update Profile* separately — the avatar URL is updated automatically."
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": ""
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professional", "{{professionalId}}", "avatar", "upload"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "body": "{\n  \"avatarUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"fileId\": \"FILE_ID\",\n  \"path\": \"professionals/PROF_ID/avatar/uuid.jpg\",\n  \"maxSizeBytes\": 10485760,\n  \"acceptedFormats\": [\"image/jpg\", \"image/jpeg\", \"image/png\", \"image/webp\"]\n}"
+                }
+              ]
             }
           ]
         },
@@ -1913,7 +1994,88 @@
           "name": "Gallery",
           "item": [
             {
-              "name": "Upload Gallery Item",
+              "name": "Upload Gallery Image File",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.fileId) {",
+                      "  pm.environment.set('mediaFileId', json.fileId);",
+                      "}",
+                      "if (json && json.imageUrl) {",
+                      "  pm.environment.set('galleryImageUrl', json.imageUrl);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "",
+                      "description": "Image (jpg, jpeg, png, webp — max 10 MB)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "gallery", "upload"]
+                },
+                "description": "Upload an image file to Appwrite storage for the professional gallery.\n\n**Response:**\n- `imageUrl` — public URL auto-saved to `galleryImageUrl`\n- `fileId` — Appwrite file ID saved to `mediaFileId`\n- `path` — storage path `professionals/{id}/gallery/{uuid}.ext`\n\n**Workflow:** call this first, then use `galleryImageUrl` in *Create Gallery Item* to persist the DB record."
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": ""
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professional", "{{professionalId}}", "gallery", "upload"]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "body": "{\n  \"imageUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"fileId\": \"FILE_ID\",\n  \"path\": \"professionals/PROF_ID/gallery/uuid.jpg\",\n  \"maxSizeBytes\": 10485760,\n  \"acceptedFormats\": [\"image/jpg\", \"image/jpeg\", \"image/png\", \"image/webp\"]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Create Gallery Item (from URL)",
               "event": [
                 {
                   "listen": "test",
@@ -1959,7 +2121,7 @@
               }
             },
             {
-              "name": "Update Gallery Item",
+              "name": "Update Gallery Item (caption / category)",
               "event": [
                 {
                   "listen": "test",
@@ -2155,6 +2317,190 @@
                 },
                 "description": "Soft delete a gallery item."
               }
+            }
+          ]
+        },
+        {
+          "name": "Media Storage",
+          "item": [
+            {
+              "name": "Get File Info",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["media", "files", "{{mediaFileId}}"]
+                },
+                "description": "Get metadata for a specific file stored in Appwrite.\n\n**Response:** `fileId`, `fileName`, `mimeType`, `sizeOriginal`, `viewUrl`, `downloadUrl`.\n\nAccess is restricted to the file owner (PROFESSIONAL) or ADMIN."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["media", "files", "{{mediaFileId}}"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"fileId\": \"FILE_ID\",\n  \"fileName\": \"professionals/PROF_ID/gallery/uuid.jpg\",\n  \"mimeType\": \"image/jpeg\",\n  \"sizeOriginal\": 204800,\n  \"viewUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"downloadUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/download?project=PROJECT\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "List Professional Files",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/media/professionals/{{professionalId}}/files?type=gallery&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["media", "professionals", "{{professionalId}}", "files"],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "gallery",
+                      "description": "gallery | avatar"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "List all files uploaded to Appwrite for a professional.\n\n**Query params:**\n- `type` — `gallery` or `avatar` (required)\n- `page` — page number (default 1)\n- `limit` — items per page (default 20, max 100)\n\n**Response:** paginated list of `MediaFileInfo` objects."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/media/professionals/{{professionalId}}/files?type=gallery&page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["media", "professionals", "{{professionalId}}", "files"],
+                      "query": [
+                        { "key": "type", "value": "gallery" },
+                        { "key": "page", "value": "1" },
+                        { "key": "limit", "value": "20" }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"data\": [\n    {\n      \"fileId\": \"FILE_ID\",\n      \"fileName\": \"professionals/PROF_ID/gallery/uuid.jpg\",\n      \"mimeType\": \"image/jpeg\",\n      \"sizeOriginal\": 204800,\n      \"viewUrl\": \"https://cloud.appwrite.io/v1/...\",\n      \"downloadUrl\": \"https://cloud.appwrite.io/v1/...\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Delete File",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["media", "files", "{{mediaFileId}}"]
+                },
+                "description": "Permanently delete a file from Appwrite storage.\n\nOnly the file owner (PROFESSIONAL) or ADMIN can delete. Use `mediaFileId` populated after an upload."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["media", "files", "{{mediaFileId}}"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"success\": true\n}"
+                }
+              ]
             }
           ]
         },
@@ -2803,7 +3149,12 @@
     },
     {
       "key": "otpCode",
-      "value": "123456",
+      "value": "0000",
+      "type": "string"
+    },
+    {
+      "key": "mediaFileId",
+      "value": "",
       "type": "string"
     },
     {

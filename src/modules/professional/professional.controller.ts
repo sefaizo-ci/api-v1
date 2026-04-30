@@ -1,21 +1,31 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
+  Inject,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
   Put,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/infrastructure/guards/roles.guard';
+import type { MediaStoragePort } from '../media/media-storage.port';
+import { MEDIA_STORAGE_SERVICE } from '../media/media-storage.port';
+import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
 import {
   ActivateServiceCommand,
   AddServiceCommand,
@@ -77,6 +87,21 @@ import {
 } from './interface/queries';
 import { ListBookingCancellationRequestsQuery } from './interface/queries/professional.queries';
 
+const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_GALLERY_IMAGES = 15;
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/jpg',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+
+type UploadedImageFile = {
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
+};
+
 type AuthenticatedRequest = Request & {
   user: {
     id: string;
@@ -90,6 +115,9 @@ export class ProfessionalController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly professionalRepository: ProfessionalRepository,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly mediaStorageService: MediaStoragePort,
   ) {}
 
   /**
@@ -507,6 +535,90 @@ export class ProfessionalController {
     );
   }
 
+  @Post(':professionalId/gallery/upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: MAX_IMAGE_UPLOAD_BYTES,
+      },
+    }),
+  )
+  async uploadGalleryImageFile(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file?: UploadedImageFile,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    this.assertValidImageFile(file);
+
+    const { pagination } = await this.mediaStorageService.listProfessionalFiles(
+      { professionalId, type: 'gallery', page: 1, limit: 1 },
+    );
+    if (pagination.total >= MAX_GALLERY_IMAGES) {
+      throw new BadRequestException(
+        `Limite atteinte : maximum ${MAX_GALLERY_IMAGES} images dans la galerie.`,
+      );
+    }
+
+    const uploaded = await this.mediaStorageService.uploadGalleryImage({
+      professionalId,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+    });
+
+    return {
+      imageUrl: uploaded.url,
+      fileId: uploaded.fileId,
+      path: uploaded.filePath,
+      maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
+      acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
+    };
+  }
+
+  @Post(':professionalId/avatar/upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: MAX_IMAGE_UPLOAD_BYTES,
+      },
+    }),
+  )
+  async uploadAvatarImageFile(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file?: UploadedImageFile,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    this.assertValidImageFile(file);
+
+    const uploaded = await this.mediaStorageService.uploadAvatarImage({
+      professionalId,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+    });
+
+    await this.commandBus.execute<UpdateProfessionalProfileCommand, unknown>(
+      new UpdateProfessionalProfileCommand(
+        professionalId,
+        undefined,
+        undefined,
+        uploaded.url,
+      ),
+    );
+
+    return {
+      avatarUrl: uploaded.url,
+      fileId: uploaded.fileId,
+      path: uploaded.filePath,
+      maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
+      acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
+    };
+  }
+
   @Put(':professionalId/gallery/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
@@ -671,5 +783,44 @@ export class ProfessionalController {
         body.reason,
       ),
     );
+  }
+
+  private assertValidImageFile(
+    file?: UploadedImageFile,
+  ): asserts file is UploadedImageFile {
+    if (!file) {
+      throw new BadRequestException(
+        'Aucun fichier image recu. Envoyez le fichier dans le champ multipart "file".',
+      );
+    }
+
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      throw new BadRequestException(
+        `Image trop lourde. Taille maximale: ${MAX_IMAGE_UPLOAD_BYTES} octets (10MB).`,
+      );
+    }
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype.toLowerCase())) {
+      throw new BadRequestException(
+        `Format non supporte (${file.mimetype}). Formats autorises: jpg, jpeg, png, webp.`,
+      );
+    }
+  }
+
+  private async assertProfessionalOwnership(
+    professionalId: string,
+    requesterUserId: string,
+  ): Promise<void> {
+    const professional =
+      await this.professionalRepository.findById(professionalId);
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouve');
+    }
+
+    if (professional.userId !== requesterUserId) {
+      throw new ForbiddenException(
+        'Vous ne pouvez pas modifier ce profil professionnel',
+      );
+    }
   }
 }
