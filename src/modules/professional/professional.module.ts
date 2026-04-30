@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { MediaModule } from '../media/media.module';
 import { ProfessionalAdminController } from './admin.controller';
 import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
 import {
@@ -9,7 +10,7 @@ import {
 import { ProfessionalController } from './professional.controller';
 
 @Module({
-  imports: [CqrsModule],
+  imports: [CqrsModule, MediaModule],
   controllers: [ProfessionalController, ProfessionalAdminController],
   providers: [
     ProfessionalRepository,
