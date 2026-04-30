@@ -79,13 +79,17 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
     );
 
     const devMode = this.isDevModeEnabled();
-    const rawCode = devMode ? '0000' : crypto.randomInt(100000, 999999).toString();
+    const rawCode = devMode
+      ? '0000'
+      : crypto.randomInt(100000, 999999).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     let channel: OtpChannel;
     if (devMode) {
-      this.logger.warn(`[OTP_DEV_MODE] code=0000 skipping notification for phone=${phone}`);
+      this.logger.warn(
+        `[OTP_DEV_MODE] code=0000 skipping notification for phone=${phone}`,
+      );
       channel = OtpChannel.SMS;
     } else {
       channel = await this.notif.sendOtp(phone, rawCode);
