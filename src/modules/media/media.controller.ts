@@ -14,8 +14,8 @@ import {
 import type { Request } from 'express';
 import { PrismaService } from '../../libs/database/prisma.service';
 import { Roles } from '../../libs/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/infrastructure/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/infrastructure/guards/roles.guard';
+import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
+import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import type { MediaStoragePort } from './media-storage.port';
 import { MEDIA_STORAGE_SERVICE } from './media-storage.port';
 

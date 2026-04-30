@@ -96,10 +96,10 @@ type VerifyOtpResponse = {
 };
 
 @Controller(AUTH.BASE)
-@ApiTags('Auth')
+@ApiTags('Sentinel')
 @ApiSecurity('x-api-key')
 @UseGuards(ApiKeyGuard)
-export class AuthController {
+export class SentinelController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,

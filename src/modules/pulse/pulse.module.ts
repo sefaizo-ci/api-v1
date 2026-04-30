@@ -5,11 +5,11 @@ import { NotificationQueueService } from './application/notification-queue.servi
 import { NotificationWorkerService } from './application/notification-worker.service';
 import { NotificationsService } from './application/notifications.service';
 import { NotificationEventHandlers } from './interface/handlers';
-import { NotificationsController } from './notifications.controller';
+import { PulseController } from './pulse.controller';
 
 @Module({
   imports: [CqrsModule],
-  controllers: [NotificationsController],
+  controllers: [PulseController],
   providers: [
     NotificationsService,
     NotificationQueueService,
@@ -18,4 +18,4 @@ import { NotificationsController } from './notifications.controller';
     ...NotificationEventHandlers,
   ],
 })
-export class NotificationsModule {}
+export class PulseModule {}

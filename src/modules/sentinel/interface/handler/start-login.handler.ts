@@ -1,15 +1,17 @@
 import {
   BadRequestException,
   Inject,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import {
+  OtpChannel,
   OtpPurpose,
   type LoginApp,
-  type OtpChannel,
 } from '../../core/enums/auth.enums';
 import type { INotificationService } from '../../core/services/notification.service.interface';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
@@ -19,12 +21,19 @@ import { withAuthFlowMetadata } from '../utils/auth-metadata.util';
 
 @CommandHandler(StartLoginCommand)
 export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
+  private readonly logger = new Logger(StartLoginHandler.name);
+
   constructor(
     @Inject('IUserRepository') private readonly userRepo: IUserRepository,
     @Inject('IOtpRepository') private readonly otpRepo: IOtpRepository,
     @Inject('INotificationService')
     private readonly notif: INotificationService,
+    private readonly config: ConfigService,
   ) {}
+
+  private isDevModeEnabled(): boolean {
+    return (this.config.get<string>('OTP_DEV_MODE') ?? 'false') === 'true';
+  }
 
   async execute(cmd: StartLoginCommand): Promise<{ channel: OtpChannel }> {
     const user = await this.userRepo.findByPhone(cmd.phone);
@@ -72,15 +81,22 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
       loginApp,
     );
 
-    const rawCode = crypto.randomInt(100000, 999999).toString();
+    const devMode = this.isDevModeEnabled();
+    const rawCode = devMode
+      ? '000000'
+      : crypto.randomInt(100000, 999999).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    console.log(
-      `OTP for ${cmd.phone} (purpose: ${OtpPurpose.LOGIN}, app: ${loginApp}): ${rawCode}`,
-    );
-
-    const channel = await this.notif.sendOtp(cmd.phone, rawCode);
+    let channel: OtpChannel;
+    if (devMode) {
+      this.logger.warn(
+        `[OTP_DEV_MODE] code=000000 skipping notification for phone=${cmd.phone}`,
+      );
+      channel = OtpChannel.SMS;
+    } else {
+      channel = await this.notif.sendOtp(cmd.phone, rawCode);
+    }
     await this.otpRepo.create({
       userId: user.id,
       code: codeHash,
