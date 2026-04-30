@@ -21,10 +21,10 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/infrastructure/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/infrastructure/guards/roles.guard';
 import type { MediaStoragePort } from '../media/media-storage.port';
 import { MEDIA_STORAGE_SERVICE } from '../media/media-storage.port';
+import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
+import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
 import {
   ActivateServiceCommand,
@@ -568,10 +568,16 @@ export class ProfessionalController {
       mimeType: file.mimetype,
     });
 
+    const galleryItem = await this.commandBus.execute<
+      UploadGalleryItemCommand,
+      unknown
+    >(new UploadGalleryItemCommand(professionalId, uploaded.url));
+
     return {
       imageUrl: uploaded.url,
       fileId: uploaded.fileId,
       path: uploaded.filePath,
+      galleryItem,
       maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
       acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
     };

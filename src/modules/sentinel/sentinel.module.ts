@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import type { StringValue } from 'ms';
 
-import { AuthController } from './auth.controller';
+import { SentinelController } from './sentinel.controller';
 import { CreatePinHandler } from './interface/handler/create-pin.handler';
 import { LoginHandler } from './interface/handler/login.handler';
 import { RefreshTokenHandler } from './interface/handler/refresh-token.handler';
@@ -53,7 +53,7 @@ const QueryHandlers = [GetMeHandler, InitAuthFlowHandler];
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [SentinelController],
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,
@@ -69,4 +69,4 @@ const QueryHandlers = [GetMeHandler, InitAuthFlowHandler];
   ],
   exports: ['IUserRepository', JwtAuthGuard, RolesGuard],
 })
-export class AuthModule {}
+export class SentinelModule {}

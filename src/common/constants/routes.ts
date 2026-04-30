@@ -10,7 +10,7 @@ export const APP = {
 } as const;
 
 export const AUTH = {
-  BASE: 'auth',
+  BASE: 'sentinel',
   FLOW: {
     INIT: 'flow/init',
   },
@@ -30,7 +30,7 @@ export const AUTH = {
   COOKIE: {
     REFRESH: {
       NAME: 'refreshToken',
-      PATH: `/${APP.API.PREFIX}/auth`,
+      PATH: `/${APP.API.PREFIX}/sentinel`,
     },
   },
 } as const;

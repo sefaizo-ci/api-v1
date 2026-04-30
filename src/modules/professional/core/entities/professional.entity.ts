@@ -145,7 +145,7 @@ export class ProfessionalEntity {
    */
   verify(): void {
     if (this.isVerified) {
-      throw new Error('Professional is already verified');
+      return;
     }
     this.isVerified = true;
     this.status = ProfessionalStatus.ACTIVE;
