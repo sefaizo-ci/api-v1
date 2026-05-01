@@ -25,7 +25,10 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
     if (user.isPinBlocked())
       throw new UnauthorizedException('PIN bloqué 1 heure.');
 
-    const pinValid = await bcrypt.compare(cmd.pin, user.clientSecret!.secretHash);
+    const pinValid = await bcrypt.compare(
+      cmd.pin,
+      user.clientSecret!.secretHash,
+    );
 
     if (!pinValid) {
       await this.userRepo.incrementPinFail(cmd.userId);

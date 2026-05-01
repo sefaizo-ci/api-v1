@@ -49,7 +49,10 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
       throw new UnauthorizedException('PIN bloqué 1 heure.');
     }
 
-    const pinValid = await bcrypt.compare(cmd.pin, user.clientSecret!.secretHash);
+    const pinValid = await bcrypt.compare(
+      cmd.pin,
+      user.clientSecret!.secretHash,
+    );
     if (!pinValid) {
       await this.userRepo.incrementPinFail(user.id);
       if (user.pinRemainingAttempts() <= 1) {

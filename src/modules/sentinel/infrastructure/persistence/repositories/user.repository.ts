@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import * as crypto from 'crypto';
 import { PrismaService } from '../../../../../libs/database/prisma.service';
 
 import { UserEntity } from '../../../core/entities/user.entity';
@@ -222,7 +221,11 @@ export class UserRepository implements IUserRepository {
     model?: string;
   }): Promise<string> {
     const existing = await this.prisma.device.findFirst({
-      where: { userId: data.userId, fingerprint: data.fingerprint, deletedAt: null },
+      where: {
+        userId: data.userId,
+        fingerprint: data.fingerprint,
+        deletedAt: null,
+      },
       select: { id: true },
     });
 
