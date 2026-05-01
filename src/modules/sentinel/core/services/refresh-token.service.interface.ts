@@ -10,7 +10,7 @@ export interface IRefreshTokenRepository {
     platform?: string;
     metadata?: Prisma.InputJsonValue;
     expiresAt: Date;
-  }): Promise<void>;
+  }): Promise<{ id: string }>;
   findByHash(tokenHash: string): Promise<RefreshTokenEntity | null>;
   revoke(tokenId: string): Promise<void>;
   revokeAllForUser(userId: string): Promise<void>;

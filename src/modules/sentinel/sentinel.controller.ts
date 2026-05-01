@@ -223,6 +223,7 @@ export class SentinelController {
   })
   async verifyOtp(
     @Body() dto: VerifyOtpDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result: VerifyOtpResponse = await this.commandBus.execute<
@@ -234,6 +235,7 @@ export class SentinelController {
         dto.code,
         dto.purpose,
         resolveLoginApp(dto.app),
+        req.headers['user-agent'],
       ),
     );
 

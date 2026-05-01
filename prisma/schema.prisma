@@ -121,16 +121,13 @@ model User {
   deletedAt   DateTime?
   metadata    Json?
 
-  pinHash         String?
-  pinFailCount    Int       @default(0)
-  pinBlockedUntil DateTime?
-
-  challenges          Challenge[]
-  refreshTokens       RefreshToken[]
-  authLogs            AuthLog[]
-  phoneRoles          PhoneRole[]
-  devices             Device[]
+  challenges            Challenge[]
+  refreshTokens         RefreshToken[]
+  authLogs              AuthLog[]
+  phoneRoles            PhoneRole[]
+  devices               Device[]
   deviceAuthentications DeviceAuthentication[]
+  clientSecret          ClientSecret?
 
   professional     Professional?
   bookingsAsClient Booking[]     @relation("ClientBookings")
@@ -281,11 +278,14 @@ model DeviceAuthentication {
 model ClientSecret {
   id            String    @id @default(uuid())
   clientId      String    @unique
+  user          User      @relation(fields: [clientId], references: [id], onDelete: Cascade)
   secretHash    String
-  appPlatform   String
+  appPlatform   String    @default("MOBILE")
   appVersionMin String?
   isActive      Boolean   @default(true)
   expiresAt     DateTime?
+  failCount     Int       @default(0)
+  blockedUntil  DateTime?
   metadata      Json?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

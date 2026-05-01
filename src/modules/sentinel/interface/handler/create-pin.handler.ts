@@ -76,5 +76,11 @@ export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
         registrationCompletedAt: new Date().toISOString(),
       }),
     );
+
+    await this.userRepo.logAuthEvent({
+      event: 'REGISTRATION_COMPLETED',
+      userId: cmd.userId,
+      metadata: { role: cmd.role },
+    });
   }
 }

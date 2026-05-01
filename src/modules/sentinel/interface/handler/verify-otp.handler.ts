@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { OtpPurpose } from '../../core/enums/auth.enums';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
@@ -26,6 +27,16 @@ type VerifyOtpResult = {
     roles: string[];
   };
 };
+
+function extractPlatform(userAgent?: string): string {
+  if (!userAgent) return 'UNKNOWN';
+  const ua = userAgent.toLowerCase();
+  if (ua.includes('android')) return 'ANDROID';
+  if (ua.includes('iphone') || ua.includes('ipad')) return 'IOS';
+  if (ua.includes('windows')) return 'WINDOWS';
+  if (ua.includes('mac')) return 'MAC';
+  return 'WEB';
+}
 
 @CommandHandler(VerifyOtpCommand)
 export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
@@ -100,15 +111,44 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
         roles,
       });
       const { raw, hash } = this.tokenService.generateRefreshToken();
-      await this.refreshRepo.create({
+
+      const fingerprint = crypto
+        .createHash('sha256')
+        .update(cmd.deviceInfo ?? 'unknown')
+        .digest('hex');
+      const platform = extractPlatform(cmd.deviceInfo);
+
+      const { id: tokenId } = await this.refreshRepo.create({
         userId: user.id,
         tokenHash: hash,
+        deviceInfo: cmd.deviceInfo,
+        platform,
         metadata: {
           source: 'verify_otp_login',
           otpId: otp.id,
           app: cmd.app,
         },
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+
+      const deviceId = await this.userRepo.upsertDevice({
+        userId: user.id,
+        fingerprint,
+        platform,
+        model: cmd.deviceInfo?.substring(0, 255),
+      });
+
+      await this.userRepo.createDeviceAuth({
+        deviceId,
+        userId: user.id,
+        refreshTokenId: tokenId,
+      });
+
+      await this.userRepo.logAuthEvent({
+        event: 'LOGIN_SUCCESS',
+        userId: user.id,
+        deviceInfo: cmd.deviceInfo,
+        metadata: { app: cmd.app, otpId: otp.id },
       });
 
       await this.userRepo.updateMetadata(
@@ -140,6 +180,14 @@ export class VerifyOtpHandler implements ICommandHandler<VerifyOtpCommand> {
     const isNewUser = !user.isVerified;
     if (isNewUser && cmd.purpose === OtpPurpose.REGISTRATION) {
       await this.userRepo.markVerified(user.id);
+
+      await this.userRepo.logAuthEvent({
+        event: 'OTP_VERIFIED',
+        userId: user.id,
+        deviceInfo: cmd.deviceInfo,
+        metadata: { purpose: OtpPurpose.REGISTRATION },
+      });
+
       await this.userRepo.updateMetadata(
         user.id,
         withAuthFlowMetadata(user.metadata, {

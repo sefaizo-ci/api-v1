@@ -49,7 +49,7 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
       throw new UnauthorizedException('PIN bloqué 1 heure.');
     }
 
-    const pinValid = await bcrypt.compare(cmd.pin, user.pinHash!);
+    const pinValid = await bcrypt.compare(cmd.pin, user.clientSecret!.secretHash);
     if (!pinValid) {
       await this.userRepo.incrementPinFail(user.id);
       if (user.pinRemainingAttempts() <= 1) {
@@ -74,6 +74,14 @@ export class StartLoginHandler implements ICommandHandler<StartLoginCommand> {
     }
 
     await this.userRepo.resetPinFail(user.id);
+
+    await this.userRepo.logAuthEvent({
+      event: 'LOGIN_OTP_REQUESTED',
+      userId: user.id,
+      deviceInfo: cmd.deviceInfo,
+      metadata: { app: loginApp },
+    });
+
     await this.otpRepo.invalidatePrevious(
       user.id,
       OtpPurpose.LOGIN,

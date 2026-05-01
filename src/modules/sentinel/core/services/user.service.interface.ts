@@ -32,4 +32,23 @@ export interface IUserRepository {
     userId: string,
     metadata: Prisma.InputJsonValue,
   ): Promise<void>;
+  logAuthEvent(data: {
+    event: string;
+    userId?: string;
+    channel?: string;
+    ipAddress?: string;
+    deviceInfo?: string;
+    metadata?: Prisma.InputJsonValue;
+  }): Promise<void>;
+  upsertDevice(data: {
+    userId: string;
+    fingerprint: string;
+    platform: string;
+    model?: string;
+  }): Promise<string>;
+  createDeviceAuth(data: {
+    deviceId: string;
+    userId: string;
+    refreshTokenId: string;
+  }): Promise<void>;
 }

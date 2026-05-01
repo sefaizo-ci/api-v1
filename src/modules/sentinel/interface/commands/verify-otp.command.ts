@@ -7,5 +7,6 @@ export class VerifyOtpCommand {
     public readonly code: string,
     public readonly purpose: PublicOtpPurpose,
     public readonly app: LoginApp = Role.CLIENT,
+    public readonly deviceInfo?: string,
   ) {}
 }

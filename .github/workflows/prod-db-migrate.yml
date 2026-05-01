@@ -32,6 +32,12 @@ jobs:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: npx prisma validate
 
+      - name: Resolve any failed migrations
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          npx prisma migrate resolve --rolled-back "20260430205454_refactor_multi_schema" || echo "No failed migration to resolve, continuing"
+
       - name: Deploy Prisma migrations to production
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
