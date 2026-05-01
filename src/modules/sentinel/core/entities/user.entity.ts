@@ -1,6 +1,13 @@
 import type { Prisma } from '@prisma/client';
 import type { UserRole } from '../enums/auth.enums';
 
+export type ClientSecretData = {
+  id: string;
+  secretHash: string;
+  failCount: number;
+  blockedUntil: Date | null;
+};
+
 export class UserEntity {
   constructor(
     public readonly id: string,
@@ -11,20 +18,18 @@ export class UserEntity {
     public readonly metadata: Prisma.JsonValue,
     public readonly isVerified: boolean,
     public readonly isActive: boolean,
-    public readonly pinHash: string | null,
-    public readonly pinFailCount: number,
-    public readonly pinBlockedUntil: Date | null,
+    public readonly clientSecret: ClientSecretData | null,
     public readonly createdAt: Date,
     public readonly deletedAt: Date | null,
   ) {}
 
   isPinBlocked(): boolean {
-    if (!this.pinBlockedUntil) return false;
-    return this.pinBlockedUntil > new Date();
+    if (!this.clientSecret?.blockedUntil) return false;
+    return this.clientSecret.blockedUntil > new Date();
   }
 
   hasPin(): boolean {
-    return this.pinHash !== null;
+    return this.clientSecret !== null && Boolean(this.clientSecret.secretHash);
   }
 
   isAccountActive(): boolean {
@@ -32,6 +37,6 @@ export class UserEntity {
   }
 
   pinRemainingAttempts(): number {
-    return Math.max(0, 5 - this.pinFailCount);
+    return Math.max(0, 5 - (this.clientSecret?.failCount ?? 0));
   }
 }

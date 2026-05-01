@@ -12,9 +12,14 @@ export class UserMapper {
       raw.metadata,
       raw.isVerified,
       raw.isActive,
-      raw.pinHash,
-      raw.pinFailCount,
-      raw.pinBlockedUntil,
+      raw.clientSecret
+        ? {
+            id: raw.clientSecret.id,
+            secretHash: raw.clientSecret.secretHash,
+            failCount: raw.clientSecret.failCount,
+            blockedUntil: raw.clientSecret.blockedUntil,
+          }
+        : null,
       raw.createdAt,
       raw.deletedAt,
     );

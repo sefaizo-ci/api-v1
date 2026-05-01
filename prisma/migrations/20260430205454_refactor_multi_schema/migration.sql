@@ -18,93 +18,105 @@ CREATE SCHEMA IF NOT EXISTS "pulse";
 CREATE SCHEMA IF NOT EXISTS "sentinel";
 
 -- CreateEnum
-CREATE TYPE "sentinel"."Role" AS ENUM ('CLIENT', 'PROFESSIONAL', 'ADMIN');
+DO $$ BEGIN
+  CREATE TYPE "sentinel"."Role" AS ENUM ('CLIENT', 'PROFESSIONAL', 'ADMIN');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateEnum
-CREATE TYPE "sentinel"."OtpChannel" AS ENUM ('WHATSAPP', 'SMS');
+DO $$ BEGIN
+  CREATE TYPE "sentinel"."OtpChannel" AS ENUM ('WHATSAPP', 'SMS');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateEnum
-CREATE TYPE "sentinel"."OtpPurpose" AS ENUM ('REGISTRATION', 'LOGIN', 'PHONE_CHANGE', 'PIN_RESET');
+DO $$ BEGIN
+  CREATE TYPE "sentinel"."OtpPurpose" AS ENUM ('REGISTRATION', 'LOGIN', 'PHONE_CHANGE', 'PIN_RESET');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateEnum
-CREATE TYPE "sentinel"."ChallengeType" AS ENUM ('OTP', 'PKCE');
+DO $$ BEGIN
+  CREATE TYPE "sentinel"."ChallengeType" AS ENUM ('OTP', 'PKCE');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateEnum
-CREATE TYPE "pulse"."NotificationChannel" AS ENUM ('IN_APP', 'PUSH', 'WHATSAPP', 'SMS');
+DO $$ BEGIN
+  CREATE TYPE "pulse"."NotificationChannel" AS ENUM ('IN_APP', 'PUSH', 'WHATSAPP', 'SMS');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateEnum
-CREATE TYPE "pulse"."NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'READ');
+DO $$ BEGIN
+  CREATE TYPE "pulse"."NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'READ');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- DropForeignKey
-ALTER TABLE "auth_logs" DROP CONSTRAINT "auth_logs_userId_fkey";
+ALTER TABLE IF EXISTS "auth_logs" DROP CONSTRAINT IF EXISTS "auth_logs_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "notification_devices" DROP CONSTRAINT "notification_devices_userId_fkey";
+ALTER TABLE IF EXISTS "notification_devices" DROP CONSTRAINT IF EXISTS "notification_devices_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "notifications" DROP CONSTRAINT "notifications_userId_fkey";
+ALTER TABLE IF EXISTS "notifications" DROP CONSTRAINT IF EXISTS "notifications_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "otp_codes" DROP CONSTRAINT "otp_codes_userId_fkey";
+ALTER TABLE IF EXISTS "otp_codes" DROP CONSTRAINT IF EXISTS "otp_codes_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "phone_roles" DROP CONSTRAINT "phone_roles_phoneId_fkey";
+ALTER TABLE IF EXISTS "phone_roles" DROP CONSTRAINT IF EXISTS "phone_roles_phoneId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "phone_roles" DROP CONSTRAINT "phone_roles_userId_fkey";
+ALTER TABLE IF EXISTS "phone_roles" DROP CONSTRAINT IF EXISTS "phone_roles_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "refresh_tokens" DROP CONSTRAINT "refresh_tokens_userId_fkey";
+ALTER TABLE IF EXISTS "refresh_tokens" DROP CONSTRAINT IF EXISTS "refresh_tokens_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "users" DROP CONSTRAINT "users_phoneId_fkey";
+ALTER TABLE IF EXISTS "users" DROP CONSTRAINT IF EXISTS "users_phoneId_fkey";
 
 -- DropForeignKey (public tables referencing users — must drop before users is dropped)
-ALTER TABLE "professionals" DROP CONSTRAINT "professionals_userId_fkey";
-ALTER TABLE "bookings" DROP CONSTRAINT "bookings_clientId_fkey";
-ALTER TABLE "service_category_requests" DROP CONSTRAINT "service_category_requests_reviewedByUserId_fkey";
+ALTER TABLE IF EXISTS "professionals" DROP CONSTRAINT IF EXISTS "professionals_userId_fkey";
+ALTER TABLE IF EXISTS "bookings" DROP CONSTRAINT IF EXISTS "bookings_clientId_fkey";
+ALTER TABLE IF EXISTS "service_category_requests" DROP CONSTRAINT IF EXISTS "service_category_requests_reviewedByUserId_fkey";
 
 -- DropTable
-DROP TABLE "auth_logs";
+DROP TABLE IF EXISTS "auth_logs";
 
 -- DropTable
-DROP TABLE "notification_devices";
+DROP TABLE IF EXISTS "notification_devices";
 
 -- DropTable
-DROP TABLE "notifications";
+DROP TABLE IF EXISTS "notifications";
 
 -- DropTable
-DROP TABLE "otp_codes";
+DROP TABLE IF EXISTS "otp_codes";
 
 -- DropTable
-DROP TABLE "phone_roles";
+DROP TABLE IF EXISTS "phone_roles";
 
 -- DropTable
-DROP TABLE "phones";
+DROP TABLE IF EXISTS "phones";
 
 -- DropTable
-DROP TABLE "refresh_tokens";
+DROP TABLE IF EXISTS "refresh_tokens";
 
 -- DropTable
-DROP TABLE "users";
+DROP TABLE IF EXISTS "users";
 
 -- DropEnum
-DROP TYPE "NotificationChannel";
+DROP TYPE IF EXISTS "NotificationChannel";
 
 -- DropEnum
-DROP TYPE "NotificationStatus";
+DROP TYPE IF EXISTS "NotificationStatus";
 
 -- DropEnum
-DROP TYPE "OtpChannel";
+DROP TYPE IF EXISTS "OtpChannel";
 
 -- DropEnum
-DROP TYPE "OtpPurpose";
+DROP TYPE IF EXISTS "OtpPurpose";
 
 -- DropEnum
-DROP TYPE "Role";
+DROP TYPE IF EXISTS "Role";
 
 -- CreateTable
-CREATE TABLE "sentinel"."users" (
+CREATE TABLE IF NOT EXISTS "sentinel"."users" (
     "id" TEXT NOT NULL,
     "phoneId" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
@@ -124,7 +136,7 @@ CREATE TABLE "sentinel"."users" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."phone_numbers" (
+CREATE TABLE IF NOT EXISTS "sentinel"."phone_numbers" (
     "id" TEXT NOT NULL,
     "number" TEXT NOT NULL,
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
@@ -137,7 +149,7 @@ CREATE TABLE "sentinel"."phone_numbers" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."phone_roles" (
+CREATE TABLE IF NOT EXISTS "sentinel"."phone_roles" (
     "id" TEXT NOT NULL,
     "phoneId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -150,7 +162,7 @@ CREATE TABLE "sentinel"."phone_roles" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."challenges" (
+CREATE TABLE IF NOT EXISTS "sentinel"."challenges" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "deviceId" TEXT,
@@ -170,7 +182,7 @@ CREATE TABLE "sentinel"."challenges" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."refresh_tokens" (
+CREATE TABLE IF NOT EXISTS "sentinel"."refresh_tokens" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "tokenHash" TEXT NOT NULL,
@@ -188,7 +200,7 @@ CREATE TABLE "sentinel"."refresh_tokens" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."auth_logs" (
+CREATE TABLE IF NOT EXISTS "sentinel"."auth_logs" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
     "event" TEXT NOT NULL,
@@ -203,7 +215,7 @@ CREATE TABLE "sentinel"."auth_logs" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."devices" (
+CREATE TABLE IF NOT EXISTS "sentinel"."devices" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "fingerprint" TEXT,
@@ -222,7 +234,7 @@ CREATE TABLE "sentinel"."devices" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."device_authentications" (
+CREATE TABLE IF NOT EXISTS "sentinel"."device_authentications" (
     "id" TEXT NOT NULL,
     "deviceId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -237,7 +249,7 @@ CREATE TABLE "sentinel"."device_authentications" (
 );
 
 -- CreateTable
-CREATE TABLE "sentinel"."client_secrets" (
+CREATE TABLE IF NOT EXISTS "sentinel"."client_secrets" (
     "id" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
     "secretHash" TEXT NOT NULL,
@@ -253,7 +265,7 @@ CREATE TABLE "sentinel"."client_secrets" (
 );
 
 -- CreateTable
-CREATE TABLE "pulse"."notifications" (
+CREATE TABLE IF NOT EXISTS "pulse"."notifications" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -274,7 +286,7 @@ CREATE TABLE "pulse"."notifications" (
 );
 
 -- CreateTable
-CREATE TABLE "pulse"."notification_devices" (
+CREATE TABLE IF NOT EXISTS "pulse"."notification_devices" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "platform" TEXT NOT NULL,
@@ -291,84 +303,118 @@ CREATE TABLE "pulse"."notification_devices" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_phoneId_key" ON "sentinel"."users"("phoneId");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_phoneId_key" ON "sentinel"."users"("phoneId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "phone_numbers_number_key" ON "sentinel"."phone_numbers"("number");
+CREATE UNIQUE INDEX IF NOT EXISTS "phone_numbers_number_key" ON "sentinel"."phone_numbers"("number");
 
 -- CreateIndex
-CREATE INDEX "phone_roles_userId_idx" ON "sentinel"."phone_roles"("userId");
+CREATE INDEX IF NOT EXISTS "phone_roles_userId_idx" ON "sentinel"."phone_roles"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "phone_roles_phoneId_role_key" ON "sentinel"."phone_roles"("phoneId", "role");
+CREATE UNIQUE INDEX IF NOT EXISTS "phone_roles_phoneId_role_key" ON "sentinel"."phone_roles"("phoneId", "role");
 
 -- CreateIndex
-CREATE INDEX "challenges_userId_purpose_idx" ON "sentinel"."challenges"("userId", "purpose");
+CREATE INDEX IF NOT EXISTS "challenges_userId_purpose_idx" ON "sentinel"."challenges"("userId", "purpose");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "refresh_tokens_tokenHash_key" ON "sentinel"."refresh_tokens"("tokenHash");
+CREATE UNIQUE INDEX IF NOT EXISTS "refresh_tokens_tokenHash_key" ON "sentinel"."refresh_tokens"("tokenHash");
 
 -- CreateIndex
-CREATE INDEX "devices_userId_isActive_idx" ON "sentinel"."devices"("userId", "isActive");
+CREATE INDEX IF NOT EXISTS "devices_userId_isActive_idx" ON "sentinel"."devices"("userId", "isActive");
 
 -- CreateIndex
-CREATE INDEX "device_authentications_userId_deviceId_idx" ON "sentinel"."device_authentications"("userId", "deviceId");
+CREATE INDEX IF NOT EXISTS "device_authentications_userId_deviceId_idx" ON "sentinel"."device_authentications"("userId", "deviceId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "client_secrets_clientId_key" ON "sentinel"."client_secrets"("clientId");
+CREATE UNIQUE INDEX IF NOT EXISTS "client_secrets_clientId_key" ON "sentinel"."client_secrets"("clientId");
 
 -- CreateIndex
-CREATE INDEX "notifications_userId_createdAt_idx" ON "pulse"."notifications"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "notifications_userId_createdAt_idx" ON "pulse"."notifications"("userId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "notifications_status_channel_idx" ON "pulse"."notifications"("status", "channel");
+CREATE INDEX IF NOT EXISTS "notifications_status_channel_idx" ON "pulse"."notifications"("status", "channel");
 
 -- CreateIndex
-CREATE INDEX "notification_devices_userId_isActive_idx" ON "pulse"."notification_devices"("userId", "isActive");
+CREATE INDEX IF NOT EXISTS "notification_devices_userId_isActive_idx" ON "pulse"."notification_devices"("userId", "isActive");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "notification_devices_userId_platform_deviceId_key" ON "pulse"."notification_devices"("userId", "platform", "deviceId");
+CREATE UNIQUE INDEX IF NOT EXISTS "notification_devices_userId_platform_deviceId_key" ON "pulse"."notification_devices"("userId", "platform", "deviceId");
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."users" ADD CONSTRAINT "users_phoneId_fkey" FOREIGN KEY ("phoneId") REFERENCES "sentinel"."phone_numbers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."users" ADD CONSTRAINT "users_phoneId_fkey" FOREIGN KEY ("phoneId") REFERENCES "sentinel"."phone_numbers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."phone_roles" ADD CONSTRAINT "phone_roles_phoneId_fkey" FOREIGN KEY ("phoneId") REFERENCES "sentinel"."phone_numbers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."phone_roles" ADD CONSTRAINT "phone_roles_phoneId_fkey" FOREIGN KEY ("phoneId") REFERENCES "sentinel"."phone_numbers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."phone_roles" ADD CONSTRAINT "phone_roles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."phone_roles" ADD CONSTRAINT "phone_roles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."challenges" ADD CONSTRAINT "challenges_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."challenges" ADD CONSTRAINT "challenges_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."challenges" ADD CONSTRAINT "challenges_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "sentinel"."devices"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."challenges" ADD CONSTRAINT "challenges_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "sentinel"."devices"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."auth_logs" ADD CONSTRAINT "auth_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."auth_logs" ADD CONSTRAINT "auth_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."devices" ADD CONSTRAINT "devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."devices" ADD CONSTRAINT "devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."device_authentications" ADD CONSTRAINT "device_authentications_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "sentinel"."devices"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."device_authentications" ADD CONSTRAINT "device_authentications_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "sentinel"."devices"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."device_authentications" ADD CONSTRAINT "device_authentications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."device_authentications" ADD CONSTRAINT "device_authentications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "sentinel"."device_authentications" ADD CONSTRAINT "device_authentications_refreshTokenId_fkey" FOREIGN KEY ("refreshTokenId") REFERENCES "sentinel"."refresh_tokens"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "sentinel"."device_authentications" ADD CONSTRAINT "device_authentications_refreshTokenId_fkey" FOREIGN KEY ("refreshTokenId") REFERENCES "sentinel"."refresh_tokens"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "pulse"."notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "pulse"."notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey
-ALTER TABLE "pulse"."notification_devices" ADD CONSTRAINT "notification_devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "pulse"."notification_devices" ADD CONSTRAINT "notification_devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- AddForeignKey (restore public → sentinel.users cross-schema constraints)
-ALTER TABLE "professionals" ADD CONSTRAINT "professionals_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "bookings" ADD CONSTRAINT "bookings_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "service_category_requests" ADD CONSTRAINT "service_category_requests_reviewedByUserId_fkey" FOREIGN KEY ("reviewedByUserId") REFERENCES "sentinel"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "professionals" ADD CONSTRAINT "professionals_userId_fkey" FOREIGN KEY ("userId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "bookings" ADD CONSTRAINT "bookings_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "sentinel"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "service_category_requests" ADD CONSTRAINT "service_category_requests_reviewedByUserId_fkey" FOREIGN KEY ("reviewedByUserId") REFERENCES "sentinel"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;

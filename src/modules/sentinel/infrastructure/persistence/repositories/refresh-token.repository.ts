@@ -18,8 +18,9 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
     platform?: string;
     metadata?: Prisma.InputJsonValue;
     expiresAt: Date;
-  }): Promise<void> {
-    await this.prisma.refreshToken.create({ data });
+  }): Promise<{ id: string }> {
+    const token = await this.prisma.refreshToken.create({ data });
+    return { id: token.id };
   }
 
   async findByHash(tokenHash: string): Promise<RefreshTokenEntity | null> {
