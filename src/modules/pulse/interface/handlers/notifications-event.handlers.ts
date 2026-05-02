@@ -55,9 +55,7 @@ async function fetchBookingForNotification(
 
 @EventsHandler(BookingCreatedEvent)
 @Injectable()
-export class OnBookingCreatedNotificationHandler
-  implements IEventHandler<BookingCreatedEvent>
-{
+export class OnBookingCreatedNotificationHandler implements IEventHandler<BookingCreatedEvent> {
   private readonly logger = new Logger(
     OnBookingCreatedNotificationHandler.name,
   );
@@ -91,9 +89,7 @@ export class OnBookingCreatedNotificationHandler
 
 @EventsHandler(BookingCancellationRequestedEvent)
 @Injectable()
-export class OnBookingCancellationRequestedNotificationHandler
-  implements IEventHandler<BookingCancellationRequestedEvent>
-{
+export class OnBookingCancellationRequestedNotificationHandler implements IEventHandler<BookingCancellationRequestedEvent> {
   private readonly logger = new Logger(
     OnBookingCancellationRequestedNotificationHandler.name,
   );
@@ -130,9 +126,7 @@ export class OnBookingCancellationRequestedNotificationHandler
 
 @EventsHandler(BookingConfirmedEvent)
 @Injectable()
-export class OnBookingConfirmedNotificationHandler
-  implements IEventHandler<BookingConfirmedEvent>
-{
+export class OnBookingConfirmedNotificationHandler implements IEventHandler<BookingConfirmedEvent> {
   private readonly logger = new Logger(
     OnBookingConfirmedNotificationHandler.name,
   );
@@ -210,9 +204,7 @@ export class OnBookingConfirmedNotificationHandler
 
 @EventsHandler(BookingRejectedEvent)
 @Injectable()
-export class OnBookingRejectedNotificationHandler
-  implements IEventHandler<BookingRejectedEvent>
-{
+export class OnBookingRejectedNotificationHandler implements IEventHandler<BookingRejectedEvent> {
   private readonly logger = new Logger(
     OnBookingRejectedNotificationHandler.name,
   );
@@ -246,9 +238,7 @@ export class OnBookingRejectedNotificationHandler
 
 @EventsHandler(BookingCompletedEvent)
 @Injectable()
-export class OnBookingCompletedNotificationHandler
-  implements IEventHandler<BookingCompletedEvent>
-{
+export class OnBookingCompletedNotificationHandler implements IEventHandler<BookingCompletedEvent> {
   private readonly logger = new Logger(
     OnBookingCompletedNotificationHandler.name,
   );
@@ -292,9 +282,7 @@ export class OnBookingCompletedNotificationHandler
 
 @EventsHandler(BookingCancelledEvent)
 @Injectable()
-export class OnBookingCancelledNotificationHandler
-  implements IEventHandler<BookingCancelledEvent>
-{
+export class OnBookingCancelledNotificationHandler implements IEventHandler<BookingCancelledEvent> {
   private readonly logger = new Logger(
     OnBookingCancelledNotificationHandler.name,
   );
@@ -349,9 +337,7 @@ export class OnBookingCancelledNotificationHandler
 
 @EventsHandler(BookingCancellationRequestApprovedEvent)
 @Injectable()
-export class OnBookingCancellationRequestApprovedNotificationHandler
-  implements IEventHandler<BookingCancellationRequestApprovedEvent>
-{
+export class OnBookingCancellationRequestApprovedNotificationHandler implements IEventHandler<BookingCancellationRequestApprovedEvent> {
   private readonly logger = new Logger(
     OnBookingCancellationRequestApprovedNotificationHandler.name,
   );
@@ -388,9 +374,7 @@ export class OnBookingCancellationRequestApprovedNotificationHandler
 
 @EventsHandler(BookingCancellationRequestRejectedEvent)
 @Injectable()
-export class OnBookingCancellationRequestRejectedNotificationHandler
-  implements IEventHandler<BookingCancellationRequestRejectedEvent>
-{
+export class OnBookingCancellationRequestRejectedNotificationHandler implements IEventHandler<BookingCancellationRequestRejectedEvent> {
   private readonly logger = new Logger(
     OnBookingCancellationRequestRejectedNotificationHandler.name,
   );
@@ -400,9 +384,7 @@ export class OnBookingCancellationRequestRejectedNotificationHandler
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async handle(
-    event: BookingCancellationRequestRejectedEvent,
-  ): Promise<void> {
+  async handle(event: BookingCancellationRequestRejectedEvent): Promise<void> {
     try {
       const booking = await fetchBookingForNotification(
         this.prisma,
@@ -429,9 +411,7 @@ export class OnBookingCancellationRequestRejectedNotificationHandler
 
 @EventsHandler(BookingNoShowEvent)
 @Injectable()
-export class OnBookingNoShowNotificationHandler
-  implements IEventHandler<BookingNoShowEvent>
-{
+export class OnBookingNoShowNotificationHandler implements IEventHandler<BookingNoShowEvent> {
   private readonly logger = new Logger(OnBookingNoShowNotificationHandler.name);
 
   constructor(
@@ -463,9 +443,7 @@ export class OnBookingNoShowNotificationHandler
 
 @EventsHandler(ProfessionalVerifiedEvent)
 @Injectable()
-export class OnProfessionalVerifiedNotificationHandler
-  implements IEventHandler<ProfessionalVerifiedEvent>
-{
+export class OnProfessionalVerifiedNotificationHandler implements IEventHandler<ProfessionalVerifiedEvent> {
   private readonly logger = new Logger(
     OnProfessionalVerifiedNotificationHandler.name,
   );
@@ -501,9 +479,7 @@ export class OnProfessionalVerifiedNotificationHandler
 
 @EventsHandler(ProfessionalSuspendedEvent)
 @Injectable()
-export class OnProfessionalSuspendedNotificationHandler
-  implements IEventHandler<ProfessionalSuspendedEvent>
-{
+export class OnProfessionalSuspendedNotificationHandler implements IEventHandler<ProfessionalSuspendedEvent> {
   private readonly logger = new Logger(
     OnProfessionalSuspendedNotificationHandler.name,
   );
@@ -539,9 +515,7 @@ export class OnProfessionalSuspendedNotificationHandler
 
 @EventsHandler(ProfessionalReactivatedEvent)
 @Injectable()
-export class OnProfessionalReactivatedNotificationHandler
-  implements IEventHandler<ProfessionalReactivatedEvent>
-{
+export class OnProfessionalReactivatedNotificationHandler implements IEventHandler<ProfessionalReactivatedEvent> {
   private readonly logger = new Logger(
     OnProfessionalReactivatedNotificationHandler.name,
   );

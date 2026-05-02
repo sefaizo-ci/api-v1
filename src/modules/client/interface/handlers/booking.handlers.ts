@@ -442,7 +442,7 @@ async function validateBookingSlot(
 
   if (!availability) {
     throw new BadRequestException(
-      'Le professionnel n\'est pas disponible ce jour-là.',
+      "Le professionnel n'est pas disponible ce jour-là.",
     );
   }
 
