@@ -14,6 +14,96 @@ import { ProfessionalMapper } from '../mappers/professional.mapper';
 export class ProfessionalRepository implements IProfessionalRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private buildWhere(filters?: {
+    status?: string;
+    isVerified?: boolean;
+    location?: string;
+    search?: string;
+    rating?: number;
+  }): Prisma.ProfessionalWhereInput {
+    const where: Prisma.ProfessionalWhereInput = { deletedAt: null };
+
+    if (filters?.status) where.status = filters.status;
+    if (filters?.isVerified !== undefined) {
+      where.isVerified = filters.isVerified;
+    }
+    if (filters?.location) {
+      where.location =
+        filters.location as Prisma.ProfessionalWhereInput['location'];
+    }
+    if (filters?.rating !== undefined) {
+      where.rating = { gte: filters.rating };
+    }
+
+    const search = filters?.search?.trim();
+    if (search) {
+      where.OR = [
+        {
+          agencyName: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          bio: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          services: {
+            some: {
+              deletedAt: null,
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    return where;
+  }
+
+  private async fetchProfessionals(
+    where: Prisma.ProfessionalWhereInput,
+    pagination?: {
+      skip?: number;
+      take?: number;
+    },
+  ): Promise<ProfessionalEntity[]> {
+    const raws = await this.prisma.professional.findMany({
+      where,
+      include: {
+        services: {
+          where: { deletedAt: null },
+          include: {
+            communeFees: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        availabilities: {
+          where: { deletedAt: null },
+        },
+        gallery: {
+          where: { deletedAt: null },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: pagination?.skip,
+      take: pagination?.take,
+    });
+
+    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+  }
+
   async save(professional: ProfessionalEntity): Promise<void> {
     const persistenceData = ProfessionalMapper.toPersistence(professional);
 
@@ -239,42 +329,36 @@ export class ProfessionalRepository implements IProfessionalRepository {
     isVerified?: boolean;
     location?: string;
   }): Promise<ProfessionalEntity[]> {
-    const where: Prisma.ProfessionalWhereInput = { deletedAt: null };
+    return this.fetchProfessionals(this.buildWhere(filters));
+  }
 
-    if (filters?.status) where.status = filters.status;
-    if (filters?.isVerified !== undefined)
-      where.isVerified = filters.isVerified;
-    if (filters?.location) {
-      where.location =
-        filters.location as Prisma.ProfessionalWhereInput['location'];
-    }
+  async findAllPaginated(
+    filters?: {
+      status?: string;
+      isVerified?: boolean;
+      location?: string;
+      search?: string;
+      rating?: number;
+    },
+    pagination?: {
+      page?: number;
+      limit?: number;
+    },
+  ): Promise<{
+    data: ProfessionalEntity[];
+    total: number;
+  }> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const skip = (page - 1) * limit;
+    const where = this.buildWhere(filters);
 
-    const raws = await this.prisma.professional.findMany({
-      where,
-      include: {
-        services: {
-          where: { deletedAt: null },
-          include: {
-            communeFees: true,
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        availabilities: {
-          where: { deletedAt: null },
-        },
-        gallery: {
-          where: { deletedAt: null },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.fetchProfessionals(where, { skip, take: limit }),
+      this.prisma.professional.count({ where }),
+    ]);
 
-    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+    return { data, total };
   }
 
   async delete(id: string): Promise<void> {
