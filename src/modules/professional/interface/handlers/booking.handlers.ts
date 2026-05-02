@@ -10,6 +10,7 @@ import {
   CancelBookingCommand,
   CompleteBookingCommand,
   ConfirmBookingCommand,
+  MarkNoShowCommand,
   RejectBookingCancellationRequestCommand,
   RejectBookingCommand,
 } from '../../interface/commands/booking.commands';
@@ -19,6 +20,7 @@ import {
   BookingCancelledEvent,
   BookingCompletedEvent,
   BookingConfirmedEvent,
+  BookingNoShowEvent,
   BookingRejectedEvent,
 } from '../events/booking.events';
 
@@ -284,7 +286,7 @@ export class RejectBookingCancellationRequestHandler implements ICommandHandler<
     await this.prisma.booking.update({
       where: { id: booking.id },
       data: {
-        cancellationRequestStatus: 'REJECTED',
+        cancellationRequestStatus: 'NONE',
         cancellationReviewedAt: new Date(),
         cancellationNote: command.reason,
       },
@@ -293,5 +295,41 @@ export class RejectBookingCancellationRequestHandler implements ICommandHandler<
     this.eventBus.publish(
       new BookingCancellationRequestRejectedEvent(booking.id),
     );
+  }
+}
+
+@CommandHandler(MarkNoShowCommand)
+@Injectable()
+export class MarkNoShowHandler implements ICommandHandler<MarkNoShowCommand> {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBus,
+  ) {}
+
+  async execute(command: MarkNoShowCommand): Promise<void> {
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: command.bookingId,
+        professionalId: command.professionalId,
+        deletedAt: null,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reservation non trouvee');
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      throw new BadRequestException(
+        'Seules les reservations confirmees peuvent etre marquees comme absence.',
+      );
+    }
+
+    await this.prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: 'NO_SHOW' },
+    });
+
+    this.eventBus.publish(new BookingNoShowEvent(booking.id));
   }
 }
