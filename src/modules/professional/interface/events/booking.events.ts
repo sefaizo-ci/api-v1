@@ -26,3 +26,7 @@ export class BookingCancellationRequestApprovedEvent implements IEvent {
 export class BookingCancellationRequestRejectedEvent implements IEvent {
   constructor(public readonly bookingId: string) {}
 }
+
+export class BookingNoShowEvent implements IEvent {
+  constructor(public readonly bookingId: string) {}
+}

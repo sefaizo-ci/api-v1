@@ -245,24 +245,28 @@ export class ListProfessionalsHandler implements IQueryHandler<ListProfessionals
   constructor(private readonly repository: ProfessionalRepository) {}
 
   async execute(query: ListProfessionalsQuery) {
-    const professionals = await this.repository.findAll({
-      status: query.filters?.status,
-      isVerified: query.filters?.isVerified,
-      location: query.filters?.location,
-    });
-
     const page = query.page || 1;
     const limit = query.limit || 20;
-    const startIndex = (page - 1) * limit;
-    const paginated = professionals.slice(startIndex, startIndex + limit);
+
+    const { data, total } = await this.repository.findAllPaginated(
+      {
+        status: query.filters?.status,
+        isVerified: query.filters?.isVerified,
+        location: query.filters?.location,
+      },
+      {
+        page,
+        limit,
+      },
+    );
 
     return {
-      data: paginated.map((p) => p.getSummary()),
+      data: data.map((p) => p.getSummary()),
       pagination: {
         page,
         limit,
-        total: professionals.length,
-        totalPages: Math.ceil(professionals.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
@@ -311,10 +315,11 @@ export class GetProfessionalAvailabilityHandler implements IQueryHandler<GetProf
       };
     }
 
+    const availabilities = professional.getActiveAvailabilities();
     return {
       professionalId: professional.id,
-      availabilities: professional.getActiveAvailabilities(),
-      count: professional.getActiveAvailabilities().length,
+      availabilities,
+      count: availabilities.length,
     };
   }
 }
@@ -322,28 +327,36 @@ export class GetProfessionalAvailabilityHandler implements IQueryHandler<GetProf
 @QueryHandler(GetProfessionalGalleryQuery)
 @Injectable()
 export class GetProfessionalGalleryHandler implements IQueryHandler<GetProfessionalGalleryQuery> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetProfessionalGalleryQuery) {
-    const professional = await this.repository.findById(query.professionalId);
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
-    }
-
-    const gallery = professional.getPublicGallery();
     const page = query.page || 1;
     const limit = query.limit || 20;
-    const startIndex = (page - 1) * limit;
-    const paginated = gallery.slice(startIndex, startIndex + limit);
+
+    const where = {
+      professionalId: query.professionalId,
+      isPublic: true,
+      deletedAt: null,
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.galleryItem.findMany({
+        where,
+        orderBy: { order: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.galleryItem.count({ where }),
+    ]);
 
     return {
-      professionalId: professional.id,
-      data: paginated,
+      professionalId: query.professionalId,
+      data,
       pagination: {
         page,
         limit,
-        total: gallery.length,
-        totalPages: Math.ceil(gallery.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
@@ -490,39 +503,31 @@ export class SearchProfessionalsHandler implements IQueryHandler<SearchProfessio
   constructor(private readonly repository: ProfessionalRepository) {}
 
   async execute(query: SearchProfessionalsQuery) {
-    const professionals = await this.repository.findAll({
-      isVerified: true,
-      status: 'ACTIVE',
-      location: query.location,
-    });
-
-    // Basic search implementation
-    const filtered = professionals.filter((p) => {
-      const searchTerm = query.search.toLowerCase();
-      return (
-        p.agencyName.toLowerCase().includes(searchTerm) ||
-        p.bio?.toLowerCase().includes(searchTerm) ||
-        p.services.some((s) => s.name.toLowerCase().includes(searchTerm))
-      );
-    });
-
-    // Filter by rating if provided
-    const ratingFiltered = query.rating
-      ? filtered.filter((p) => p.rating >= query.rating!)
-      : filtered;
-
     const page = query.page || 1;
     const limit = query.limit || 20;
-    const startIndex = (page - 1) * limit;
-    const paginated = ratingFiltered.slice(startIndex, startIndex + limit);
+    const search = query.search.trim();
+
+    const { data, total } = await this.repository.findAllPaginated(
+      {
+        isVerified: true,
+        status: 'ACTIVE',
+        location: query.location,
+        search,
+        rating: query.rating,
+      },
+      {
+        page,
+        limit,
+      },
+    );
 
     return {
-      data: paginated.map((p) => p.getSummary()),
+      data: data.map((p) => p.getSummary()),
       pagination: {
         page,
         limit,
-        total: ratingFiltered.length,
-        totalPages: Math.ceil(ratingFiltered.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
