@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { BookingStatus, ServiceCategoryRequestStatus } from '@prisma/client';
+import { ServiceCategoryRequestStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ServiceOfferingEntity } from '../../core/entities/service-offering.entity';
@@ -398,16 +398,11 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
   ) {}
 
   async execute(command: UpdateServiceCommand): Promise<ServiceOfferingEntity> {
-    const serviceRecord = await this.prisma.serviceOffering.findFirst({
-      where: { id: command.serviceId, deletedAt: null },
-      select: { professionalId: true },
-    });
+    const professionals = await this.repository.findAll();
+    const owner = professionals.find((p) =>
+      p.services.some((s) => s.id === command.serviceId && !s.deletedAt),
+    );
 
-    if (!serviceRecord) {
-      throw new NotFoundException('Service non trouve');
-    }
-
-    const owner = await this.repository.findById(serviceRecord.professionalId);
     if (!owner) {
       throw new NotFoundException('Service non trouve');
     }
@@ -552,10 +547,7 @@ export class ActivateServiceHandler implements ICommandHandler<ActivateServiceCo
 @CommandHandler(DeactivateServiceCommand)
 @Injectable()
 export class DeactivateServiceHandler implements ICommandHandler<DeactivateServiceCommand> {
-  constructor(
-    private readonly repository: ProfessionalRepository,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly repository: ProfessionalRepository) {}
 
   async execute(command: DeactivateServiceCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
@@ -570,18 +562,5 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
 
     service.deactivate();
     await this.repository.save(professional);
-
-    await this.prisma.booking.updateMany({
-      where: {
-        serviceId: command.serviceId,
-        status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
-        deletedAt: null,
-      },
-      data: {
-        status: BookingStatus.CANCELLED,
-        cancelledAt: new Date(),
-        cancellationNote: 'Service désactivé par le professionnel.',
-      },
-    });
   }
 }

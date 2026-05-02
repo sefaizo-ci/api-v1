@@ -79,24 +79,9 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
       throw new BadRequestException('Date de reservation invalide');
     }
 
-    await validateBookingSlot(this.prisma, {
-      professionalId: command.professionalId,
-      scheduledAt,
-      durationMin: service.durationMin,
-    });
-
-    let travelFee = 0;
-    if (service.communeFees.length > 0) {
-      const fee = service.communeFees.find(
-        (f) => f.commune === command.commune,
-      );
-      if (!fee) {
-        throw new BadRequestException(
-          `Ce professionnel n'est pas disponible dans la commune "${command.commune}".`,
-        );
-      }
-      travelFee = fee.travelFee;
-    }
+    const travelFee =
+      service.communeFees.find((fee) => fee.commune === command.commune)
+        ?.travelFee ?? 0;
 
     const overlaps = await findOverlappingBookings(this.prisma, {
       professionalId: command.professionalId,
@@ -193,25 +178,10 @@ export class UpdatePendingBookingHandler implements ICommandHandler<UpdatePendin
       throw new BadRequestException('Date de reservation invalide');
     }
 
-    await validateBookingSlot(this.prisma, {
-      professionalId: booking.professionalId,
-      scheduledAt: nextScheduledAt,
-      durationMin: booking.durationMin,
-    });
-
     const nextCommune = command.commune ?? booking.commune;
-    let travelFee = 0;
-    if (booking.service.communeFees.length > 0) {
-      const fee = booking.service.communeFees.find(
-        (f) => f.commune === nextCommune,
-      );
-      if (!fee) {
-        throw new BadRequestException(
-          `Ce professionnel n'est pas disponible dans la commune "${nextCommune}".`,
-        );
-      }
-      travelFee = fee.travelFee;
-    }
+    const travelFee =
+      booking.service.communeFees.find((fee) => fee.commune === nextCommune)
+        ?.travelFee ?? 0;
 
     const overlaps = await findOverlappingBookings(this.prisma, {
       professionalId: booking.professionalId,
@@ -424,56 +394,6 @@ function toBookingStatus(status?: string): BookingStatus | undefined {
   return BookingStatus[normalized as keyof typeof BookingStatus];
 }
 
-async function validateBookingSlot(
-  prisma: PrismaService,
-  args: { professionalId: string; scheduledAt: Date; durationMin: number },
-): Promise<void> {
-  const dayOfWeek = args.scheduledAt.getUTCDay();
-
-  const availability = await prisma.availability.findFirst({
-    where: {
-      professionalId: args.professionalId,
-      dayOfWeek,
-      isActive: true,
-      deletedAt: null,
-      status: 'OPEN',
-    },
-  });
-
-  if (!availability) {
-    throw new BadRequestException(
-      "Le professionnel n'est pas disponible ce jour-là.",
-    );
-  }
-
-  const toMin = (time: string): number => {
-    const [h, m] = time.split(':').map(Number);
-    return h * 60 + m;
-  };
-
-  const bookingStartMin =
-    args.scheduledAt.getUTCHours() * 60 + args.scheduledAt.getUTCMinutes();
-  const bookingEndMin = bookingStartMin + args.durationMin;
-  const workStartMin = toMin(availability.startTime);
-  const workEndMin = toMin(availability.endTime);
-
-  if (bookingStartMin < workStartMin || bookingEndMin > workEndMin) {
-    throw new BadRequestException(
-      `Le créneau est hors des heures de travail (${availability.startTime} – ${availability.endTime}).`,
-    );
-  }
-
-  if (availability.breakStartTime && availability.breakEndTime) {
-    const breakStartMin = toMin(availability.breakStartTime);
-    const breakEndMin = toMin(availability.breakEndTime);
-    if (bookingStartMin < breakEndMin && bookingEndMin > breakStartMin) {
-      throw new BadRequestException(
-        `Le créneau chevauche la pause (${availability.breakStartTime} – ${availability.breakEndTime}).`,
-      );
-    }
-  }
-}
-
 async function findOverlappingBookings(
   prisma: PrismaService,
   args: {
@@ -486,6 +406,9 @@ async function findOverlappingBookings(
   const start = args.scheduledAt;
   const end = new Date(start.getTime() + args.durationMin * 60000);
 
+  const marginBefore = new Date(start.getTime() - 24 * 60 * 60000);
+  const marginAfter = new Date(end.getTime() + 24 * 60 * 60000);
+
   const candidates = await prisma.booking.findMany({
     where: {
       professionalId: args.professionalId,
@@ -495,8 +418,8 @@ async function findOverlappingBookings(
       },
       ...(args.excludeBookingId ? { id: { not: args.excludeBookingId } } : {}),
       scheduledAt: {
-        gte: new Date(start.getTime() - args.durationMin * 60000),
-        lte: end,
+        gte: marginBefore,
+        lte: marginAfter,
       },
     },
     select: {

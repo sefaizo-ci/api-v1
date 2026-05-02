@@ -10,7 +10,6 @@ import {
   CancelBookingHandler,
   CompleteBookingHandler,
   ConfirmBookingHandler,
-  MarkNoShowHandler,
   RejectBookingCancellationRequestHandler,
   RejectBookingHandler,
 } from './booking.handlers';
@@ -93,7 +92,6 @@ export const ProfessionalCommandHandlers = [
   CancelBookingHandler,
   ApproveBookingCancellationRequestHandler,
   RejectBookingCancellationRequestHandler,
-  MarkNoShowHandler,
 ];
 
 export const ProfessionalQueryHandlers = [

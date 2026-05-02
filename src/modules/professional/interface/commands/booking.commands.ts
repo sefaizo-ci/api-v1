@@ -68,14 +68,3 @@ export class RejectBookingCancellationRequestCommand implements ICommand {
     public readonly reason?: string,
   ) {}
 }
-
-/**
- * MarkNoShowCommand
- * Command for professional to mark a confirmed booking as no-show
- */
-export class MarkNoShowCommand implements ICommand {
-  constructor(
-    public readonly bookingId: string,
-    public readonly professionalId: string,
-  ) {}
-}

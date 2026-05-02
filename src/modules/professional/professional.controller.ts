@@ -53,7 +53,6 @@ import {
 } from './interface/commands';
 import {
   ApproveBookingCancellationRequestCommand,
-  MarkNoShowCommand,
   RejectBookingCancellationRequestCommand,
 } from './interface/commands/booking.commands';
 import {
@@ -756,18 +755,6 @@ export class ProfessionalController {
   ) {
     return this.commandBus.execute<CompleteBookingCommand, unknown>(
       new CompleteBookingCommand(bookingId, professionalId),
-    );
-  }
-
-  @Put(':professionalId/bookings/:bookingId/no-show')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('PROFESSIONAL')
-  async markNoShow(
-    @Param('professionalId') professionalId: string,
-    @Param('bookingId') bookingId: string,
-  ) {
-    return this.commandBus.execute<MarkNoShowCommand, unknown>(
-      new MarkNoShowCommand(bookingId, professionalId),
     );
   }
 
