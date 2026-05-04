@@ -1,8 +1,28 @@
 {
   "info": {
     "name": "sefaizo-api",
-    "description": "Unified Postman collection for Sefaizo API with Auth and Professional folders.",
+    "description": "Unified Postman collection for Sefaizo API. All requests require the x-api-key header, and protected routes also require Bearer JWT.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "x-api-key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
   },
   "item": [
     {
@@ -18,12 +38,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    ""
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": [""]
                 },
                 "description": "Verify API is running."
               },
@@ -35,12 +51,8 @@
                     "header": [],
                     "url": {
                       "raw": "{{baseUrl}}/",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        ""
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": [""]
                     }
                   },
                   "status": "OK",
@@ -94,14 +106,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/flow/init",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "flow",
-                    "init"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "flow", "init"]
                 },
                 "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` \u2192 User has PIN, proceed with LOGIN flow\n- `hasAccount: false` \u2192 New user, proceed with REGISTRATION flow\n- `nextStep` is `PIN_THEN_OTP` or `OTP`"
               },
@@ -126,14 +132,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/flow/init",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "flow",
-                        "init"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "flow", "init"]
                     }
                   },
                   "status": "OK",
@@ -160,14 +160,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/flow/init",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "flow",
-                        "init"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "flow", "init"]
                     }
                   },
                   "status": "OK",
@@ -214,14 +208,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/send",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "otp",
-                    "send"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "otp", "send"]
                 },
                 "description": "Send OTP via WhatsApp/SMS for account registration.\n\n**Allowed for:**\n- New users (no account)\n- Incomplete registrations (created but no PIN)\n\n**Blocked for:**\n- Completed accounts (have PIN) \u2192 returns 400 \"Account already active\""
               },
@@ -246,14 +234,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "otp",
-                        "send"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "otp", "send"]
                     }
                   },
                   "status": "OK",
@@ -280,14 +262,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "otp",
-                        "send"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "otp", "send"]
                     }
                   },
                   "status": "Bad Request",
@@ -336,14 +312,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/verify",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "otp",
-                    "verify"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "otp", "verify"]
                 },
                 "description": "Verify OTP for account registration. Returns `userId` and `isNewUser` flag for profile completion step.\n\n**On Success:**\n- Returns `userId` (save for next step)\n- Sets `currentStep: OTP_VERIFIED` in metadata\n- User must proceed to Complete Registration"
               },
@@ -368,14 +338,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "otp",
-                        "verify"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "otp", "verify"]
                     }
                   },
                   "status": "OK",
@@ -417,14 +381,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/register/complete",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "register",
-                    "complete"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "register", "complete"]
                 },
                 "description": "Finalize registration: set user profile (firstName, lastName) and PIN code.\n\n**On Success:**\n- Account becomes active\n- Sets `currentStep: REGISTRATION_COMPLETE` in metadata\n- User can now use login flow"
               },
@@ -449,14 +407,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/register/complete",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "register",
-                        "complete"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "register", "complete"]
                     }
                   },
                   "status": "Created",
@@ -504,14 +456,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/login/start",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "login",
-                    "start"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "login", "start"]
                 },
                 "description": "Validate phone + PIN and initiate LOGIN OTP.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n\n**On Success:**\n- Sends LOGIN OTP scoped to the selected app\n- Server metadata step is `LOGIN_OTP_SENT`"
               },
@@ -536,14 +482,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "login",
-                        "start"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "login", "start"]
                     }
                   },
                   "status": "OK",
@@ -570,14 +510,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "login",
-                        "start"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "login", "start"]
                     }
                   },
                   "status": "Unauthorized",
@@ -629,14 +563,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/verify",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "otp",
-                    "verify"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "otp", "verify"]
                 },
                 "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n- LOGIN OTP verification is scoped by app"
               },
@@ -661,14 +589,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "otp",
-                        "verify"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "otp", "verify"]
                     }
                   },
                   "status": "OK",
@@ -722,14 +644,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/token/refresh",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "token",
-                    "refresh"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "token", "refresh"]
                 },
                 "description": "Rotate tokens: invalidate old refreshToken and issue new pair.\n\n**Use when:**\n- Access token expires\n- Updating device info\n- Rolling session forward"
               },
@@ -754,14 +670,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/token/refresh",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "token",
-                        "refresh"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "token", "refresh"]
                     }
                   },
                   "status": "OK",
@@ -804,13 +714,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/me",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "me"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "me"]
                 },
                 "description": "Retrieve authenticated user profile including metadata."
               },
@@ -831,13 +736,8 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/me",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "me"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "me"]
                     }
                   },
                   "status": "OK",
@@ -883,13 +783,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/logout",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "sentinel",
-                    "logout"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "logout"]
                 },
                 "description": "Logout current session or all sessions.\n\n**Parameters:**\n- `refreshToken`: (required) Token to invalidate\n- `allDevices`: (optional) Set to `true` to logout all sessions, `false` to logout current device only"
               },
@@ -918,13 +813,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/logout",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "logout"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "logout"]
                     }
                   },
                   "status": "OK",
@@ -955,13 +845,8 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/logout",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "logout"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "logout"]
                     }
                   },
                   "status": "OK",
@@ -1000,12 +885,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional"]
                 },
                 "description": "List public professionals with optional filters: status, isVerified, location, page, limit."
               }
@@ -1030,14 +911,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/search/query?q={{searchQuery}}&location={{searchLocation}}&rating={{searchRating}}&page={{page}}&limit={{limit}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "search",
-                    "query"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "search", "query"],
                   "query": [
                     {
                       "key": "q",
@@ -1065,6 +940,186 @@
               }
             },
             {
+              "name": "Recommended Professionals",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/discover/recommended?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "discover", "recommended"],
+                  "query": [
+                    {
+                      "key": "lat",
+                      "value": "{{latitude}}"
+                    },
+                    {
+                      "key": "lng",
+                      "value": "{{longitude}}"
+                    },
+                    {
+                      "key": "radius",
+                      "value": "{{searchRadius}}"
+                    },
+                    {
+                      "key": "commune",
+                      "value": "{{commune}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    }
+                  ]
+                },
+                "description": "Recommended professionals ordered by relevance. Optionally filter by coordinates, commune and radius."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": []
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"8bc9f001-ce79-4eb9-a052-4ed0141b1384\",\n      \"agencyName\": \"Studio Awa Hair\",\n      \"avatarUrl\": \"https://i.pravatar.cc/300?img=5\",\n      \"address\": \"Cocody Riviera 3, Abidjan\",\n      \"location\": \"BOTH\",\n      \"latitude\": 5.3713,\n      \"longitude\": -3.9699,\n      \"bio\": \"Sp\u00e9cialiste en coiffure naturelle et soins capillaires depuis 8 ans.\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 4.8,\n      \"reviewCount\": 47,\n      \"serviceCount\": 3,\n      \"availabilityCount\": 6,\n      \"galleryCount\": 4,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 0.1\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "New Professionals",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/discover/new?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "discover", "new"],
+                  "query": [
+                    {
+                      "key": "lat",
+                      "value": "{{latitude}}"
+                    },
+                    {
+                      "key": "lng",
+                      "value": "{{longitude}}"
+                    },
+                    {
+                      "key": "radius",
+                      "value": "{{searchRadius}}"
+                    },
+                    {
+                      "key": "commune",
+                      "value": "{{commune}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    }
+                  ]
+                },
+                "description": "Professionals created in the last 30 days, optionally filtered by location."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": []
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"9c93322a-213e-4a90-ab7a-8ade2338d834\",\n      \"agencyName\": \"Glam by Mariam\",\n      \"avatarUrl\": \"https://i.pravatar.cc/300?img=32\",\n      \"address\": \"Riviera Golf, Cocody, Abidjan\",\n      \"location\": \"HOME\",\n      \"latitude\": 5.3667,\n      \"longitude\": -3.95,\n      \"bio\": \"Maquilleuse professionnelle pour tous vos \u00e9v\u00e9nements.\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 4.9,\n      \"reviewCount\": 38,\n      \"serviceCount\": 3,\n      \"availabilityCount\": 5,\n      \"galleryCount\": 4,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 2.2\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Trending Professionals",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/discover/trending?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "discover", "trending"],
+                  "query": [
+                    {
+                      "key": "lat",
+                      "value": "{{latitude}}"
+                    },
+                    {
+                      "key": "lng",
+                      "value": "{{longitude}}"
+                    },
+                    {
+                      "key": "radius",
+                      "value": "{{searchRadius}}"
+                    },
+                    {
+                      "key": "commune",
+                      "value": "{{commune}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    }
+                  ]
+                },
+                "description": "Trending professionals ordered by bookings, optionally filtered by location."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": []
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"73d6ca30-25b5-4e7b-a0c0-0364c4249f38\",\n      \"agencyName\": \"Salon Chez Ibrahim\",\n      \"avatarUrl\": \"https://nyc.cloud.appwrite.io/v1/storage/buckets/69f39f60002afa476ebb/files/69f3c8bf00353adf31a6/view?project=69f39e71002ce4bf23bf\",\n      \"address\": \"Abidjan, Cocody, Angr\u00e9\",\n      \"location\": \"SALON\",\n      \"latitude\": 5.3559,\n      \"longitude\": -3.9969,\n      \"bio\": \"Sp\u00e9cialiste coiffure et soins capillaires depuis 10 ans\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 0,\n      \"reviewCount\": 0,\n      \"serviceCount\": 2,\n      \"availabilityCount\": 4,\n      \"galleryCount\": 1,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 3.4\n    }\n  ]\n}"
+                }
+              ]
+            },
+            {
               "name": "Get Professional Public Profile",
               "event": [
                 {
@@ -1084,13 +1139,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}"]
                 },
                 "description": "Get public profile for one professional."
               }
@@ -1115,14 +1165,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services?includeInactive={{includeInactive}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "services"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "services"],
                   "query": [
                     {
                       "key": "includeInactive",
@@ -1153,9 +1197,7 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability?dayOfWeek={{dayOfWeek}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1191,14 +1233,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery?page={{page}}&limit={{limit}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "gallery"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "gallery"],
                   "query": [
                     {
                       "key": "page",
@@ -1243,14 +1279,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/me",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "profile",
-                    "me"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "profile", "me"]
                 },
                 "description": "Get the authenticated professional profile."
               }
@@ -1280,9 +1310,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/completion",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "profile",
@@ -1333,13 +1361,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "profile"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "profile"]
                 },
                 "description": "Create the professional profile."
               }
@@ -1377,14 +1400,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "profile",
-                    "{{professionalId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "profile", "{{professionalId}}"]
                 },
                 "description": "Update the professional profile (text fields only). To update the avatar, use *Upload Avatar* instead."
               }
@@ -1432,9 +1449,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1467,9 +1482,7 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "{{professionalId}}",
@@ -1513,14 +1526,8 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "services",
-                    "categories"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "services", "categories"],
                   "query": [
                     {
                       "key": "page",
@@ -1533,7 +1540,40 @@
                   ]
                 },
                 "description": "List active global service categories with pagination. Public endpoint."
-              }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professional", "services", "categories"],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\"data\":[{\"id\":\"uuid-1\",\"name\":\"Coupe femme\",\"slug\":\"coupe-femme\",\"description\":\"Coupes de cheveux femme, coiffures et styling\",\"icon\":\"💇‍♀️\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#E75480\"}},{\"id\":\"uuid-2\",\"name\":\"Coupe de cheveux homme\",\"slug\":\"coupe-de-cheveux-homme\",\"description\":\"Coupes homme, dégradés et rasage\",\"icon\":\"💇‍♂️\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#3498DB\"}},{\"id\":\"uuid-3\",\"name\":\"Épilation\",\"slug\":\"epilation\",\"description\":\"Épilation à la cire, au fil et au laser\",\"icon\":\"✨\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#E75480\"}},{\"id\":\"uuid-4\",\"name\":\"Ongle\",\"slug\":\"ongle\",\"description\":\"Manucure, pédicure et pose de gel/résine\",\"icon\":\"💅\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#EC407A\"}},{\"id\":\"uuid-5\",\"name\":\"Visage\",\"slug\":\"visage\",\"description\":\"Soins du visage, nettoyage et maquillage\",\"icon\":\"💄\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#F4A460\"}},{\"id\":\"uuid-6\",\"name\":\"Massage\",\"slug\":\"massage\",\"description\":\"Massages détente, thérapie et bien-être\",\"icon\":\"🧖\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#9B59B6\"}},{\"id\":\"uuid-7\",\"name\":\"Corps\",\"slug\":\"corps\",\"description\":\"Soins du corps, gommages et enveloppements\",\"icon\":\"🛁\",\"isActive\":true,\"createdAt\":\"2026-05-04T00:00:00Z\",\"updatedAt\":\"2026-05-04T00:00:00Z\",\"deletedAt\":null,\"metadata\":{\"color\":\"#1ABC9C\"}}],\"pagination\":{\"page\":1,\"limit\":20,\"total\":7,\"totalPages\":1}}"
+                }
+              ]
             },
             {
               "name": "Create Service Category",
@@ -1568,18 +1608,12 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"Category for premium services\"\n}"
+                  "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"Category for premium services\",\n  \"icon\": \"https://example.com/icons/premium.png\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "services",
-                    "categories"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "services", "categories"]
                 },
                 "description": "Admin only: create a new global category directly (no professional request required)."
               }
@@ -1613,13 +1647,11 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"Updated category description\"\n}"
+                  "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"Updated category description\",\n  \"icon\": \"https://example.com/icons/updated-icon.png\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "services",
@@ -1655,9 +1687,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "services",
@@ -1705,9 +1735,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1730,9 +1758,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests?status=PENDING&page=1&limit=20",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1797,14 +1823,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "services"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "services"]
                 },
                 "description": "Create a service offering for the current professional."
               }
@@ -1842,14 +1862,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "services",
-                    "{{serviceId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "services", "{{serviceId}}"]
                 },
                 "description": "Update a service offering."
               }
@@ -1879,9 +1893,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/deactivate",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1918,9 +1930,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/activate",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1957,9 +1967,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2003,9 +2011,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/communes",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2055,14 +2061,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "availability"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "availability"]
                 },
                 "description": "Set a day availability slot."
               }
@@ -2100,9 +2100,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2146,9 +2144,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2193,14 +2189,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "availability"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "availability"]
                 },
                 "description": "Set the same availability across the week."
               }
@@ -2230,9 +2220,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2291,9 +2279,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2326,9 +2312,7 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "{{professionalId}}",
@@ -2383,14 +2367,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "gallery"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "gallery"]
                 },
                 "description": "Upload a gallery item."
               }
@@ -2428,9 +2406,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2466,9 +2442,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/publish",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2505,9 +2479,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/unpublish",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2552,9 +2524,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/reorder",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2590,9 +2560,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2633,14 +2601,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "media",
-                    "files",
-                    "{{mediaFileId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["media", "files", "{{mediaFileId}}"]
                 },
                 "description": "Get metadata for a specific file stored in Appwrite.\n\n**Response:** `fileId`, `fileName`, `mimeType`, `sizeOriginal`, `viewUrl`, `downloadUrl`.\n\nAccess is restricted to the file owner (PROFESSIONAL) or ADMIN."
               },
@@ -2657,14 +2619,8 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "media",
-                        "files",
-                        "{{mediaFileId}}"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["media", "files", "{{mediaFileId}}"]
                     }
                   },
                   "status": "OK",
@@ -2698,9 +2654,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/media/professionals/{{professionalId}}/files?type=gallery&page=1&limit=20",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "media",
                     "professionals",
@@ -2738,9 +2692,7 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/media/professionals/{{professionalId}}/files?type=gallery&page=1&limit=20",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "media",
                         "professionals",
@@ -2794,14 +2746,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "media",
-                    "files",
-                    "{{mediaFileId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["media", "files", "{{mediaFileId}}"]
                 },
                 "description": "Permanently delete a file from Appwrite storage.\n\nOnly the file owner (PROFESSIONAL) or ADMIN can delete. Use `mediaFileId` populated after an upload."
               },
@@ -2818,14 +2764,8 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "media",
-                        "files",
-                        "{{mediaFileId}}"
-                      ]
+                      "host": ["{{baseUrl}}"],
+                      "path": ["media", "files", "{{mediaFileId}}"]
                     }
                   },
                   "status": "OK",
@@ -2864,14 +2804,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "professional",
-                    "{{professionalId}}",
-                    "bookings"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professional", "{{professionalId}}", "bookings"],
                   "query": [
                     {
                       "key": "status",
@@ -2915,9 +2849,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/confirm",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2962,9 +2894,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/reject",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3001,9 +2931,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/complete",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3040,9 +2968,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/cancellation-requests?page={{page}}&limit={{limit}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3088,9 +3014,7 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/approve",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3136,9 +3060,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/reject",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3184,9 +3106,7 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "profile",
@@ -3230,9 +3150,7 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "profile",
@@ -3268,9 +3186,7 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "profile",
@@ -3298,9 +3214,7 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/category-requests/admin?status=PENDING&page=1&limit=20",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "services",
@@ -3345,9 +3259,7 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/approve",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "services",
@@ -3380,9 +3292,7 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/reject",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
+                      "host": ["{{baseUrl}}"],
                       "path": [
                         "professional",
                         "services",
@@ -3447,14 +3357,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "clients",
-                    "me",
-                    "bookings"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["clients", "me", "bookings"]
                 },
                 "description": "Client creates a booking. Schedule overlap is allowed and returned as warning data."
               }
@@ -3484,14 +3388,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "clients",
-                    "me",
-                    "bookings"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["clients", "me", "bookings"],
                   "query": [
                     {
                       "key": "status",
@@ -3535,15 +3433,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "clients",
-                    "me",
-                    "bookings",
-                    "{{bookingId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["clients", "me", "bookings", "{{bookingId}}"]
                 },
                 "description": "Get one booking owned by the authenticated client."
               }
@@ -3581,15 +3472,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "clients",
-                    "me",
-                    "bookings",
-                    "{{bookingId}}"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["clients", "me", "bookings", "{{bookingId}}"]
                 },
                 "description": "Update booking details while the booking status is PENDING."
               }
@@ -3627,9 +3511,7 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}/cancellation-request",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
+                  "host": ["{{baseUrl}}"],
                   "path": [
                     "clients",
                     "me",
@@ -3680,13 +3562,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/pulse/me?status=UNREAD&page={{page}}&limit={{limit}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "pulse",
-                    "me"
-                  ],
+                  "host": ["{{baseUrl}}"],
+                  "path": ["pulse", "me"],
                   "query": [
                     {
                       "key": "status",
@@ -3731,15 +3608,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/pulse/me/{{notificationId}}/read",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "pulse",
-                    "me",
-                    "{{notificationId}}",
-                    "read"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["pulse", "me", "{{notificationId}}", "read"]
                 },
                 "description": "Mark a single notification as read. notificationId auto-populated from List My Notifications."
               }
@@ -3769,14 +3639,8 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/pulse/me/read-all",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "pulse",
-                    "me",
-                    "read-all"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["pulse", "me", "read-all"]
                 },
                 "description": "Mark all in-app notifications as read for the authenticated user."
               }
@@ -3819,14 +3683,8 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/pulse/devices/register",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "pulse",
-                    "devices",
-                    "register"
-                  ]
+                  "host": ["{{baseUrl}}"],
+                  "path": ["pulse", "devices", "register"]
                 },
                 "description": "Register or update a push notification device for the authenticated user. platform: string (max 50), deviceId: string (max 200), pushToken: string."
               }

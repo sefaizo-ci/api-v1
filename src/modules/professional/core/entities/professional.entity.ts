@@ -416,14 +416,24 @@ export class ProfessionalEntity {
    * Get a summary of professional profile for display
    */
   getSummary() {
+    const activeServices = this.getActiveServices();
+    const minPrice =
+      activeServices.length > 0
+        ? Math.min(...activeServices.map((s) => s.basePrice))
+        : null;
     return {
       id: this.id,
       agencyName: this.agencyName,
+      bio: this.bio,
+      avatarUrl: this.avatarUrl,
+      address: this.address,
+      location: this.location,
       status: this.status,
       isVerified: this.isVerified,
       rating: this.rating,
       reviewCount: this.reviewCount,
-      serviceCount: this.getActiveServices().length,
+      minPrice,
+      serviceCount: activeServices.length,
       availabilityCount: this.getActiveAvailabilities().length,
       galleryCount: this.getGalleryItemCount(),
       profileCompletion: this.getProfileCompletion(),

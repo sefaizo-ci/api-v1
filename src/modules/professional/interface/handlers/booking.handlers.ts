@@ -51,13 +51,16 @@ export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingComm
       );
     }
 
-    await this.prisma.booking.update({
-      where: { id: booking.id },
-      data: {
-        status: 'CONFIRMED',
-        confirmedAt: new Date(),
-      },
-    });
+    await Promise.all([
+      this.prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: 'CONFIRMED', confirmedAt: new Date() },
+      }),
+      this.prisma.professional.update({
+        where: { id: command.professionalId },
+        data: { bookingCount: { increment: 1 } },
+      }),
+    ]);
 
     this.eventBus.publish(new BookingConfirmedEvent(booking.id));
   }

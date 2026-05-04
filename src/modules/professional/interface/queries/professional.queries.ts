@@ -81,6 +81,39 @@ export class ListServiceCategoriesQuery implements IQuery {
   ) {}
 }
 
+export class GetRecommendedProfessionalsQuery implements IQuery {
+  constructor(
+    public readonly lat?: number,
+    public readonly lng?: number,
+    public readonly radiusKm?: number,
+    public readonly commune?: string,
+    public readonly limit?: number,
+    public readonly page?: number,
+  ) {}
+}
+
+export class GetNewProfessionalsQuery implements IQuery {
+  constructor(
+    public readonly lat?: number,
+    public readonly lng?: number,
+    public readonly radiusKm?: number,
+    public readonly commune?: string,
+    public readonly limit?: number,
+    public readonly page?: number,
+  ) {}
+}
+
+export class GetTrendingProfessionalsQuery implements IQuery {
+  constructor(
+    public readonly lat?: number,
+    public readonly lng?: number,
+    public readonly radiusKm?: number,
+    public readonly commune?: string,
+    public readonly limit?: number,
+    public readonly page?: number,
+  ) {}
+}
+
 export class ListServiceCategoryRequestsQuery implements IQuery {
   constructor(
     public readonly professionalId?: string,
