@@ -47,7 +47,6 @@ import { StartLoginDto } from './interface/dtos/start-login.dto';
 import { VerifyOtpDto } from './interface/dtos/verify-otp.dto';
 
 import { CurrentUser } from '../../libs/decorators/current-user.decorator';
-import { ApiKeyGuard } from './infrastructure/guards/api-key.guard';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -98,7 +97,6 @@ type VerifyOtpResponse = {
 @Controller(AUTH.BASE)
 @ApiTags('Sentinel')
 @ApiSecurity('x-api-key')
-@UseGuards(ApiKeyGuard)
 export class SentinelController {
   constructor(
     private readonly commandBus: CommandBus,
