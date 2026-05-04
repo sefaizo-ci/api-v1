@@ -20,15 +20,17 @@ type HealthResponse = {
   service: string;
 };
 
-type ProfessionalListResponse = {
-  data: unknown[];
-  pagination: unknown;
-};
-
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
+  const apiKey = 'test-api-key';
+
+  function requestWithApiKey(path: string) {
+    return request(app.getHttpServer()).get(path).set('x-api-key', apiKey);
+  }
 
   beforeAll(async () => {
+    process.env.API_KEY = apiKey;
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -54,9 +56,12 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
+  it('/ (GET) should require x-api-key', () => {
+    return request(app.getHttpServer()).get('/').expect(401);
+  });
+
+  it('/ (GET) with x-api-key', () => {
+    return requestWithApiKey('/')
       .expect(200)
       .expect(({ body }: { body: RootResponse }) => {
         expect(body.success).toBe(true);
@@ -64,9 +69,12 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/health (GET)', () => {
-    return request(app.getHttpServer())
-      .get(`/${APP.HEALTH}`)
+  it('/health (GET) should require x-api-key', () => {
+    return request(app.getHttpServer()).get(`/${APP.HEALTH}`).expect(401);
+  });
+
+  it('/health (GET) with x-api-key', () => {
+    return requestWithApiKey(`/${APP.HEALTH}`)
       .expect(200)
       .expect(({ body }: { body: HealthResponse }) => {
         expect(body.success).toBe(true);
@@ -75,19 +83,15 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/professional (GET) should be public', () => {
+  it('/professional (GET) should require x-api-key', () => {
     return request(app.getHttpServer())
       .get(`/${APP.API.PREFIX}/professional`)
-      .expect(200)
-      .expect(({ body }: { body: ProfessionalListResponse }) => {
-        expect(Array.isArray(body.data)).toBe(true);
-        expect(body.pagination).toBeDefined();
-      });
+      .expect(401);
   });
 
   it('/professional/profile/me (GET) should require auth', () => {
-    return request(app.getHttpServer())
-      .get(`/${APP.API.PREFIX}/professional/profile/me`)
-      .expect(401);
+    return requestWithApiKey(
+      `/${APP.API.PREFIX}/professional/profile/me`,
+    ).expect(401);
   });
 });
