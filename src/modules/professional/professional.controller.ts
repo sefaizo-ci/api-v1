@@ -75,12 +75,15 @@ import {
 import { ReorderGalleryDto } from './interface/dtos/gallery.dto';
 import {
   GetMyProfessionalProfileQuery,
+  GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
   GetProfessionalBookingsQuery,
   GetProfessionalGalleryQuery,
   GetProfessionalProfileQuery,
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
+  GetRecommendedProfessionalsQuery,
+  GetTrendingProfessionalsQuery,
   ListProfessionalsQuery,
   ListServiceCategoriesQuery,
   ListServiceCategoryRequestsQuery,
@@ -246,6 +249,79 @@ export class ProfessionalController {
   ) {
     return this.queryBus.execute<SearchProfessionalsQuery, unknown>(
       new SearchProfessionalsQuery(q, location, rating, page, limit),
+    );
+  }
+
+  /**
+   * Recommended professionals — top rated, optionally near user
+   * ?lat=5.37&lng=-3.97&radius=10&commune=Cocody&limit=10
+   */
+  @Get('discover/recommended')
+  async getRecommended(
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radius') radius?: string,
+    @Query('commune') commune?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.queryBus.execute<GetRecommendedProfessionalsQuery, unknown>(
+      new GetRecommendedProfessionalsQuery(
+        lat ? parseFloat(lat) : undefined,
+        lng ? parseFloat(lng) : undefined,
+        radius ? parseFloat(radius) : undefined,
+        commune,
+        limit ? parseInt(limit, 10) : undefined,
+        page ? parseInt(page, 10) : undefined,
+      ),
+    );
+  }
+
+  /**
+   * New professionals — joined in the last 30 days, optionally near user
+   */
+  @Get('discover/new')
+  async getNew(
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radius') radius?: string,
+    @Query('commune') commune?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.queryBus.execute<GetNewProfessionalsQuery, unknown>(
+      new GetNewProfessionalsQuery(
+        lat ? parseFloat(lat) : undefined,
+        lng ? parseFloat(lng) : undefined,
+        radius ? parseFloat(radius) : undefined,
+        commune,
+        limit ? parseInt(limit, 10) : undefined,
+        page ? parseInt(page, 10) : undefined,
+      ),
+    );
+  }
+
+  /**
+   * Trending professionals — most booked, optionally near user
+   */
+  @Get('discover/trending')
+  async getTrending(
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radius') radius?: string,
+    @Query('commune') commune?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.queryBus.execute<GetTrendingProfessionalsQuery, unknown>(
+      new GetTrendingProfessionalsQuery(
+        lat ? parseFloat(lat) : undefined,
+        lng ? parseFloat(lng) : undefined,
+        radius ? parseFloat(radius) : undefined,
+        commune,
+        limit ? parseInt(limit, 10) : undefined,
+        page ? parseInt(page, 10) : undefined,
+      ),
     );
   }
 

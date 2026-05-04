@@ -24,12 +24,15 @@ import {
 } from './gallery.handlers';
 import {
   GetMyProfessionalProfileHandler,
+  GetNewProfessionalsHandler,
   GetProfessionalAvailabilityHandler,
   GetProfessionalBookingsHandler,
   GetProfessionalGalleryHandler,
   GetProfessionalProfileHandler,
   GetProfessionalServicesHandler,
   GetProfileCompletionHandler,
+  GetRecommendedProfessionalsHandler,
+  GetTrendingProfessionalsHandler,
   ListBookingCancellationRequestsHandler,
   ListProfessionalsHandler,
   ListServiceCategoriesHandler,
@@ -109,6 +112,9 @@ export const ProfessionalQueryHandlers = [
   ListServiceCategoriesHandler,
   ListServiceCategoryRequestsHandler,
   SearchProfessionalsHandler,
+  GetRecommendedProfessionalsHandler,
+  GetNewProfessionalsHandler,
+  GetTrendingProfessionalsHandler,
 ];
 
 export * from './availability.handlers';

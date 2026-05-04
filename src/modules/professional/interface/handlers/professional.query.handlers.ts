@@ -13,12 +13,15 @@ import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
   GetMyProfessionalProfileQuery,
+  GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
   GetProfessionalBookingsQuery,
   GetProfessionalGalleryQuery,
   GetProfessionalProfileQuery,
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
+  GetRecommendedProfessionalsQuery,
+  GetTrendingProfessionalsQuery,
   ListBookingCancellationRequestsQuery,
   ListProfessionalsQuery,
   ListServiceCategoriesQuery,
@@ -27,6 +30,192 @@ import {
 } from '../../interface/queries';
 
 const BOOKING_CANCELLATION_REQUEST_STATUS_PENDING = 'PENDING' as const;
+
+type GeoRow = { id: string; distance_km: string | null };
+
+type DiscoveryItem = {
+  id: string;
+  agencyName: string | null;
+  avatarUrl: string | null;
+  address: string | null;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  bio: string | null;
+  status: string;
+  isVerified: boolean;
+  rating: number;
+  reviewCount: number;
+  minPrice: number | null;
+  serviceCount: number;
+  availabilityCount: number;
+  galleryCount: number;
+  canAcceptBookings: boolean;
+  distanceKm: number | null;
+};
+
+type DiscoveryPage = {
+  data: DiscoveryItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+type GeoQueryOpts = {
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  commune?: string;
+  limit?: number;
+  page?: number;
+};
+
+async function runGeoDiscovery(
+  prisma: PrismaService,
+  opts: GeoQueryOpts,
+  extraWhere: string,
+  orderBy: string,
+): Promise<DiscoveryPage> {
+  const km = opts.radiusKm ?? 10;
+  const limit = opts.limit ?? 10;
+  const page = opts.page ?? 1;
+  const offset = (page - 1) * limit;
+  const hasCoords = opts.lat !== undefined && opts.lng !== undefined;
+  const lat = opts.lat ?? 0;
+  const lng = opts.lng ?? 0;
+
+  const distExpr = hasCoords
+    ? `ROUND(CAST(6371 * acos(LEAST(1.0, cos(radians(${lat})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(p.latitude)))) AS numeric), 1)`
+    : 'NULL';
+  const geoWhere = hasCoords
+    ? `AND (6371 * acos(LEAST(1.0, cos(radians(${lat})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(p.latitude))))) <= ${km}`
+    : '';
+  const comWhere = opts.commune
+    ? `AND p.address ILIKE '%${opts.commune.replace(/'/g, "''")}%'`
+    : '';
+
+  const [rows, countRows] = await Promise.all([
+    prisma.$queryRaw<GeoRow[]>(
+      Prisma.sql`
+        SELECT p.id, ${Prisma.raw(distExpr)} AS distance_km
+        FROM "public"."professionals" p
+        WHERE p."deletedAt" IS NULL
+          AND p.status = 'ACTIVE'
+          AND p."isVerified" = true
+          ${Prisma.raw(geoWhere)}
+          ${Prisma.raw(comWhere)}
+          ${Prisma.raw(extraWhere)}
+        ORDER BY ${Prisma.raw(orderBy)}
+        LIMIT ${Prisma.raw(String(limit))}
+        OFFSET ${Prisma.raw(String(offset))}
+      `,
+    ),
+    prisma.$queryRaw<[{ count: string }]>(
+      Prisma.sql`
+        SELECT COUNT(*) AS count
+        FROM "public"."professionals" p
+        WHERE p."deletedAt" IS NULL
+          AND p.status = 'ACTIVE'
+          AND p."isVerified" = true
+          ${Prisma.raw(geoWhere)}
+          ${Prisma.raw(comWhere)}
+          ${Prisma.raw(extraWhere)}
+      `,
+    ),
+  ]);
+
+  const total = parseInt(countRows[0]?.count ?? '0', 10);
+  const pagination = {
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+  };
+
+  if (rows.length === 0) return { data: [], pagination };
+
+  const ids = rows.map((r) => r.id);
+  const distMap = new Map(
+    rows.map((r) => [
+      r.id,
+      r.distance_km !== null ? parseFloat(r.distance_km) : null,
+    ]),
+  );
+
+  const [professionals, minPriceRows] = await Promise.all([
+    prisma.professional.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        agencyName: true,
+        avatarUrl: true,
+        address: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        bio: true,
+        status: true,
+        isVerified: true,
+        rating: true,
+        reviewCount: true,
+        deletedAt: true,
+        _count: {
+          select: {
+            services: { where: { deletedAt: null, isActive: true } },
+            availabilities: { where: { deletedAt: null, isActive: true } },
+            gallery: { where: { deletedAt: null, isPublic: true } },
+          },
+        },
+      },
+    }),
+    prisma.serviceOffering.groupBy({
+      by: ['professionalId'],
+      where: { professionalId: { in: ids }, isActive: true, deletedAt: null },
+      _min: { basePrice: true },
+    }),
+  ]);
+
+  const proMap = new Map(professionals.map((p) => [p.id, p]));
+  const minPriceMap = new Map(
+    minPriceRows.map((r) => [r.professionalId, r._min.basePrice]),
+  );
+
+  const data = ids
+    .filter((id) => proMap.has(id))
+    .map((id): DiscoveryItem => {
+      const p = proMap.get(id)!;
+      return {
+        id: p.id,
+        agencyName: p.agencyName,
+        avatarUrl: p.avatarUrl,
+        address: p.address,
+        location: p.location,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        bio: p.bio,
+        status: p.status,
+        isVerified: p.isVerified,
+        rating: p.rating,
+        reviewCount: p.reviewCount,
+        minPrice: minPriceMap.get(id) ?? null,
+        serviceCount: p._count.services,
+        availabilityCount: p._count.availabilities,
+        galleryCount: p._count.gallery,
+        canAcceptBookings:
+          p.isVerified &&
+          p.status === 'ACTIVE' &&
+          !p.deletedAt &&
+          p._count.services > 0 &&
+          p._count.availabilities > 0,
+        distanceKm: distMap.get(id) ?? null,
+      };
+    });
+
+  return { data, pagination };
+}
 
 type ServiceCategoryRecord = {
   id: string;
@@ -530,5 +719,55 @@ export class SearchProfessionalsHandler implements IQueryHandler<SearchProfessio
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+}
+
+@QueryHandler(GetRecommendedProfessionalsQuery)
+@Injectable()
+export class GetRecommendedProfessionalsHandler implements IQueryHandler<GetRecommendedProfessionalsQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(
+    query: GetRecommendedProfessionalsQuery,
+  ): Promise<DiscoveryPage> {
+    const orderBy =
+      query.lat !== undefined
+        ? `distance_km ASC NULLS LAST, p.rating DESC`
+        : `p.rating DESC, p."reviewCount" DESC`;
+    return runGeoDiscovery(this.prisma, query, '', orderBy);
+  }
+}
+
+@QueryHandler(GetNewProfessionalsQuery)
+@Injectable()
+export class GetNewProfessionalsHandler implements IQueryHandler<GetNewProfessionalsQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: GetNewProfessionalsQuery): Promise<DiscoveryPage> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ');
+    return runGeoDiscovery(
+      this.prisma,
+      query,
+      `AND p."createdAt" >= '${thirtyDaysAgo}'`,
+      `p."createdAt" DESC`,
+    );
+  }
+}
+
+@QueryHandler(GetTrendingProfessionalsQuery)
+@Injectable()
+export class GetTrendingProfessionalsHandler implements IQueryHandler<GetTrendingProfessionalsQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: GetTrendingProfessionalsQuery): Promise<DiscoveryPage> {
+    return runGeoDiscovery(
+      this.prisma,
+      query,
+      '',
+      `p."bookingCount" DESC, p.rating DESC`,
+    );
   }
 }
