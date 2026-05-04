@@ -311,8 +311,9 @@ model Professional {
   longitude  Float?
   status     String          @default("PENDING")
   isVerified Boolean         @default(false)
-  rating     Float           @default(0)
-  reviewCount Int            @default(0)
+  rating      Float           @default(0)
+  reviewCount Int             @default(0)
+  bookingCount Int            @default(0)
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   deletedAt  DateTime?
@@ -359,6 +360,7 @@ model ServiceCategory {
   name        String
   slug        String    @unique
   description String?
+  icon        String?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
