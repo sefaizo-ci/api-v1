@@ -38,8 +38,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/",
-                  "host": ["{{baseUrl}}"],
-                  "path": [""]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    ""
+                  ]
                 },
                 "description": "Verify API is running."
               },
@@ -51,8 +55,12 @@
                     "header": [],
                     "url": {
                       "raw": "{{baseUrl}}/",
-                      "host": ["{{baseUrl}}"],
-                      "path": [""]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        ""
+                      ]
                     }
                   },
                   "status": "OK",
@@ -67,7 +75,7 @@
           "name": "AUTH FLOW",
           "item": [
             {
-              "name": "1\ufe0f\u20e3 Init Flow (Detect Account)",
+              "name": "1️⃣ Init Flow (Detect Account)",
               "event": [
                 {
                   "listen": "test",
@@ -94,10 +102,6 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
@@ -106,10 +110,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/flow/init",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "flow", "init"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "flow",
+                    "init"
+                  ]
                 },
-                "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` \u2192 User has PIN, proceed with LOGIN flow\n- `hasAccount: false` \u2192 New user, proceed with REGISTRATION flow\n- `nextStep` is `PIN_THEN_OTP` or `OTP`"
+                "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` → User has PIN, proceed with LOGIN flow\n- `hasAccount: false` → New user, proceed with REGISTRATION flow\n- `nextStep` is `PIN_THEN_OTP` or `OTP`"
               },
               "response": [
                 {
@@ -120,10 +130,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -132,8 +138,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/flow/init",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "flow", "init"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "flow",
+                        "init"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -148,10 +160,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -160,8 +168,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/flow/init",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "flow", "init"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "flow",
+                        "init"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -176,7 +190,7 @@
           "name": "AUTH REGISTRATION (NEW USER PATH)",
           "item": [
             {
-              "name": "2\ufe0f\u20e3 Send OTP for Registration",
+              "name": "2️⃣ Send OTP for Registration",
               "event": [
                 {
                   "listen": "test",
@@ -196,10 +210,6 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
@@ -208,10 +218,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/send",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "otp", "send"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "otp",
+                    "send"
+                  ]
                 },
-                "description": "Send OTP via WhatsApp/SMS for account registration.\n\n**Allowed for:**\n- New users (no account)\n- Incomplete registrations (created but no PIN)\n\n**Blocked for:**\n- Completed accounts (have PIN) \u2192 returns 400 \"Account already active\""
+                "description": "Send OTP via WhatsApp/SMS.\n\n**Accepted `purpose` values:**\n- `REGISTRATION` — new account or incomplete registration\n- `PIN_RESET` — existing account, forgot PIN\n\n**400:** sending REGISTRATION OTP to an already active account.\n\n**429 (rate limit):** 60 s cooldown between requests, max 5 per 15 min."
               },
               "response": [
                 {
@@ -222,10 +238,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -234,8 +246,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "otp", "send"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "send"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -250,10 +268,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -262,18 +276,54 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "otp", "send"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "send"
+                      ]
                     }
                   },
                   "status": "Bad Request",
                   "code": 400,
-                  "body": "{\n  \"message\": \"Ce num\u00e9ro est d\u00e9j\u00e0 enregistr\u00e9.\"\n}"
+                  "body": "{\n  \"message\": \"Ce numéro est déjà enregistré.\"\n}"
+                },
+                {
+                  "name": "429 Too Many Requests (Rate Limit)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/send",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "send"
+                      ]
+                    }
+                  },
+                  "status": "Too Many Requests",
+                  "code": 429,
+                  "body": "{\n  \"message\": \"Patientez 45s avant de redemander un code.\",\n  \"statusCode\": 429\n}"
                 }
               ]
             },
             {
-              "name": "3\ufe0f\u20e3 Verify OTP (Registration)",
+              "name": "3️⃣ Verify OTP (Registration)",
               "event": [
                 {
                   "listen": "test",
@@ -300,10 +350,6 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
@@ -312,8 +358,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/verify",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "otp", "verify"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "otp",
+                    "verify"
+                  ]
                 },
                 "description": "Verify OTP for account registration. Returns `userId` and `isNewUser` flag for profile completion step.\n\n**On Success:**\n- Returns `userId` (save for next step)\n- Sets `currentStep: OTP_VERIFIED` in metadata\n- User must proceed to Complete Registration"
               },
@@ -326,10 +378,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -338,18 +386,114 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "otp", "verify"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
                     }
                   },
                   "status": "OK",
                   "code": 200,
                   "body": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"isNewUser\": true\n}"
+                },
+                {
+                  "name": "400 Code Expired",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "body": "{\n  \"message\": \"Code expiré. Demandez un nouveau code.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                },
+                {
+                  "name": "401 Wrong Code (attempts remaining)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"111111\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "401 Too Many Attempts (Blocked 1h)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"111111\",\n  \"purpose\": \"REGISTRATION\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"Trop de tentatives. Bloqué 1 heure.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
                 }
               ]
             },
             {
-              "name": "4\ufe0f\u20e3 Complete Registration (Set Profile + PIN)",
+              "name": "4️⃣ Complete Registration (Set Profile + PIN)",
               "event": [
                 {
                   "listen": "test",
@@ -369,22 +513,24 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\",\n  \"role\": \"CLIENT\"\n}"
+                  "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"{{firstName}}\",\n  \"lastName\": \"{{lastName}}\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\",\n  \"role\": \"{{registrationRole}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/register/complete",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "register", "complete"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "register",
+                    "complete"
+                  ]
                 },
-                "description": "Finalize registration: set user profile (firstName, lastName) and PIN code.\n\n**On Success:**\n- Account becomes active\n- Sets `currentStep: REGISTRATION_COMPLETE` in metadata\n- User can now use login flow"
+                "description": "Finalize registration: set user profile (firstName, lastName), PIN code and role.\n\n**`role` values:** `CLIENT` or `PROFESSIONAL` (ADMIN not allowed at registration).\n\n**PIN rules:** 4–6 digits, no obvious patterns (000000, 123456, 111111 rejected).\n\n**On Success:** HTTP 201, body null. Account is active, user can now login."
               },
               "response": [
                 {
@@ -395,25 +541,117 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"pin\": \"1234\",\n  \"confirmPin\": \"1234\",\n  \"role\": \"CLIENT\"\n}"
+                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2580\",\n  \"confirmPin\": \"2580\",\n  \"role\": \"CLIENT\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/register/complete",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "register", "complete"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "register",
+                        "complete"
+                      ]
                     }
                   },
                   "status": "Created",
                   "code": 201,
                   "body": "null"
+                },
+                {
+                  "name": "400 PIN Mismatch",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2580\",\n  \"confirmPin\": \"2581\",\n  \"role\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "register",
+                        "complete"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "body": "{\n  \"message\": \"Les deux PIN ne correspondent pas.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                },
+                {
+                  "name": "400 PIN Too Simple",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"123456\",\n  \"confirmPin\": \"123456\",\n  \"role\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "register",
+                        "complete"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "body": "{\n  \"message\": \"PIN trop simple. Choisissez un code plus sécurisé.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                },
+                {
+                  "name": "400 User Not Found",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"userId\": \"00000000-0000-0000-0000-000000000000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2580\",\n  \"confirmPin\": \"2580\",\n  \"role\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "register",
+                        "complete"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "body": "{\n  \"message\": \"Utilisateur introuvable.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
                 }
               ],
               "description": "Finalize registration: set user profile (firstName, lastName), PIN code and role.\n\n**On Success:**\n- Account becomes active\n- Returns null (HTTP 201)"
@@ -424,7 +662,7 @@
           "name": "AUTH LOGIN (EXISTING USER PATH)",
           "item": [
             {
-              "name": "2\ufe0f\u20e3 Start Login (PIN Verification)",
+              "name": "2️⃣ Start Login (PIN Verification)",
               "event": [
                 {
                   "listen": "test",
@@ -444,20 +682,22 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\",\n  \"app\": \"CLIENT\"\n}"
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\",\n  \"app\": \"{{loginApp}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/login/start",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "login", "start"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "login",
+                    "start"
+                  ]
                 },
                 "description": "Validate phone + PIN and initiate LOGIN OTP.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n\n**On Success:**\n- Sends LOGIN OTP scoped to the selected app\n- Server metadata step is `LOGIN_OTP_SENT`"
               },
@@ -470,10 +710,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -482,8 +718,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "login", "start"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "start"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -498,10 +740,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -510,18 +748,144 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "login", "start"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "start"
+                      ]
                     }
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"PIN non configur\u00e9.\"\n}"
+                  "body": "{\n  \"message\": \"PIN non configuré.\"\n}"
+                },
+                {
+                  "name": "400 User Not Found",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250799999999\",\n  \"pin\": \"2580\",\n  \"app\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/start",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "body": "{\n  \"message\": \"Numéro introuvable.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                },
+                {
+                  "name": "401 Wrong PIN",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"9999\",\n  \"app\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/start",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"PIN incorrect. 2 tentative(s) restante(s).\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "401 PIN Blocked (Too Many Attempts)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"9999\",\n  \"app\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/start",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"PIN bloqué 1 heure.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "401 Wrong App Role",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"2580\",\n  \"app\": \"PROFESSIONAL\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/start",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"Ce compte ne possède pas le profil PROFESSIONAL.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
                 }
               ]
             },
             {
-              "name": "3\ufe0f\u20e3 Verify OTP (Login -> Tokens)",
+              "name": "3️⃣ Verify OTP (Login -> Tokens)",
               "event": [
                 {
                   "listen": "test",
@@ -551,20 +915,22 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"CLIENT\"\n}"
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"{{loginApp}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/verify",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "otp", "verify"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "otp",
+                    "verify"
+                  ]
                 },
                 "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n- LOGIN OTP verification is scoped by app"
               },
@@ -577,10 +943,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -589,13 +951,79 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "otp", "verify"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
                     }
                   },
                   "status": "OK",
                   "code": 200,
                   "body": "{\n  \"userId\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n  \"isNewUser\": false,\n  \"accessToken\": \"jwt_access_token\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"Aya\",\n    \"role\": \"CLIENT\",\n    \"roles\": [\n      \"CLIENT\"\n    ]\n  }\n}"
+                },
+                {
+                  "name": "401 Wrong Code",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"111111\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"CLIENT\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "401 Wrong App Role",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"000000\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"PROFESSIONAL\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "body": "{\n  \"message\": \"Ce compte ne possède pas le profil PROFESSIONAL.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
                 }
               ]
             }
@@ -632,10 +1060,6 @@
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
                   }
                 ],
                 "body": {
@@ -644,8 +1068,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/token/refresh",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "token", "refresh"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "token",
+                    "refresh"
+                  ]
                 },
                 "description": "Rotate tokens: invalidate old refreshToken and issue new pair.\n\n**Use when:**\n- Access token expires\n- Updating device info\n- Rolling session forward"
               },
@@ -658,10 +1088,6 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
-                      },
-                      {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
                       }
                     ],
                     "body": {
@@ -670,8 +1096,14 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/token/refresh",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "token", "refresh"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "token",
+                        "refresh"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -704,18 +1136,19 @@
                 "method": "GET",
                 "header": [
                   {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  },
-                  {
                     "key": "Authorization",
                     "value": "Bearer {{accessToken}}"
                   }
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/me",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "me"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "me"
+                  ]
                 },
                 "description": "Retrieve authenticated user profile including metadata."
               },
@@ -726,18 +1159,19 @@
                     "method": "GET",
                     "header": [
                       {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
-                      },
-                      {
                         "key": "Authorization",
                         "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       }
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/me",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "me"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "me"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -769,22 +1203,23 @@
                     "value": "application/json"
                   },
                   {
-                    "key": "x-api-key",
-                    "value": "{{apiKey}}"
-                  },
-                  {
                     "key": "Authorization",
                     "value": "Bearer {{accessToken}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\",\n  \"allDevices\": false\n}"
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\",\n  \"allDevices\": {{logoutAllDevices}}\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/logout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "logout"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "logout"
+                  ]
                 },
                 "description": "Logout current session or all sessions.\n\n**Parameters:**\n- `refreshToken`: (required) Token to invalidate\n- `allDevices`: (optional) Set to `true` to logout all sessions, `false` to logout current device only"
               },
@@ -799,10 +1234,6 @@
                         "value": "application/json"
                       },
                       {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
-                      },
-                      {
                         "key": "Authorization",
                         "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       }
@@ -813,8 +1244,13 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/logout",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "logout"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "logout"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -831,10 +1267,6 @@
                         "value": "application/json"
                       },
                       {
-                        "key": "x-api-key",
-                        "value": "{{apiKey}}"
-                      },
-                      {
                         "key": "Authorization",
                         "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       }
@@ -845,8 +1277,13 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/logout",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "logout"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "logout"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -885,8 +1322,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional"
+                  ]
                 },
                 "description": "List public professionals with optional filters: status, isVerified, location, page, limit."
               }
@@ -911,8 +1352,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/search/query?q={{searchQuery}}&location={{searchLocation}}&rating={{searchRating}}&page={{page}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "search", "query"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "search",
+                    "query"
+                  ],
                   "query": [
                     {
                       "key": "q",
@@ -959,8 +1406,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/discover/recommended?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "discover", "recommended"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "discover",
+                    "recommended"
+                  ],
                   "query": [
                     {
                       "key": "lat",
@@ -995,7 +1448,7 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"8bc9f001-ce79-4eb9-a052-4ed0141b1384\",\n      \"agencyName\": \"Studio Awa Hair\",\n      \"avatarUrl\": \"https://i.pravatar.cc/300?img=5\",\n      \"address\": \"Cocody Riviera 3, Abidjan\",\n      \"location\": \"BOTH\",\n      \"latitude\": 5.3713,\n      \"longitude\": -3.9699,\n      \"bio\": \"Sp\u00e9cialiste en coiffure naturelle et soins capillaires depuis 8 ans.\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 4.8,\n      \"reviewCount\": 47,\n      \"serviceCount\": 3,\n      \"availabilityCount\": 6,\n      \"galleryCount\": 4,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 0.1\n    }\n  ]\n}"
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"8bc9f001-ce79-4eb9-a052-4ed0141b1384\",\n      \"agencyName\": \"Studio Awa Hair\",\n      \"avatarUrl\": \"https://i.pravatar.cc/300?img=5\",\n      \"address\": \"Cocody Riviera 3, Abidjan\",\n      \"location\": \"BOTH\",\n      \"latitude\": 5.3713,\n      \"longitude\": -3.9699,\n      \"bio\": \"Spécialiste en coiffure naturelle et soins capillaires depuis 8 ans.\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 4.8,\n      \"reviewCount\": 47,\n      \"serviceCount\": 3,\n      \"availabilityCount\": 6,\n      \"galleryCount\": 4,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 0.1\n    }\n  ]\n}"
                 }
               ]
             },
@@ -1019,8 +1472,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/discover/new?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "discover", "new"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "discover",
+                    "new"
+                  ],
                   "query": [
                     {
                       "key": "lat",
@@ -1055,7 +1514,7 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"9c93322a-213e-4a90-ab7a-8ade2338d834\",\n      \"agencyName\": \"Glam by Mariam\",\n      \"avatarUrl\": \"https://i.pravatar.cc/300?img=32\",\n      \"address\": \"Riviera Golf, Cocody, Abidjan\",\n      \"location\": \"HOME\",\n      \"latitude\": 5.3667,\n      \"longitude\": -3.95,\n      \"bio\": \"Maquilleuse professionnelle pour tous vos \u00e9v\u00e9nements.\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 4.9,\n      \"reviewCount\": 38,\n      \"serviceCount\": 3,\n      \"availabilityCount\": 5,\n      \"galleryCount\": 4,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 2.2\n    }\n  ]\n}"
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"9c93322a-213e-4a90-ab7a-8ade2338d834\",\n      \"agencyName\": \"Glam by Mariam\",\n      \"avatarUrl\": \"https://i.pravatar.cc/300?img=32\",\n      \"address\": \"Riviera Golf, Cocody, Abidjan\",\n      \"location\": \"HOME\",\n      \"latitude\": 5.3667,\n      \"longitude\": -3.95,\n      \"bio\": \"Maquilleuse professionnelle pour tous vos événements.\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 4.9,\n      \"reviewCount\": 38,\n      \"serviceCount\": 3,\n      \"availabilityCount\": 5,\n      \"galleryCount\": 4,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 2.2\n    }\n  ]\n}"
                 }
               ]
             },
@@ -1079,8 +1538,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/discover/trending?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "discover", "trending"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "discover",
+                    "trending"
+                  ],
                   "query": [
                     {
                       "key": "lat",
@@ -1115,7 +1580,7 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"73d6ca30-25b5-4e7b-a0c0-0364c4249f38\",\n      \"agencyName\": \"Salon Chez Ibrahim\",\n      \"avatarUrl\": \"https://nyc.cloud.appwrite.io/v1/storage/buckets/69f39f60002afa476ebb/files/69f3c8bf00353adf31a6/view?project=69f39e71002ce4bf23bf\",\n      \"address\": \"Abidjan, Cocody, Angr\u00e9\",\n      \"location\": \"SALON\",\n      \"latitude\": 5.3559,\n      \"longitude\": -3.9969,\n      \"bio\": \"Sp\u00e9cialiste coiffure et soins capillaires depuis 10 ans\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 0,\n      \"reviewCount\": 0,\n      \"serviceCount\": 2,\n      \"availabilityCount\": 4,\n      \"galleryCount\": 1,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 3.4\n    }\n  ]\n}"
+                  "body": "{\n  \"data\": [\n    {\n      \"id\": \"73d6ca30-25b5-4e7b-a0c0-0364c4249f38\",\n      \"agencyName\": \"Salon Chez Ibrahim\",\n      \"avatarUrl\": \"https://nyc.cloud.appwrite.io/v1/storage/buckets/69f39f60002afa476ebb/files/69f3c8bf00353adf31a6/view?project=69f39e71002ce4bf23bf\",\n      \"address\": \"Abidjan, Cocody, Angré\",\n      \"location\": \"SALON\",\n      \"latitude\": 5.3559,\n      \"longitude\": -3.9969,\n      \"bio\": \"Spécialiste coiffure et soins capillaires depuis 10 ans\",\n      \"status\": \"ACTIVE\",\n      \"isVerified\": true,\n      \"rating\": 0,\n      \"reviewCount\": 0,\n      \"serviceCount\": 2,\n      \"availabilityCount\": 4,\n      \"galleryCount\": 1,\n      \"canAcceptBookings\": true,\n      \"distanceKm\": 3.4\n    }\n  ]\n}"
                 }
               ]
             },
@@ -1139,8 +1604,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}"
+                  ]
                 },
                 "description": "Get public profile for one professional."
               }
@@ -1165,8 +1635,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services?includeInactive={{includeInactive}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "services"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services"
+                  ],
                   "query": [
                     {
                       "key": "includeInactive",
@@ -1197,7 +1673,9 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability?dayOfWeek={{dayOfWeek}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1233,8 +1711,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery?page={{page}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "gallery"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -1279,8 +1763,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/me",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "profile", "me"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "me"
+                  ]
                 },
                 "description": "Get the authenticated professional profile."
               }
@@ -1310,7 +1800,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/completion",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "profile",
@@ -1361,8 +1853,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "profile"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile"
+                  ]
                 },
                 "description": "Create the professional profile."
               }
@@ -1400,8 +1897,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "profile", "{{professionalId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "profile",
+                    "{{professionalId}}"
+                  ]
                 },
                 "description": "Update the professional profile (text fields only). To update the avatar, use *Upload Avatar* instead."
               }
@@ -1443,13 +1946,15 @@
                       "key": "file",
                       "type": "file",
                       "src": "",
-                      "description": "Image (jpg, jpeg, png, webp \u2014 max 10 MB)"
+                      "description": "Image (jpg, jpeg, png, webp — max 10 MB)"
                     }
                   ]
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1457,7 +1962,7 @@
                     "upload"
                   ]
                 },
-                "description": "Upload an avatar image to Appwrite and automatically update the professional profile.\n\n**Response:**\n- `avatarUrl` \u2014 public URL auto-saved to `profileAvatarUrl`\n- `fileId` \u2014 Appwrite file ID saved to `mediaFileId`\n\nNo need to call *Update Profile* separately \u2014 the avatar URL is updated automatically."
+                "description": "Upload an avatar image to Appwrite and automatically update the professional profile.\n\n**Response:**\n- `avatarUrl` — public URL auto-saved to `profileAvatarUrl`\n- `fileId` — Appwrite file ID saved to `mediaFileId`\n\nNo need to call *Update Profile* separately — the avatar URL is updated automatically."
               },
               "response": [
                 {
@@ -1482,7 +1987,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "{{professionalId}}",
@@ -1526,8 +2033,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "services", "categories"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "services",
+                    "categories"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -1549,8 +2062,14 @@
                     "header": [],
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["professional", "services", "categories"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professional",
+                        "services",
+                        "categories"
+                      ],
                       "query": [
                         {
                           "key": "page",
@@ -1608,12 +2127,18 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"Category for premium services\",\n  \"icon\": \"https://example.com/icons/premium.png\"\n}"
+                  "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "services", "categories"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "services",
+                    "categories"
+                  ]
                 },
                 "description": "Admin only: create a new global category directly (no professional request required)."
               }
@@ -1647,11 +2172,13 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"Updated category description\",\n  \"icon\": \"https://example.com/icons/updated-icon.png\"\n}"
+                  "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "services",
@@ -1687,7 +2214,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "services",
@@ -1731,11 +2260,13 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"proposedName\": \"Lissage bresilien premium\",\n  \"proposedDescription\": \"Technique specialisee de lissage et soin intensif\"\n}"
+                  "raw": "{\n  \"proposedName\": \"{{categoryProposedName}}\",\n  \"proposedDescription\": \"{{categoryProposedDescription}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1758,7 +2289,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests?status=PENDING&page=1&limit=20",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1823,8 +2356,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "services"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "services"
+                  ]
                 },
                 "description": "Create a service offering for the current professional."
               }
@@ -1862,8 +2401,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "services", "{{serviceId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "services",
+                    "{{serviceId}}"
+                  ]
                 },
                 "description": "Update a service offering."
               }
@@ -1893,7 +2438,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/deactivate",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1930,7 +2477,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/activate",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -1967,7 +2516,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2011,7 +2562,9 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/communes",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2061,8 +2614,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "availability"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability"
+                  ]
                 },
                 "description": "Set a day availability slot."
               }
@@ -2100,7 +2659,9 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2140,11 +2701,13 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"status\": \"OPEN\"\n}"
+                  "raw": "{\n  \"status\": \"{{availabilityStatus}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}/status",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2185,12 +2748,18 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\",\n  \"excludeDays\": [5, 6]\n}"
+                  "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\",\n  \"excludeDays\": {{excludeDays}}\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "availability"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "availability"
+                  ]
                 },
                 "description": "Set the same availability across the week."
               }
@@ -2220,7 +2789,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2273,13 +2844,15 @@
                       "key": "file",
                       "type": "file",
                       "src": "",
-                      "description": "Image (jpg, jpeg, png, webp \u2014 max 10 MB)"
+                      "description": "Image (jpg, jpeg, png, webp — max 10 MB)"
                     }
                   ]
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2287,7 +2860,7 @@
                     "upload"
                   ]
                 },
-                "description": "Upload an image file to Appwrite storage for the professional gallery.\n\n**Response:**\n- `imageUrl` \u2014 public URL auto-saved to `galleryImageUrl`\n- `fileId` \u2014 Appwrite file ID saved to `mediaFileId`\n- `path` \u2014 storage path `professionals/{id}/gallery/{uuid}.ext`\n\n**Workflow:** call this first, then use `galleryImageUrl` in *Create Gallery Item* to persist the DB record."
+                "description": "Upload an image file to Appwrite storage for the professional gallery.\n\n**Response:**\n- `imageUrl` — public URL auto-saved to `galleryImageUrl`\n- `fileId` — Appwrite file ID saved to `mediaFileId`\n- `path` — storage path `professionals/{id}/gallery/{uuid}.ext`\n\n**Workflow:** call this first, then use `galleryImageUrl` in *Create Gallery Item* to persist the DB record."
               },
               "response": [
                 {
@@ -2312,7 +2885,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "{{professionalId}}",
@@ -2367,8 +2942,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "gallery"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "gallery"
+                  ]
                 },
                 "description": "Upload a gallery item."
               }
@@ -2406,7 +2987,9 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2442,7 +3025,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/publish",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2479,7 +3064,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/unpublish",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2524,7 +3111,9 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/reorder",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2560,7 +3149,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2601,8 +3192,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["media", "files", "{{mediaFileId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "media",
+                    "files",
+                    "{{mediaFileId}}"
+                  ]
                 },
                 "description": "Get metadata for a specific file stored in Appwrite.\n\n**Response:** `fileId`, `fileName`, `mimeType`, `sizeOriginal`, `viewUrl`, `downloadUrl`.\n\nAccess is restricted to the file owner (PROFESSIONAL) or ADMIN."
               },
@@ -2619,8 +3216,14 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["media", "files", "{{mediaFileId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "media",
+                        "files",
+                        "{{mediaFileId}}"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -2654,7 +3257,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/media/professionals/{{professionalId}}/files?type=gallery&page=1&limit=20",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "media",
                     "professionals",
@@ -2677,7 +3282,7 @@
                     }
                   ]
                 },
-                "description": "List all files uploaded to Appwrite for a professional.\n\n**Query params:**\n- `type` \u2014 `gallery` or `avatar` (required)\n- `page` \u2014 page number (default 1)\n- `limit` \u2014 items per page (default 20, max 100)\n\n**Response:** paginated list of `MediaFileInfo` objects."
+                "description": "List all files uploaded to Appwrite for a professional.\n\n**Query params:**\n- `type` — `gallery` or `avatar` (required)\n- `page` — page number (default 1)\n- `limit` — items per page (default 20, max 100)\n\n**Response:** paginated list of `MediaFileInfo` objects."
               },
               "response": [
                 {
@@ -2692,7 +3297,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/media/professionals/{{professionalId}}/files?type=gallery&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "media",
                         "professionals",
@@ -2746,8 +3353,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["media", "files", "{{mediaFileId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "media",
+                    "files",
+                    "{{mediaFileId}}"
+                  ]
                 },
                 "description": "Permanently delete a file from Appwrite storage.\n\nOnly the file owner (PROFESSIONAL) or ADMIN can delete. Use `mediaFileId` populated after an upload."
               },
@@ -2764,8 +3377,14 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/media/files/{{mediaFileId}}",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["media", "files", "{{mediaFileId}}"]
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "media",
+                        "files",
+                        "{{mediaFileId}}"
+                      ]
                     }
                   },
                   "status": "OK",
@@ -2804,8 +3423,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["professional", "{{professionalId}}", "bookings"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "bookings"
+                  ],
                   "query": [
                     {
                       "key": "status",
@@ -2849,7 +3474,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/confirm",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2894,7 +3521,9 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/reject",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2931,7 +3560,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/complete",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -2941,6 +3572,45 @@
                   ]
                 },
                 "description": "Mark a booking as completed."
+              }
+            },
+            {
+              "name": "Mark No Show",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/no-show",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professional",
+                    "{{professionalId}}",
+                    "bookings",
+                    "{{bookingId}}",
+                    "no-show"
+                  ]
+                },
+                "description": "Mark a confirmed booking as no-show when the client did not show up at the appointment."
               }
             },
             {
@@ -2968,7 +3638,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/cancellation-requests?page={{page}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3014,7 +3686,9 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/approve",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3056,11 +3730,13 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"reason\": \"La reservation est proche, impossible d'annuler\"\n}"
+                  "raw": "{\n  \"reason\": \"{{rejectionReason}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/reject",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "professional",
                     "{{professionalId}}",
@@ -3106,7 +3782,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "profile",
@@ -3150,7 +3828,9 @@
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "profile",
@@ -3186,7 +3866,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "profile",
@@ -3214,7 +3896,9 @@
                     ],
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/category-requests/admin?status=PENDING&page=1&limit=20",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "services",
@@ -3255,11 +3939,13 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"approvedName\": \"Lissage bresilien\",\n  \"approvedDescription\": \"Categorie validee par admin\"\n}"
+                      "raw": "{\n  \"approvedName\": \"{{categoryApprovedName}}\",\n  \"approvedDescription\": \"{{categoryApprovedDescription}}\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/approve",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "services",
@@ -3288,11 +3974,13 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"reviewNote\": \"Trop proche d'une categorie existante\"\n}"
+                      "raw": "{\n  \"reviewNote\": \"{{categoryReviewNote}}\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/reject",
-                      "host": ["{{baseUrl}}"],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
                       "path": [
                         "professional",
                         "services",
@@ -3357,8 +4045,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["clients", "me", "bookings"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "clients",
+                    "me",
+                    "bookings"
+                  ]
                 },
                 "description": "Client creates a booking. Schedule overlap is allowed and returned as warning data."
               }
@@ -3388,8 +4082,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["clients", "me", "bookings"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "clients",
+                    "me",
+                    "bookings"
+                  ],
                   "query": [
                     {
                       "key": "status",
@@ -3433,8 +4133,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["clients", "me", "bookings", "{{bookingId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "clients",
+                    "me",
+                    "bookings",
+                    "{{bookingId}}"
+                  ]
                 },
                 "description": "Get one booking owned by the authenticated client."
               }
@@ -3472,8 +4179,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["clients", "me", "bookings", "{{bookingId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "clients",
+                    "me",
+                    "bookings",
+                    "{{bookingId}}"
+                  ]
                 },
                 "description": "Update booking details while the booking status is PENDING."
               }
@@ -3511,7 +4225,9 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}/cancellation-request",
-                  "host": ["{{baseUrl}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
                   "path": [
                     "clients",
                     "me",
@@ -3562,8 +4278,13 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/pulse/me?status=UNREAD&page={{page}}&limit={{limit}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["pulse", "me"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pulse",
+                    "me"
+                  ],
                   "query": [
                     {
                       "key": "status",
@@ -3608,8 +4329,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/pulse/me/{{notificationId}}/read",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["pulse", "me", "{{notificationId}}", "read"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pulse",
+                    "me",
+                    "{{notificationId}}",
+                    "read"
+                  ]
                 },
                 "description": "Mark a single notification as read. notificationId auto-populated from List My Notifications."
               }
@@ -3639,8 +4367,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/pulse/me/read-all",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["pulse", "me", "read-all"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pulse",
+                    "me",
+                    "read-all"
+                  ]
                 },
                 "description": "Mark all in-app notifications as read for the authenticated user."
               }
@@ -3679,12 +4413,18 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"platform\": \"ANDROID\",\n  \"deviceId\": \"device-unique-id-abc123\",\n  \"pushToken\": \"fcm-push-token-here\"\n}"
+                  "raw": "{\n  \"platform\": \"{{devicePlatform}}\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"pushToken\": \"{{pushToken}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/pulse/devices/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["pulse", "devices", "register"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pulse",
+                    "devices",
+                    "register"
+                  ]
                 },
                 "description": "Register or update a push notification device for the authenticated user. platform: string (max 50), deviceId: string (max 200), pushToken: string."
               }
@@ -3957,7 +4697,7 @@
     },
     {
       "key": "galleryCaption",
-      "value": "Avant / Apr\u00e8s",
+      "value": "Avant / Après",
       "type": "string"
     },
     {
@@ -3973,6 +4713,106 @@
     {
       "key": "serviceCategoryRequestId",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "firstName",
+      "value": "Aya",
+      "type": "string"
+    },
+    {
+      "key": "lastName",
+      "value": "Kouame",
+      "type": "string"
+    },
+    {
+      "key": "registrationRole",
+      "value": "CLIENT",
+      "type": "string"
+    },
+    {
+      "key": "loginApp",
+      "value": "CLIENT",
+      "type": "string"
+    },
+    {
+      "key": "logoutAllDevices",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "serviceCategoryDescription",
+      "value": "Catégorie de prestations premium",
+      "type": "string"
+    },
+    {
+      "key": "categoryProposedName",
+      "value": "Lissage brésilien premium",
+      "type": "string"
+    },
+    {
+      "key": "categoryProposedDescription",
+      "value": "Technique spécialisée de lissage",
+      "type": "string"
+    },
+    {
+      "key": "categoryApprovedName",
+      "value": "Lissage brésilien",
+      "type": "string"
+    },
+    {
+      "key": "categoryApprovedDescription",
+      "value": "Prestation validée par l'admin",
+      "type": "string"
+    },
+    {
+      "key": "categoryReviewNote",
+      "value": "Trop proche d'une catégorie existante",
+      "type": "string"
+    },
+    {
+      "key": "availabilityStatus",
+      "value": "OPEN",
+      "type": "string"
+    },
+    {
+      "key": "rejectionReason",
+      "value": "Horaire non disponible",
+      "type": "string"
+    },
+    {
+      "key": "devicePlatform",
+      "value": "ANDROID",
+      "type": "string"
+    },
+    {
+      "key": "deviceId",
+      "value": "device-unique-id-abc123",
+      "type": "string"
+    },
+    {
+      "key": "pushToken",
+      "value": "fcm-push-token-here",
+      "type": "string"
+    },
+    {
+      "key": "excludeDays",
+      "value": "[5, 6]",
+      "type": "string"
+    },
+    {
+      "key": "latitude",
+      "value": "5.3517",
+      "type": "string"
+    },
+    {
+      "key": "longitude",
+      "value": "-4.0012",
+      "type": "string"
+    },
+    {
+      "key": "searchRadius",
+      "value": "10",
       "type": "string"
     }
   ],
