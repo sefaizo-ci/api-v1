@@ -598,9 +598,7 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
 
 @CommandHandler(AddServiceImageCommand)
 @Injectable()
-export class AddServiceImageHandler
-  implements ICommandHandler<AddServiceImageCommand>
-{
+export class AddServiceImageHandler implements ICommandHandler<AddServiceImageCommand> {
   constructor(private readonly repository: ProfessionalRepository) {}
 
   async execute(command: AddServiceImageCommand): Promise<void> {
@@ -617,9 +615,7 @@ export class AddServiceImageHandler
 
 @CommandHandler(RemoveServiceImageCommand)
 @Injectable()
-export class RemoveServiceImageHandler
-  implements ICommandHandler<RemoveServiceImageCommand>
-{
+export class RemoveServiceImageHandler implements ICommandHandler<RemoveServiceImageCommand> {
   constructor(private readonly repository: ProfessionalRepository) {}
 
   async execute(command: RemoveServiceImageCommand): Promise<void> {
