@@ -38,9 +38,9 @@ export class AddServiceDto {
   @MaxLength(80)
   category!: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/brushing.jpg' })
+  @ApiPropertyOptional({ example: 'https://example.com/service.jpg' })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_protocol: true })
   imageUrl?: string;
 }
 
@@ -77,9 +77,9 @@ export class UpdateServiceDto {
   @MaxLength(80)
   category?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/brushing-vip.jpg' })
+  @ApiPropertyOptional({ example: 'https://example.com/service.jpg' })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_protocol: true })
   imageUrl?: string;
 }
 

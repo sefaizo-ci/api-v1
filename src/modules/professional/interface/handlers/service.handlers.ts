@@ -14,6 +14,7 @@ import { ProfessionalRepository } from '../../infrastructure/persistence/profess
 import {
   ActivateServiceCommand,
   AddServiceCommand,
+  AddServiceImageCommand,
   ApproveServiceCategoryRequestCommand,
   CreateServiceCategoryCommand,
   CreateServiceCategoryRequestCommand,
@@ -21,6 +22,7 @@ import {
   DeleteServiceCategoryCommand,
   DeleteServiceCommand,
   RejectServiceCategoryRequestCommand,
+  RemoveServiceImageCommand,
   SetServiceCommuneFeeCommand,
   UpdateServiceCategoryCommand,
   UpdateServiceCommand,
@@ -373,11 +375,14 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
       professionalId: command.professionalId,
       name: command.name,
       description: command.description,
-      imageUrl: command.imageUrl,
       durationMin: command.durationMin,
       basePrice: command.basePrice,
       category: category.name,
     });
+
+    if (command.imageUrl) {
+      service.setImage(command.imageUrl);
+    }
 
     professional.addService(service);
     await this.repository.save(professional);
@@ -432,9 +437,6 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
     if (command.description !== undefined) {
       service.description = command.description;
     }
-    if (command.imageUrl !== undefined) {
-      service.imageUrl = command.imageUrl;
-    }
     if (command.durationMin !== undefined) {
       service.durationMin = command.durationMin;
     }
@@ -466,6 +468,10 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
       }
 
       service.category = category.name;
+    }
+
+    if (command.imageUrl !== undefined) {
+      service.setImage(command.imageUrl);
     }
 
     service.updatedAt = new Date();
@@ -587,5 +593,43 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
         cancellationNote: 'Service désactivé par le professionnel.',
       },
     });
+  }
+}
+
+@CommandHandler(AddServiceImageCommand)
+@Injectable()
+export class AddServiceImageHandler
+  implements ICommandHandler<AddServiceImageCommand>
+{
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: AddServiceImageCommand): Promise<void> {
+    const professional = await this.repository.findById(command.professionalId);
+    if (!professional) throw new NotFoundException('Professionnel non trouve');
+
+    const service = professional.getService(command.serviceId);
+    if (!service) throw new NotFoundException('Service non trouve');
+
+    service.setImage(command.imageUrl);
+    await this.repository.save(professional);
+  }
+}
+
+@CommandHandler(RemoveServiceImageCommand)
+@Injectable()
+export class RemoveServiceImageHandler
+  implements ICommandHandler<RemoveServiceImageCommand>
+{
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: RemoveServiceImageCommand): Promise<void> {
+    const professional = await this.repository.findById(command.professionalId);
+    if (!professional) throw new NotFoundException('Professionnel non trouve');
+
+    const service = professional.getService(command.serviceId);
+    if (!service) throw new NotFoundException('Service non trouve');
+
+    service.clearImage();
+    await this.repository.save(professional);
   }
 }
