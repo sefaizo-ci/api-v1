@@ -107,24 +107,52 @@ enum NotificationStatus {
 // SENTINEL — models
 // ─────────────────────────────────────────────
 
+// PhoneNumber is the root identity.
+// A single phone can have one CLIENT account and one PROFESSIONAL account,
+// each fully independent with its own PIN and profile.
+model PhoneNumber {
+  id                 String    @id @default(uuid())
+  number             String    @unique
+  isVerified         Boolean   @default(false)
+  clientUserId       String?   @unique
+  professionalUserId String?   @unique
+  metadata           Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  clientUser       User?       @relation("PhoneClientUser", fields: [clientUserId], references: [id], onDelete: SetNull)
+  professionalUser User?       @relation("PhoneProfessionalUser", fields: [professionalUserId], references: [id], onDelete: SetNull)
+  users            User[]      @relation("PhoneUsers")
+  challenges       Challenge[]
+
+  @@map("phone_numbers")
+  @@schema("sentinel")
+}
+
 model User {
   id          String    @id @default(uuid())
-  phoneId     String    @unique
-  phone       PhoneNumber @relation(fields: [phoneId], references: [id], onDelete: Restrict)
+  phoneId     String
+  phone       PhoneNumber @relation("PhoneUsers", fields: [phoneId], references: [id], onDelete: Restrict)
   firstName   String
   lastName    String
   role        Role      @default(CLIENT)
-  isVerified  Boolean   @default(false)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  metadata    Json?
+  isVerified       Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  acceptedTermsAt      DateTime?
+  onboardingCompletedAt DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  metadata         Json?
+
+  // Back-references from PhoneNumber (one-to-one via unique FK)
+  clientPhone       PhoneNumber? @relation("PhoneClientUser")
+  professionalPhone PhoneNumber? @relation("PhoneProfessionalUser")
 
   challenges            Challenge[]
   refreshTokens         RefreshToken[]
   authLogs              AuthLog[]
-  phoneRoles            PhoneRole[]
   devices               Device[]
   deviceAuthentications DeviceAuthentication[]
   clientSecret          ClientSecret?
@@ -135,62 +163,32 @@ model User {
   notifications        Notification[]
   notificationDevices  NotificationDevice[]
 
+  @@index([phoneId, role])
   @@map("users")
   @@schema("sentinel")
 }
 
-model PhoneNumber {
-  id         String      @id @default(uuid())
-  number     String      @unique
-  isVerified Boolean     @default(false)
-  metadata   Json?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  deletedAt  DateTime?
-
-  roles PhoneRole[]
-  user  User?
-
-  @@map("phone_numbers")
-  @@schema("sentinel")
-}
-
-model PhoneRole {
-  id        String      @id @default(uuid())
-  phoneId   String
-  phone     PhoneNumber @relation(fields: [phoneId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role
-  metadata  Json?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@unique([phoneId, role])
-  @@index([userId])
-  @@map("phone_roles")
-  @@schema("sentinel")
-}
-
 model Challenge {
-  id           String        @id @default(uuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deviceId     String?
-  device       Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  type         ChallengeType @default(OTP)
-  code         String
-  purpose      OtpPurpose
-  channel      OtpChannel
-  isUsed       Boolean       @default(false)
-  failCount    Int           @default(0)
-  blockedUntil DateTime?
-  metadata     Json?
-  expiresAt    DateTime
-  createdAt    DateTime      @default(now())
-  deletedAt    DateTime?
+  id            String        @id @default(uuid())
+  phoneNumberId String
+  phoneNumber   PhoneNumber   @relation(fields: [phoneNumberId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId      String?
+  device        Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  type          ChallengeType @default(OTP)
+  code          String
+  purpose       OtpPurpose
+  channel       OtpChannel
+  isUsed        Boolean       @default(false)
+  failCount     Int           @default(0)
+  blockedUntil  DateTime?
+  metadata      Json?
+  expiresAt     DateTime
+  createdAt     DateTime      @default(now())
+  deletedAt     DateTime?
 
-  @@index([userId, purpose])
+  @@index([phoneNumberId, purpose])
   @@map("challenges")
   @@schema("sentinel")
 }
@@ -338,6 +336,7 @@ model ServiceOffering {
   category       ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   name           String
   description    String?
+  imageUrl       String?
   durationMin    Int
   basePrice      Float
   isActive       Boolean      @default(true)

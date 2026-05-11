@@ -40,6 +40,7 @@ import {
   RejectBookingCommand,
   RemoveAvailabilityCommand,
   ReorderGalleryCommand,
+  SetAvailabilityBulkCommand,
   SetAvailabilityCommand,
   SetAvailabilityForAllWeekCommand,
   SetAvailabilityStatusCommand,
@@ -62,6 +63,7 @@ import {
   CreateServiceCategoryRequestDto,
   RejectBookingDto,
   ReviewCancellationRequestDto,
+  SetAvailabilityBulkDto,
   SetAvailabilityDto,
   SetAvailabilityForWeekDto,
   SetAvailabilityStatusDto,
@@ -140,7 +142,6 @@ export class ProfessionalController {
         req.user.id,
         body.agencyName,
         body.bio,
-        body.avatarUrl,
         body.location,
         body.address,
         body.latitude,
@@ -164,7 +165,7 @@ export class ProfessionalController {
         professionalId,
         body.agencyName,
         body.bio,
-        body.avatarUrl,
+        undefined,
         body.location,
         body.address,
         body.latitude,
@@ -408,6 +409,7 @@ export class ProfessionalController {
         body.durationMin,
         body.basePrice,
         body.category,
+        body.imageUrl,
       ),
     );
   }
@@ -427,6 +429,7 @@ export class ProfessionalController {
         body.durationMin,
         body.basePrice,
         body.category,
+        body.imageUrl,
       ),
     );
   }
@@ -514,6 +517,18 @@ export class ProfessionalController {
         body.breakStartTime,
         body.breakEndTime,
       ),
+    );
+  }
+
+  @Post(':professionalId/availability/bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async setAvailabilityBulk(
+    @Param('professionalId') professionalId: string,
+    @Body() body: SetAvailabilityBulkDto,
+  ) {
+    return this.commandBus.execute<SetAvailabilityBulkCommand, unknown>(
+      new SetAvailabilityBulkCommand(professionalId, body.availabilities),
     );
   }
 

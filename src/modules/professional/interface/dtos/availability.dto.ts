@@ -10,6 +10,7 @@ import {
   Matches,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { AvailabilityStatus } from '../../core/enums';
 
@@ -76,6 +77,14 @@ export class SetAvailabilityStatusDto {
   @ApiProperty({ enum: AvailabilityStatus, example: AvailabilityStatus.OPEN })
   @IsEnum(AvailabilityStatus)
   status!: AvailabilityStatus;
+}
+
+export class SetAvailabilityBulkDto {
+  @ApiProperty({ type: [SetAvailabilityDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SetAvailabilityDto)
+  availabilities!: SetAvailabilityDto[];
 }
 
 export class SetAvailabilityForWeekDto {

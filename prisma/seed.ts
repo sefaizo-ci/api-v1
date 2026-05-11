@@ -276,14 +276,11 @@ async function seedUser(u: SeedUser, pinHash: string): Promise<string> {
     },
   });
 
-  await prisma.phoneRole.create({
-    data: {
-      id: randomUUID(),
-      phoneId,
-      userId,
-      role: u.role as any,
-      metadata: { seededBy: SEED_TAG },
-    },
+  await prisma.phoneNumber.update({
+    where: { id: phoneId },
+    data: u.role === 'PROFESSIONAL'
+      ? { professionalUserId: userId }
+      : { clientUserId: userId },
   });
 
   // PIN stored in ClientSecret (same table as mobile app key, clientId = userId)

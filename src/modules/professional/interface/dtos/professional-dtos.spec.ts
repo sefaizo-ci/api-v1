@@ -9,17 +9,15 @@ import {
 } from './index';
 
 describe('Professional DTO validation', () => {
-  it('rejects invalid profile payload (short name + invalid avatar url)', async () => {
+  it('rejects invalid profile payload (short name)', async () => {
     const dto = plainToInstance(CreateProfessionalProfileDto, {
       agencyName: 'A',
-      avatarUrl: 'not-a-url',
     });
 
     const errors = await validate(dto);
     const fields = errors.map((error) => error.property);
 
     expect(fields).toContain('agencyName');
-    expect(fields).toContain('avatarUrl');
   });
 
   it('rejects invalid commune fee payload (negative fee)', async () => {

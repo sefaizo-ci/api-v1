@@ -11,7 +11,6 @@ export class CreateProfessionalProfileCommand implements ICommand {
     public readonly userId: string,
     public readonly agencyName: string,
     public readonly bio?: string,
-    public readonly avatarUrl?: string,
     public readonly location?: ServiceLocation,
     public readonly address?: string,
     public readonly latitude?: number,

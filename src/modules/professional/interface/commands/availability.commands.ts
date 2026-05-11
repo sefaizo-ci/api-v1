@@ -16,6 +16,25 @@ export class SetAvailabilityCommand implements ICommand {
   ) {}
 }
 
+export interface AvailabilitySlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  breakStartTime?: string;
+  breakEndTime?: string;
+}
+
+/**
+ * SetAvailabilityBulkCommand
+ * Upserts multiple availability slots in one shot (onboarding)
+ */
+export class SetAvailabilityBulkCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly slots: AvailabilitySlot[],
+  ) {}
+}
+
 /**
  * UpdateAvailabilityCommand
  * Command to update existing availability for a day

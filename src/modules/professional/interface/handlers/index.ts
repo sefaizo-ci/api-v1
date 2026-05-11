@@ -1,5 +1,6 @@
 import {
   RemoveAvailabilityHandler,
+  SetAvailabilityBulkHandler,
   SetAvailabilityForAllWeekHandler,
   SetAvailabilityHandler,
   SetAvailabilityStatusHandler,
@@ -80,6 +81,7 @@ export const ProfessionalCommandHandlers = [
   ActivateServiceHandler,
   DeactivateServiceHandler,
   SetAvailabilityHandler,
+  SetAvailabilityBulkHandler,
   UpdateAvailabilityHandler,
   RemoveAvailabilityHandler,
   SetAvailabilityStatusHandler,
