@@ -37,6 +37,7 @@ export class ServiceOfferingEntity {
   professionalId: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   durationMin: number;
   basePrice: number;
   category: string;
@@ -51,6 +52,7 @@ export class ServiceOfferingEntity {
     professionalId: string;
     name: string;
     description?: string;
+    imageUrl?: string;
     durationMin: number;
     basePrice: number;
     category: string;
@@ -64,6 +66,7 @@ export class ServiceOfferingEntity {
     this.professionalId = props.professionalId;
     this.name = props.name;
     this.description = props.description;
+    this.imageUrl = props.imageUrl;
     this.durationMin = props.durationMin;
     this.basePrice = props.basePrice;
     this.category = props.category;
@@ -79,6 +82,7 @@ export class ServiceOfferingEntity {
     professionalId: string;
     name: string;
     description?: string;
+    imageUrl?: string;
     durationMin: number;
     basePrice: number;
     category: string;

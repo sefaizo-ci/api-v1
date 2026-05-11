@@ -8,6 +8,7 @@ export class AddServiceCommand implements ICommand {
     public readonly durationMin: number = 30,
     public readonly basePrice: number = 0,
     public readonly category: string = 'Other',
+    public readonly imageUrl?: string,
   ) {}
 }
 
@@ -69,6 +70,7 @@ export class UpdateServiceCommand implements ICommand {
     public readonly durationMin?: number,
     public readonly basePrice?: number,
     public readonly category?: string,
+    public readonly imageUrl?: string,
   ) {}
 }
 

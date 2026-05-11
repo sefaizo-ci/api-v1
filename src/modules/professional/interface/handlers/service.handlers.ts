@@ -373,6 +373,7 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
       professionalId: command.professionalId,
       name: command.name,
       description: command.description,
+      imageUrl: command.imageUrl,
       durationMin: command.durationMin,
       basePrice: command.basePrice,
       category: category.name,
@@ -430,6 +431,9 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
     }
     if (command.description !== undefined) {
       service.description = command.description;
+    }
+    if (command.imageUrl !== undefined) {
+      service.imageUrl = command.imageUrl;
     }
     if (command.durationMin !== undefined) {
       service.durationMin = command.durationMin;

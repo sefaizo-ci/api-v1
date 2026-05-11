@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -36,6 +37,11 @@ export class AddServiceDto {
   @IsString()
   @MaxLength(80)
   category!: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/brushing.jpg' })
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
 }
 
 export class UpdateServiceDto {
@@ -70,6 +76,11 @@ export class UpdateServiceDto {
   @IsString()
   @MaxLength(80)
   category?: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/brushing-vip.jpg' })
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
 }
 
 export class SetCommuneFeeDto {
