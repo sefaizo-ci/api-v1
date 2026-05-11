@@ -50,9 +50,13 @@ export class AppwriteMediaService implements MediaStoragePort {
     return this.uploadProfessionalImage(args, 'avatar');
   }
 
+  async uploadServiceImage(args: MediaUploadInput): Promise<MediaUploadResult> {
+    return this.uploadProfessionalImage(args, 'service');
+  }
+
   private uploadProfessionalImage(
     args: MediaUploadInput,
-    type: 'gallery' | 'avatar',
+    type: 'gallery' | 'avatar' | 'service',
   ): Promise<MediaUploadResult> {
     const extension = this.extensionFromMimeType(args.mimeType);
     const filePath = `professionals/${args.professionalId}/${type}/${randomUUID()}.${extension}`;

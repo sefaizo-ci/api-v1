@@ -21,7 +21,7 @@ export type MediaFileInfo = {
 
 export type ListMediaFilesInput = {
   professionalId: string;
-  type: 'gallery' | 'avatar';
+  type: 'gallery' | 'avatar' | 'service';
   page?: number;
   limit?: number;
 };
@@ -39,6 +39,7 @@ export type ListMediaFilesResult = {
 export interface MediaStoragePort {
   uploadGalleryImage(args: MediaUploadInput): Promise<MediaUploadResult>;
   uploadAvatarImage(args: MediaUploadInput): Promise<MediaUploadResult>;
+  uploadServiceImage(args: MediaUploadInput): Promise<MediaUploadResult>;
   getFileInfo(fileId: string): Promise<MediaFileInfo>;
   listProfessionalFiles(
     args: ListMediaFilesInput,
