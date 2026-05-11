@@ -336,7 +336,7 @@ model ServiceOffering {
   category       ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   name           String
   description    String?
-  imageUrls      String[]     @default([])
+  imageUrl       String?
   durationMin    Int
   basePrice      Float
   isActive       Boolean      @default(true)
