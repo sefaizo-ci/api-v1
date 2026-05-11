@@ -10,12 +10,12 @@ export class LoginPinDto {
   userId!: string;
 
   @ApiProperty({
-    description: 'PIN code (4 to 6 digits)',
+    description: 'PIN code (exactly 4 digits)',
     example: '2580',
     minLength: 4,
-    maxLength: 6,
+    maxLength: 4,
   })
   @IsString()
-  @Matches(/^\d{4,6}$/, { message: 'PIN invalide.' })
+  @Matches(/^\d{4}$/, { message: 'PIN invalide.' })
   pin!: string;
 }

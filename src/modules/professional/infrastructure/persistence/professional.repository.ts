@@ -124,6 +124,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
           update: {
             name: service.name,
             description: service.description,
+            imageUrl: service.imageUrl ?? null,
             durationMin: service.durationMin,
             basePrice: service.basePrice,
             category: {
@@ -144,6 +145,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
             },
             name: service.name,
             description: service.description,
+            imageUrl: service.imageUrl ?? null,
             durationMin: service.durationMin,
             basePrice: service.basePrice,
             category: {

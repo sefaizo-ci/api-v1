@@ -65,7 +65,45 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"message\": \"Sefaizo API is running\"\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Sefaizo API is running.\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Health Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ]
+                },
+                "description": "Detailed health check with service metadata."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/health",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "health"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"success\": true,\n  \"status\": \"ok\",\n  \"service\": \"sefaizo-api\",\n  \"timestamp\": \"2026-04-12T00:00:00.000Z\"\n}"
                 }
               ]
             }
@@ -76,26 +114,6 @@
           "item": [
             {
               "name": "1️⃣ Init Flow (Detect Account)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});",
-                      "var json = pm.response.json();",
-                      "if (json && typeof json.hasAccount !== 'undefined') {",
-                      "  pm.environment.set('hasAccount', String(json.hasAccount));",
-                      "}",
-                      "if (json && json.nextStep) {",
-                      "  pm.environment.set('nextStep', json.nextStep);",
-                      "}"
-                    ]
-                  }
-                }
-              ],
               "request": {
                 "method": "POST",
                 "header": [
@@ -104,10 +122,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\"\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/flow/init",
                   "host": [
@@ -119,11 +133,15 @@
                     "init"
                   ]
                 },
-                "description": "Detect whether phone has existing account with PIN set.\n\n**Response:**\n- `hasAccount: true` → User has PIN, proceed with LOGIN flow\n- `hasAccount: false` → New user, proceed with REGISTRATION flow\n- `nextStep` is `PIN_THEN_OTP` or `OTP`"
+                "description": "Détecte le flow à utiliser pour ce numéro + app.\n\n**nextStep:**\n- `OTP` — nouveau compte, passer par l'inscription\n- `PIN_THEN_OTP` — compte existant sur cette app, passer par la connexion\n\n**`app`:** `CLIENT` ou `PROFESSIONAL`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"app\": \"{{loginApp}}\"\n}"
+                }
               },
               "response": [
                 {
-                  "name": "200 - New User (No Account)",
+                  "name": "200 - New Account (OTP)",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -132,10 +150,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/flow/init",
                       "host": [
@@ -146,14 +160,19 @@
                         "flow",
                         "init"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"hasAccount\": false,\n  \"nextStep\": \"OTP\"\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"nextStep\": \"OTP\"\n}"
                 },
                 {
-                  "name": "200 - Existing User (Has Account)",
+                  "name": "200 - Existing Account (PIN_THEN_OTP)",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -162,10 +181,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/flow/init",
                       "host": [
@@ -176,34 +191,70 @@
                         "flow",
                         "init"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"hasAccount\": true,\n  \"nextStep\": \"PIN_THEN_OTP\"\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"nextStep\": \"PIN_THEN_OTP\"\n}"
+                },
+                {
+                  "name": "200 - No PROFESSIONAL account yet (OTP)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/flow/init",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "flow",
+                        "init"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"app\": \"PROFESSIONAL\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"nextStep\": \"OTP\"\n}"
                 }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "AUTH REGISTRATION (NEW USER PATH)",
-          "item": [
-            {
-              "name": "2️⃣ Send OTP for Registration",
+              ],
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});"
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json && json.nextStep) pm.environment.set('nextStep', json.nextStep);"
                     ]
                   }
                 }
-              ],
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AUTH REGISTRATION (NEW USER)",
+          "item": [
+            {
+              "name": "2️⃣ Send OTP (Registration)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -212,10 +263,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/send",
                   "host": [
@@ -227,7 +274,11 @@
                     "send"
                   ]
                 },
-                "description": "Send OTP via WhatsApp/SMS.\n\n**Accepted `purpose` values:**\n- `REGISTRATION` — new account or incomplete registration\n- `PIN_RESET` — existing account, forgot PIN\n\n**400:** sending REGISTRATION OTP to an already active account.\n\n**429 (rate limit):** 60 s cooldown between requests, max 5 per 15 min."
+                "description": "Envoie un OTP pour inscrire un nouveau compte.\n\n**`purpose`:** `REGISTRATION` ou `PIN_RESET`\n**`app`:** `CLIENT` ou `PROFESSIONAL`\n\nRate limit : 10 req/min.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"{{loginApp}}\"\n}"
+                }
               },
               "response": [
                 {
@@ -240,10 +291,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
                       "host": [
@@ -254,14 +301,19 @@
                         "otp",
                         "send"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "OK",
                   "code": 200,
+                  "_postman_previewlanguage": "json",
                   "body": "{\n  \"channel\": \"WHATSAPP\"\n}"
                 },
                 {
-                  "name": "400 Account Already Active",
+                  "name": "400 Slot Already Taken",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -270,10 +322,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
                       "host": [
@@ -284,14 +332,19 @@
                         "otp",
                         "send"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "Bad Request",
                   "code": 400,
-                  "body": "{\n  \"message\": \"Ce numéro est déjà enregistré.\"\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Ce numéro possède déjà un compte CLIENT actif.\",\n  \"statusCode\": 400\n}"
                 },
                 {
-                  "name": "429 Too Many Requests (Rate Limit)",
+                  "name": "429 Rate Limit",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -300,10 +353,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/send",
                       "host": [
@@ -314,36 +363,32 @@
                         "otp",
                         "send"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "Too Many Requests",
                   "code": 429,
+                  "_postman_previewlanguage": "json",
                   "body": "{\n  \"message\": \"Patientez 45s avant de redemander un code.\",\n  \"statusCode\": 429\n}"
                 }
-              ]
-            },
-            {
-              "name": "3️⃣ Verify OTP (Registration)",
+              ],
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});",
-                      "var json = pm.response.json();",
-                      "if (json && json.userId) {",
-                      "  pm.environment.set('userId', json.userId);",
-                      "}",
-                      "if (json && json.isNewUser) {",
-                      "  pm.environment.set('isNewUser', String(json.isNewUser));",
-                      "}"
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
                     ]
                   }
                 }
-              ],
+              ]
+            },
+            {
+              "name": "3️⃣ Verify OTP → challengeToken",
               "request": {
                 "method": "POST",
                 "header": [
@@ -352,10 +397,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/verify",
                   "host": [
@@ -367,7 +408,11 @@
                     "verify"
                   ]
                 },
-                "description": "Verify OTP for account registration. Returns `userId` and `isNewUser` flag for profile completion step.\n\n**On Success:**\n- Returns `userId` (save for next step)\n- Sets `currentStep: OTP_VERIFIED` in metadata\n- User must proceed to Complete Registration"
+                "description": "Vérifie le code OTP. Retourne un `challengeToken` à durée limitée (10 min) requis pour `register/complete`.\n\nLe token a `scope: 'challenge-only'` — il ne peut pas être utilisé comme accessToken.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"{{loginApp}}\"\n}"
+                }
               },
               "response": [
                 {
@@ -380,10 +425,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"123456\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
                       "host": [
@@ -394,14 +435,19 @@
                         "otp",
                         "verify"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"7314\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"isNewUser\": true\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"challengeToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"scope\": \"challenge-only\",\n  \"expiresIn\": 600\n}"
                 },
                 {
-                  "name": "400 Code Expired",
+                  "name": "400 Code Expiré",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -410,10 +456,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"000000\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
                       "host": [
@@ -424,14 +466,19 @@
                         "otp",
                         "verify"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"0000\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "Bad Request",
                   "code": 400,
-                  "body": "{\n  \"message\": \"Code expiré. Demandez un nouveau code.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Code expiré. Demandez un nouveau code.\",\n  \"statusCode\": 400\n}"
                 },
                 {
-                  "name": "401 Wrong Code (attempts remaining)",
+                  "name": "401 Code Incorrect",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -440,10 +487,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"111111\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
                       "host": [
@@ -454,14 +497,19 @@
                         "otp",
                         "verify"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"1111\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"statusCode\": 401\n}"
                 },
                 {
-                  "name": "401 Too Many Attempts (Blocked 1h)",
+                  "name": "401 Bloqué 1h",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -470,10 +518,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"111111\",\n  \"purpose\": \"REGISTRATION\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
                       "host": [
@@ -484,41 +528,46 @@
                         "otp",
                         "verify"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"code\": \"1111\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"Trop de tentatives. Bloqué 1 heure.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Trop de tentatives. Bloqué 1 heure.\",\n  \"statusCode\": 401\n}"
                 }
-              ]
-            },
-            {
-              "name": "4️⃣ Complete Registration (Set Profile + PIN)",
+              ],
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status is 201', function () {",
-                      "  pm.response.to.have.status(201);",
-                      "});"
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json && json.challengeToken) pm.environment.set('challengeToken', json.challengeToken);"
                     ]
                   }
                 }
-              ],
+              ]
+            },
+            {
+              "name": "4️⃣ Complete Registration (Profil + PIN)",
               "request": {
                 "method": "POST",
                 "header": [
                   {
                     "key": "Content-Type",
                     "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{challengeToken}}"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"firstName\": \"{{firstName}}\",\n  \"lastName\": \"{{lastName}}\",\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\",\n  \"role\": \"{{registrationRole}}\"\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/register/complete",
                   "host": [
@@ -530,7 +579,11 @@
                     "complete"
                   ]
                 },
-                "description": "Finalize registration: set user profile (firstName, lastName), PIN code and role.\n\n**`role` values:** `CLIENT` or `PROFESSIONAL` (ADMIN not allowed at registration).\n\n**PIN rules:** 4–6 digits, no obvious patterns (000000, 123456, 111111 rejected).\n\n**On Success:** HTTP 201, body null. Account is active, user can now login."
+                "description": "Crée le compte et le PIN. Requiert le `challengeToken` de `otp/verify`.\n\n**Auth:** `Authorization: Bearer {{challengeToken}}`\n\n**Règles PIN :** exactement 4 chiffres, pas de motifs trop simples (0000, 1234, 1111…).\n\n`firstName` et `lastName` sont **optionnels** ici — ils peuvent être fournis plus tard via `PATCH /sentinel/me`.\n\nRetourne `accessToken` + `refreshToken` + profil avec `onboardingStep` :\n- `PROFILE_PENDING` → nom non renseigné, rediriger vers l'écran « Compléter profil »\n- `TERMS_PENDING` → nom OK, rediriger vers l'écran CGU",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pin\": \"{{pin}}\",\n  \"confirmPin\": \"{{pin}}\"\n}"
+                }
               },
               "response": [
                 {
@@ -541,12 +594,12 @@
                       {
                         "key": "Content-Type",
                         "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2580\",\n  \"confirmPin\": \"2580\",\n  \"role\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/register/complete",
                       "host": [
@@ -557,26 +610,31 @@
                         "register",
                         "complete"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2847\",\n  \"confirmPin\": \"2847\"\n}"
                     }
                   },
                   "status": "Created",
                   "code": 201,
-                  "body": "null"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"\",\n    \"app\": \"PROFESSIONAL\",\n    \"hasAcceptedTerms\": false,\n    \"acceptedTermsAt\": null,\n    \"onboardingStep\": \"PROFILE_PENDING\"\n  }\n}"
                 },
                 {
-                  "name": "400 PIN Mismatch",
+                  "name": "400 PIN ne correspondent pas",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
                       {
                         "key": "Content-Type",
                         "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2580\",\n  \"confirmPin\": \"2581\",\n  \"role\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/register/complete",
                       "host": [
@@ -587,26 +645,31 @@
                         "register",
                         "complete"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2847\",\n  \"confirmPin\": \"2848\"\n}"
                     }
                   },
                   "status": "Bad Request",
                   "code": 400,
-                  "body": "{\n  \"message\": \"Les deux PIN ne correspondent pas.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Les deux PIN ne correspondent pas.\",\n  \"statusCode\": 400\n}"
                 },
                 {
-                  "name": "400 PIN Too Simple",
+                  "name": "400 PIN trop simple",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
                       {
                         "key": "Content-Type",
                         "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"userId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"123456\",\n  \"confirmPin\": \"123456\",\n  \"role\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/register/complete",
                       "host": [
@@ -617,26 +680,31 @@
                         "register",
                         "complete"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"1234\",\n  \"confirmPin\": \"1234\"\n}"
                     }
                   },
                   "status": "Bad Request",
                   "code": 400,
-                  "body": "{\n  \"message\": \"PIN trop simple. Choisissez un code plus sécurisé.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN trop simple. Choisissez un code plus sécurisé.\",\n  \"statusCode\": 400\n}"
                 },
                 {
-                  "name": "400 User Not Found",
+                  "name": "409 Compte déjà existant (race condition)",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
                       {
                         "key": "Content-Type",
                         "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"userId\": \"00000000-0000-0000-0000-000000000000\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2580\",\n  \"confirmPin\": \"2580\",\n  \"role\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/register/complete",
                       "host": [
@@ -647,35 +715,79 @@
                         "register",
                         "complete"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2847\",\n  \"confirmPin\": \"2847\"\n}"
                     }
                   },
-                  "status": "Bad Request",
-                  "code": 400,
-                  "body": "{\n  \"message\": \"Utilisateur introuvable.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Un compte CLIENT existe déjà pour ce numéro.\",\n  \"statusCode\": 409\n}"
+                },
+                {
+                  "name": "401 Token de challenge invalide",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "register",
+                        "complete"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouame\",\n  \"pin\": \"2847\",\n  \"confirmPin\": \"2847\"\n}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Token de challenge requis.\",\n  \"statusCode\": 401\n}"
                 }
               ],
-              "description": "Finalize registration: set user profile (firstName, lastName), PIN code and role.\n\n**On Success:**\n- Account becomes active\n- Returns null (HTTP 201)"
-            }
-          ]
-        },
-        {
-          "name": "AUTH LOGIN (EXISTING USER PATH)",
-          "item": [
-            {
-              "name": "2️⃣ Start Login (PIN Verification)",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});"
+                      "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                      "const json = pm.response.json();",
+                      "if (json && json.accessToken) {",
+                      "  pm.environment.set('accessToken', json.accessToken);",
+                      "  if (json.user && json.user.app === 'PROFESSIONAL') pm.environment.set('professionalAccessToken', json.accessToken);",
+                      "}",
+                      "if (json && json.refreshToken) pm.environment.set('refreshToken', json.refreshToken);",
+                      "if (json && json.user && json.user.id) pm.environment.set('userId', json.user.id);"
                     ]
                   }
                 }
-              ],
+              ]
+            }
+          ]
+        },
+        {
+          "name": "AUTH LOGIN (EXISTING USER)",
+          "item": [
+            {
+              "name": "2️⃣ Start Login (Validation PIN)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -684,10 +796,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\",\n  \"app\": \"{{loginApp}}\"\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/login/start",
                   "host": [
@@ -699,7 +807,11 @@
                     "start"
                   ]
                 },
-                "description": "Validate phone + PIN and initiate LOGIN OTP.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n\n**On Success:**\n- Sends LOGIN OTP scoped to the selected app\n- Server metadata step is `LOGIN_OTP_SENT`"
+                "description": "Valide le PIN pour l'app sélectionnée et envoie automatiquement un OTP de connexion.\n\nRetourne un `challengeToken` (10 min) requis pour `login/complete`.\n\n**`app`:** `CLIENT` ou `PROFESSIONAL` — chaque compte a son propre PIN.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"pin\": \"{{pin}}\",\n  \"app\": \"{{loginApp}}\"\n}"
+                }
               },
               "response": [
                 {
@@ -712,10 +824,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"1234\",\n  \"app\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
                       "host": [
@@ -726,14 +834,19 @@
                         "login",
                         "start"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"2847\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"channel\": \"WHATSAPP\"\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"challengeToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"scope\": \"challenge-only\",\n  \"channel\": \"WHATSAPP\",\n  \"expiresIn\": 600\n}"
                 },
                 {
-                  "name": "401 Incomplete Registration",
+                  "name": "404 Compte introuvable",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -742,10 +855,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"pin\": \"1234\",\n  \"app\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
                       "host": [
@@ -756,14 +865,19 @@
                         "login",
                         "start"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250799999999\",\n  \"pin\": \"2847\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
-                  "status": "Unauthorized",
-                  "code": 401,
-                  "body": "{\n  \"message\": \"PIN non configuré.\"\n}"
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Aucun compte CLIENT pour ce numéro.\",\n  \"statusCode\": 404\n}"
                 },
                 {
-                  "name": "400 User Not Found",
+                  "name": "401 PIN incorrect",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -772,10 +886,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250799999999\",\n  \"pin\": \"2580\",\n  \"app\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
                       "host": [
@@ -786,26 +896,27 @@
                         "login",
                         "start"
                       ]
-                    }
-                  },
-                  "status": "Bad Request",
-                  "code": 400,
-                  "body": "{\n  \"message\": \"Numéro introuvable.\",\n  \"error\": \"Bad Request\",\n  \"statusCode\": 400\n}"
-                },
-                {
-                  "name": "401 Wrong PIN",
-                  "originalRequest": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
+                    },
                     "body": {
                       "mode": "raw",
                       "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"9999\",\n  \"app\": \"CLIENT\"\n}"
-                    },
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN incorrect. 2 tentative(s) restante(s).\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "401 PIN bloqué",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
                       "host": [
@@ -816,44 +927,19 @@
                         "login",
                         "start"
                       ]
-                    }
-                  },
-                  "status": "Unauthorized",
-                  "code": 401,
-                  "body": "{\n  \"message\": \"PIN incorrect. 2 tentative(s) restante(s).\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
-                },
-                {
-                  "name": "401 PIN Blocked (Too Many Attempts)",
-                  "originalRequest": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
+                    },
                     "body": {
                       "mode": "raw",
                       "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"9999\",\n  \"app\": \"CLIENT\"\n}"
-                    },
-                    "url": {
-                      "raw": "{{baseUrl}}/sentinel/login/start",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "login",
-                        "start"
-                      ]
                     }
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"PIN bloqué 1 heure.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN bloqué 1 heure.\",\n  \"statusCode\": 401\n}"
                 },
                 {
-                  "name": "401 Wrong App Role",
+                  "name": "401 Compte sans PIN",
                   "originalRequest": {
                     "method": "POST",
                     "header": [
@@ -862,10 +948,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"pin\": \"2580\",\n  \"app\": \"PROFESSIONAL\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/login/start",
                       "host": [
@@ -876,39 +958,231 @@
                         "login",
                         "start"
                       ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000000\",\n  \"pin\": \"2847\",\n  \"app\": \"CLIENT\"\n}"
                     }
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"Ce compte ne possède pas le profil PROFESSIONAL.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN non configuré.\",\n  \"statusCode\": 401\n}"
                 }
-              ]
-            },
-            {
-              "name": "3️⃣ Verify OTP (Login -> Tokens)",
+              ],
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});",
-                      "var json = pm.response.json();",
-                      "if (json && json.accessToken) {",
-                      "  pm.environment.set('accessToken', json.accessToken);",
-                      "}",
-                      "if (json && json.refreshToken) {",
-                      "  pm.environment.set('refreshToken', json.refreshToken);",
-                      "}",
-                      "if (json && json.user && json.user.id) {",
-                      "  pm.environment.set('userId', json.user.id);",
-                      "}"
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json && json.challengeToken) pm.environment.set('challengeToken', json.challengeToken);"
                     ]
                   }
                 }
+              ]
+            },
+            {
+              "name": "3️⃣ Complete Login (Verify OTP)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{challengeToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/login/complete",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "login",
+                    "complete"
+                  ]
+                },
+                "description": "Vérifie le code OTP de connexion. Requiert le `challengeToken` de `login/start`.\n\n**Auth:** `Authorization: Bearer {{challengeToken}}`\n\nRetourne `accessToken` + `refreshToken` + profil avec le suivi d'onboarding :\n- `hasAcceptedTerms` — `true` si les CGU ont été acceptées\n- `acceptedTermsAt` — timestamp ISO d'acceptation des CGU, ou `null`\n- `onboardingStep` — étape courante :\n  - `PROFILE_PENDING` → nom manquant → écran Photo + Nom\n  - `ESTABLISHMENT_PENDING` → profil pro manquant → écrans Type + Infos établissement\n  - `LOCATION_PENDING` → localisation manquante → écran Localisation\n  - `AVAILABILITY_PENDING` → horaires manquants → écran Contact & Horaires\n  - `SERVICES_PENDING` → services manquants → écran Ajouter un service\n  - `GALLERY_PENDING` → galerie manquante → écran Galerie photos\n  - `TERMS_PENDING` → CGU non acceptées → écran CGU\n  - `COMPLETED` → onboarding terminé → Tableau de bord",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{otpCode}}\"\n}"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "complete"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"code\": \"7314\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000001\",\n    \"firstName\": \"Aya\",\n    \"app\": \"PROFESSIONAL\",\n    \"hasAcceptedTerms\": true,\n    \"acceptedTermsAt\": \"2026-05-09T10:30:00.000Z\",\n    \"onboardingStep\": \"ESTABLISHMENT_PENDING\"\n  }\n}"
+                },
+                {
+                  "name": "400 Code expiré",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "complete"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"code\": \"0000\"\n}"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Code expiré. Demandez un nouveau code.\",\n  \"statusCode\": 400\n}"
+                },
+                {
+                  "name": "401 Code incorrect",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "complete"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"code\": \"1111\"\n}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "401 Token de challenge requis",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/login/complete",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "login",
+                        "complete"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"code\": \"7314\"\n}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Token de challenge requis pour cette étape.\",\n  \"statusCode\": 401\n}"
+                }
               ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json && json.accessToken) {",
+                      "  pm.environment.set('accessToken', json.accessToken);",
+                      "  if (json.user && json.user.app === 'PROFESSIONAL') pm.environment.set('professionalAccessToken', json.accessToken);",
+                      "}",
+                      "if (json && json.refreshToken) pm.environment.set('refreshToken', json.refreshToken);",
+                      "if (json && json.user && json.user.id) pm.environment.set('userId', json.user.id);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "PIN MANAGEMENT",
+          "item": [
+            {
+              "name": "1️⃣ Send OTP (PIN Reset)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -917,10 +1191,109 @@
                     "value": "application/json"
                   }
                 ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/otp/send",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "otp",
+                    "send"
+                  ]
+                },
+                "description": "Envoie un OTP pour réinitialiser le PIN du compte `app` (CLIENT ou PROFESSIONAL).",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"{{loginApp}}\"\n}"
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"purpose\": \"PIN_RESET\",\n  \"app\": \"{{loginApp}}\"\n}"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/send",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "send"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"purpose\": \"PIN_RESET\",\n  \"app\": \"CLIENT\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"channel\": \"WHATSAPP\"\n}"
                 },
+                {
+                  "name": "404 Compte introuvable",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/send",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "send"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250799999999\",\n  \"purpose\": \"PIN_RESET\",\n  \"app\": \"CLIENT\"\n}"
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Aucun compte CLIENT pour ce numéro.\",\n  \"statusCode\": 404\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2️⃣ Verify OTP → challengeToken (PIN Reset)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "url": {
                   "raw": "{{baseUrl}}/sentinel/otp/verify",
                   "host": [
@@ -932,7 +1305,11 @@
                     "verify"
                   ]
                 },
-                "description": "Verify LOGIN OTP and receive access + refresh tokens.\n\n**App context:**\n- `app` supports `CLIENT` or `PROFESSIONAL`\n- If omitted, backend defaults to `CLIENT`\n- LOGIN OTP verification is scoped by app"
+                "description": "Vérifie le code OTP de réinitialisation. Retourne un `challengeToken` requis pour `pin/reset`.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"PIN_RESET\",\n  \"app\": \"{{loginApp}}\"\n}"
+                }
               },
               "response": [
                 {
@@ -945,10 +1322,6 @@
                         "value": "application/json"
                       }
                     ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"123456\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"CLIENT\"\n}"
-                    },
                     "url": {
                       "raw": "{{baseUrl}}/sentinel/otp/verify",
                       "host": [
@@ -958,72 +1331,456 @@
                         "sentinel",
                         "otp",
                         "verify"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"7314\",\n  \"purpose\": \"PIN_RESET\",\n  \"app\": \"CLIENT\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"challengeToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"scope\": \"challenge-only\",\n  \"expiresIn\": 600\n}"
+                },
+                {
+                  "name": "401 Code incorrect",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "otp",
+                        "verify"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"1111\",\n  \"purpose\": \"PIN_RESET\",\n  \"app\": \"CLIENT\"\n}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"statusCode\": 401\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json && json.challengeToken) pm.environment.set('challengeToken', json.challengeToken);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3️⃣ Reset PIN",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{challengeToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/pin/reset",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "pin",
+                    "reset"
+                  ]
+                },
+                "description": "Réinitialise le PIN. Requiert le `challengeToken` de l'étape précédente.\n\n**Auth:** `Authorization: Bearer {{challengeToken}}`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pin\": \"{{newPin}}\",\n  \"confirmPin\": \"{{newPin}}\"\n}"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/pin/reset",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "pin",
+                        "reset"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"pin\": \"3791\",\n  \"confirmPin\": \"3791\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN réinitialisé avec succès.\"\n}"
+                },
+                {
+                  "name": "400 PIN ne correspondent pas",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{challengeToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/pin/reset",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "pin",
+                        "reset"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"pin\": \"3791\",\n  \"confirmPin\": \"3792\"\n}"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Les deux PIN ne correspondent pas.\",\n  \"statusCode\": 400\n}"
+                },
+                {
+                  "name": "401 Token de challenge requis",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/pin/reset",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "pin",
+                        "reset"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"pin\": \"3791\",\n  \"confirmPin\": \"3791\"\n}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Token de challenge requis.\",\n  \"statusCode\": 401\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Change PIN (authentifié)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/pin/change",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "pin",
+                    "change"
+                  ]
+                },
+                "description": "Modifie le PIN en étant connecté. Requiert un `accessToken` valide (pas un challengeToken).\n\n**Auth:** `Authorization: Bearer {{accessToken}}`",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"currentPin\": \"{{pin}}\",\n  \"newPin\": \"{{newPin}}\",\n  \"confirmNewPin\": \"{{newPin}}\"\n}"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/pin/change",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "pin",
+                        "change"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPin\": \"2847\",\n  \"newPin\": \"3791\",\n  \"confirmNewPin\": \"3791\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN modifié avec succès.\"\n}"
+                },
+                {
+                  "name": "401 PIN actuel incorrect",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/pin/change",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "pin",
+                        "change"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPin\": \"9999\",\n  \"newPin\": \"3791\",\n  \"confirmNewPin\": \"3791\"\n}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"PIN actuel incorrect. 2 tentative(s) restante(s).\",\n  \"statusCode\": 401\n}"
+                },
+                {
+                  "name": "400 Même PIN",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/pin/change",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "pin",
+                        "change"
+                      ]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPin\": \"2847\",\n  \"newPin\": \"2847\",\n  \"confirmNewPin\": \"2847\"\n}"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Le nouveau PIN doit être différent de l'actuel.\",\n  \"statusCode\": 400\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "TERMS & CONDITIONS",
+          "item": [
+            {
+              "name": "Accept Terms & Conditions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json && json.acceptedTermsAt) {",
+                      "  pm.environment.set('acceptedTermsAt', json.acceptedTermsAt);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/terms/accept",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "terms",
+                    "accept"
+                  ]
+                },
+                "description": "Enregistre l'acceptation des CGU par l'utilisateur connecté. Stocke un timestamp `acceptedTermsAt` en base.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\n**Idempotent** — peut être appelé plusieurs fois sans effet de bord.\n\n**Flow onboarding pro :**\n1. `register/complete` → `hasAcceptedTerms: false`\n2. → **`terms/accept`** ← vous êtes ici\n3. `professional/profile` → crée le profil\n4. `professional/:id/avatar/upload` → upload avatar"
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/terms/accept",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "terms",
+                        "accept"
                       ]
                     }
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"userId\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n  \"isNewUser\": false,\n  \"accessToken\": \"jwt_access_token\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000000\",\n    \"firstName\": \"Aya\",\n    \"role\": \"CLIENT\",\n    \"roles\": [\n      \"CLIENT\"\n    ]\n  }\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"acceptedTermsAt\": \"2026-05-09T10:30:00.000Z\"\n}"
                 },
                 {
-                  "name": "401 Wrong Code",
+                  "name": "401 Non authentifié",
                   "originalRequest": {
                     "method": "POST",
-                    "header": [
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"111111\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"CLIENT\"\n}"
-                    },
+                    "header": [],
                     "url": {
-                      "raw": "{{baseUrl}}/sentinel/otp/verify",
+                      "raw": "{{baseUrl}}/sentinel/terms/accept",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
                         "sentinel",
-                        "otp",
-                        "verify"
+                        "terms",
+                        "accept"
                       ]
                     }
                   },
                   "status": "Unauthorized",
                   "code": 401,
-                  "body": "{\n  \"message\": \"Code incorrect. 2 tentative(s) restante(s).\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
-                },
-                {
-                  "name": "401 Wrong App Role",
-                  "originalRequest": {
-                    "method": "POST",
-                    "header": [
-                      {
-                        "key": "Content-Type",
-                        "value": "application/json"
-                      }
-                    ],
-                    "body": {
-                      "mode": "raw",
-                      "raw": "{\n  \"phone\": \"+2250700000001\",\n  \"code\": \"000000\",\n  \"purpose\": \"LOGIN\",\n  \"app\": \"PROFESSIONAL\"\n}"
-                    },
-                    "url": {
-                      "raw": "{{baseUrl}}/sentinel/otp/verify",
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "sentinel",
-                        "otp",
-                        "verify"
-                      ]
-                    }
-                  },
-                  "status": "Unauthorized",
-                  "code": 401,
-                  "body": "{\n  \"message\": \"Ce compte ne possède pas le profil PROFESSIONAL.\",\n  \"error\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"message\": \"Unauthorized\",\n  \"statusCode\": 401\n}"
                 }
               ]
             }
@@ -1176,7 +1933,105 @@
                   },
                   "status": "OK",
                   "code": 200,
-                  "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"phone\": \"+2250700000001\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"CLIENT\",\n  \"isVerified\": true,\n  \"isActive\": true,\n  \"metadata\": {\n    \"authFlow\": {\n      \"currentStep\": \"LOGIN_COMPLETE\",\n      \"status\": \"completed\",\n      \"userPath\": \"EXISTING_USER\",\n      \"timestamps\": {\n        \"loginCompletedAt\": \"2026-04-13T12:06:00Z\"\n      }\n    }\n  },\n  \"createdAt\": \"2026-04-10T15:30:00Z\",\n  \"updatedAt\": \"2026-04-13T12:06:00Z\"\n}"
+                  "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"phone\": \"+2250700000001\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"CLIENT\",\n  \"isVerified\": true,\n  \"isActive\": true,\n  \"metadata\": {},\n  \"createdAt\": \"2026-04-10T15:30:00Z\",\n  \"updatedAt\": \"2026-04-13T12:06:00Z\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Update Profile",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "me"]
+                },
+                "description": "Met à jour le prénom et/ou le nom de l'utilisateur connecté.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\nRetourne le profil mis à jour + `onboardingStep` recalculé.\n\nUne fois le nom renseigné après `register/complete`, `onboardingStep` passe de `PROFILE_PENDING` à `TERMS_PENDING`.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"{{firstName}}\",\n  \"lastName\": \"{{lastName}}\"\n}"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "PATCH",
+                    "header": [
+                      { "key": "Content-Type", "value": "application/json" },
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "me"]
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouamé\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n  \"firstName\": \"Aya\",\n  \"lastName\": \"Kouamé\",\n  \"onboardingStep\": \"TERMS_PENDING\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Finalise Onboarding",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me/onboarding/complete",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["sentinel", "me", "onboarding", "complete"]
+                },
+                "description": "Bouton « Finaliser mon inscription ». Marque l'onboarding comme terminé.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\n**Prérequis :** toutes les étapes doivent être complètes (profil, CGU, établissement, horaires, services). Retourne `400` avec l'étape manquante sinon.\n\n**Idempotent** — peut être rappelé sans effet de bord."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/onboarding/complete",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "me", "onboarding", "complete"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"onboardingCompletedAt\": \"2026-05-09T14:22:00.000Z\"\n}"
+                },
+                {
+                  "name": "400 Étape manquante",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/onboarding/complete",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["sentinel", "me", "onboarding", "complete"]
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Onboarding incomplet — étape manquante : SERVICES_PENDING.\",\n  \"error\": \"Bad Request\"\n}"
                 }
               ]
             },
@@ -1289,6 +2144,242 @@
                   "status": "OK",
                   "code": 200,
                   "body": "{\n  \"message\": \"Logged out successfully from all devices\",\n  \"devicesRevoked\": 3\n}"
+                }
+              ]
+            },
+            {
+              "name": "List Active Sessions",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                      "var json = pm.response.json();",
+                      "if (json && json.length > 0) pm.environment.set('sessionId', json[0].id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me/sessions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "me",
+                    "sessions"
+                  ]
+                },
+                "description": "List all active sessions (non-expired, non-revoked refresh tokens) for the authenticated user.\n\nSaves `sessionId` of first session for revoke test."
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/sessions",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "me",
+                        "sessions"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "[\n  {\n    \"id\": \"abc123\",\n    \"platform\": \"IOS\",\n    \"deviceInfo\": \"Mozilla/5.0...\",\n    \"ipAddress\": \"41.202.x.x\",\n    \"createdAt\": \"2026-05-06T10:00:00Z\",\n    \"lastUsedAt\": \"2026-05-06T14:00:00Z\",\n    \"expiresAt\": \"2026-06-05T10:00:00Z\"\n  }\n]"
+                }
+              ]
+            },
+            {
+              "name": "Revoke Session",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me/sessions/{{sessionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "me",
+                    "sessions",
+                    "{{sessionId}}"
+                  ]
+                },
+                "description": "Revoke a specific session by its ID (from the list above). Use to disconnect a specific device."
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/sessions/{{sessionId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "me",
+                        "sessions",
+                        "{{sessionId}}"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"Session révoquée.\"\n}"
+                },
+                {
+                  "name": "404 Session Not Found",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/sessions/{{sessionId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "me",
+                        "sessions",
+                        "{{sessionId}}"
+                      ]
+                    }
+                  },
+                  "status": "Not Found",
+                  "code": 404,
+                  "body": "{\n  \"message\": \"Session introuvable.\",\n  \"error\": \"Not Found\",\n  \"statusCode\": 404\n}"
+                }
+              ]
+            },
+            {
+              "name": "Register Push Token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"platform\": \"{{devicePlatform}}\",\n  \"deviceId\": \"{{deviceId}}\",\n  \"pushToken\": \"{{pushToken}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me/push-token",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "me",
+                    "push-token"
+                  ]
+                },
+                "description": "Register or update the FCM/APNs push notification token for this device.\n\n**Call after every login** to keep the token current.\n\n**`platform`:** `IOS`, `ANDROID`, or `WEB`\n**`deviceId`:** stable UUID generated on first install (stored locally on the device)"
+              },
+              "response": [
+                {
+                  "name": "200 Success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"platform\": \"IOS\",\n  \"deviceId\": \"stable-device-uuid\",\n  \"pushToken\": \"fcm_token_here\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/push-token",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "me",
+                        "push-token"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"message\": \"Token push enregistré.\"\n}"
                 }
               ]
             }
@@ -1849,7 +2940,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"agencyName\": \"{{profileAgencyName}}\",\n  \"bio\": \"{{profileBio}}\",\n  \"avatarUrl\": \"{{profileAvatarUrl}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
+                  "raw": "{\n  \"agencyName\": \"{{profileAgencyName}}\",\n  \"bio\": \"{{profileBio}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/professional/profile",
@@ -1861,7 +2952,7 @@
                     "profile"
                   ]
                 },
-                "description": "Create the professional profile."
+                "description": "Create the professional profile. Avatar is not accepted here — use *Upload Avatar* after creation."
               }
             },
             {
@@ -2226,6 +3317,147 @@
                 },
                 "description": "Admin only: soft-delete a global category (fails if linked to active services)."
               }
+            },
+            {
+              "name": "Admin Service Categories",
+              "item": [
+                {
+                  "name": "Create Service Category (Admin Alias)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status is 201', function () {",
+                          "  pm.response.to.have.status(201);",
+                          "});",
+                          "const json = pm.response.json();",
+                          "if (json && json.id) {",
+                          "  pm.environment.set('serviceCategoryId', json.id);",
+                          "}"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/admin/services/categories",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professional",
+                        "admin",
+                        "services",
+                        "categories"
+                      ]
+                    },
+                    "description": "Admin only alias for creating a global category."
+                  }
+                },
+                {
+                  "name": "Update Service Category (Admin Alias)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status is 200', function () {",
+                          "  pm.response.to.have.status(200);",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/admin/services/categories/{{serviceCategoryId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professional",
+                        "admin",
+                        "services",
+                        "categories",
+                        "{{serviceCategoryId}}"
+                      ]
+                    },
+                    "description": "Admin only alias for updating a global category."
+                  }
+                },
+                {
+                  "name": "Delete Service Category (Admin Alias)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status is 200', function () {",
+                          "  pm.response.to.have.status(200);",
+                          "});"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminAccessToken}}"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/professional/admin/services/categories/{{serviceCategoryId}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professional",
+                        "admin",
+                        "services",
+                        "categories",
+                        "{{serviceCategoryId}}"
+                      ]
+                    },
+                    "description": "Admin only alias for soft-deleting a global category."
+                  }
+                }
+              ]
             },
             {
               "name": "Create Category Request (Professional)",
@@ -4457,7 +5689,7 @@
     },
     {
       "key": "otpCode",
-      "value": "000000",
+      "value": "0000",
       "type": "string"
     },
     {
@@ -4482,6 +5714,11 @@
     },
     {
       "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "challengeToken",
       "value": "",
       "type": "string"
     },
@@ -4726,11 +5963,6 @@
       "type": "string"
     },
     {
-      "key": "registrationRole",
-      "value": "CLIENT",
-      "type": "string"
-    },
-    {
       "key": "loginApp",
       "value": "CLIENT",
       "type": "string"
@@ -4813,6 +6045,16 @@
     {
       "key": "searchRadius",
       "value": "10",
+      "type": "string"
+    },
+    {
+      "key": "newPin",
+      "value": "3791",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
       "type": "string"
     }
   ],

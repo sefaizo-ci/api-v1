@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
   Max,
   MaxLength,
   Min,
@@ -25,12 +24,6 @@ export class CreateProfessionalProfileDto {
   @IsString()
   @MaxLength(1000)
   bio?: string;
-
-  @ApiPropertyOptional({ example: 'https://cdn.example.com/avatar.jpg' })
-  @IsOptional()
-  @IsString()
-  @IsUrl({ require_protocol: true })
-  avatarUrl?: string;
 
   @ApiPropertyOptional({
     enum: ServiceLocation,
@@ -76,12 +69,6 @@ export class UpdateProfessionalProfileDto {
   @IsString()
   @MaxLength(1000)
   bio?: string;
-
-  @ApiPropertyOptional({ example: 'https://cdn.example.com/new-avatar.jpg' })
-  @IsOptional()
-  @IsString()
-  @IsUrl({ require_protocol: true })
-  avatarUrl?: string;
 
   @ApiPropertyOptional({ enum: ServiceLocation, example: ServiceLocation.BOTH })
   @IsOptional()

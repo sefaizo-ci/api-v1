@@ -5,6 +5,7 @@ export class UserMapper {
   static toDomain(raw: UserPrismaEntity): UserEntity {
     return new UserEntity(
       raw.id,
+      raw.phoneId,
       raw.phone.number,
       raw.firstName,
       raw.lastName,
@@ -22,6 +23,8 @@ export class UserMapper {
         : null,
       raw.createdAt,
       raw.deletedAt,
+      raw.acceptedTermsAt,
+      raw.onboardingCompletedAt,
     );
   }
 }

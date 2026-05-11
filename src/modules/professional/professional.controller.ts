@@ -14,11 +14,12 @@ import {
   Query,
   Req,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import type { MediaStoragePort } from '../media/media-storage.port';
@@ -40,6 +41,7 @@ import {
   RejectBookingCommand,
   RemoveAvailabilityCommand,
   ReorderGalleryCommand,
+  SetAvailabilityBulkCommand,
   SetAvailabilityCommand,
   SetAvailabilityForAllWeekCommand,
   SetAvailabilityStatusCommand,
@@ -62,6 +64,7 @@ import {
   CreateServiceCategoryRequestDto,
   RejectBookingDto,
   ReviewCancellationRequestDto,
+  SetAvailabilityBulkDto,
   SetAvailabilityDto,
   SetAvailabilityForWeekDto,
   SetAvailabilityStatusDto,
@@ -114,7 +117,7 @@ type AuthenticatedRequest = Request & {
   };
 };
 
-@Controller('professional')
+@Controller('professionals')
 export class ProfessionalController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -140,7 +143,6 @@ export class ProfessionalController {
         req.user.id,
         body.agencyName,
         body.bio,
-        body.avatarUrl,
         body.location,
         body.address,
         body.latitude,
@@ -164,7 +166,7 @@ export class ProfessionalController {
         professionalId,
         body.agencyName,
         body.bio,
-        body.avatarUrl,
+        undefined,
         body.location,
         body.address,
         body.latitude,
@@ -408,6 +410,7 @@ export class ProfessionalController {
         body.durationMin,
         body.basePrice,
         body.category,
+        body.imageUrl,
       ),
     );
   }
@@ -427,8 +430,49 @@ export class ProfessionalController {
         body.durationMin,
         body.basePrice,
         body.category,
+        body.imageUrl,
       ),
     );
+  }
+
+  @Post(':professionalId/services/:serviceId/image/upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_UPLOAD_BYTES } }),
+  )
+  async uploadServiceImageFile(
+    @Param('professionalId') professionalId: string,
+    @Param('serviceId') serviceId: string,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file?: UploadedImageFile,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    this.assertValidImageFile(file);
+
+    const uploaded = await this.mediaStorageService.uploadServiceImage({
+      professionalId,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+    });
+
+    await this.commandBus.execute<UpdateServiceCommand, unknown>(
+      new UpdateServiceCommand(
+        serviceId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        uploaded.url,
+      ),
+    );
+
+    return {
+      imageUrl: uploaded.url,
+      fileId: uploaded.fileId,
+      path: uploaded.filePath,
+    };
   }
 
   @Put(':professionalId/services/:serviceId/deactivate')
@@ -514,6 +558,18 @@ export class ProfessionalController {
         body.breakStartTime,
         body.breakEndTime,
       ),
+    );
+  }
+
+  @Post(':professionalId/availability/bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async setAvailabilityBulk(
+    @Param('professionalId') professionalId: string,
+    @Body() body: SetAvailabilityBulkDto,
+  ) {
+    return this.commandBus.execute<SetAvailabilityBulkCommand, unknown>(
+      new SetAvailabilityBulkCommand(professionalId, body.availabilities),
     );
   }
 
@@ -655,6 +711,69 @@ export class ProfessionalController {
       fileId: uploaded.fileId,
       path: uploaded.filePath,
       galleryItem,
+      maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
+      acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
+    };
+  }
+
+  @Post(':professionalId/gallery/upload-bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  @UseInterceptors(
+    FilesInterceptor('files', MAX_GALLERY_IMAGES, {
+      limits: { fileSize: MAX_IMAGE_UPLOAD_BYTES },
+    }),
+  )
+  async uploadGalleryImageFiles(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFiles() files?: UploadedImageFile[],
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+
+    if (!files || files.length === 0) {
+      throw new BadRequestException(
+        'Aucun fichier recu. Envoyez les fichiers dans le champ multipart "files".',
+      );
+    }
+
+    for (const file of files) {
+      this.assertValidImageFile(file);
+    }
+
+    const { pagination } = await this.mediaStorageService.listProfessionalFiles(
+      { professionalId, type: 'gallery', page: 1, limit: 1 },
+    );
+    const remaining = MAX_GALLERY_IMAGES - pagination.total;
+    if (remaining <= 0) {
+      throw new BadRequestException(
+        `Limite atteinte : maximum ${MAX_GALLERY_IMAGES} images dans la galerie.`,
+      );
+    }
+    if (files.length > remaining) {
+      throw new BadRequestException(
+        `Trop d'images : vous pouvez encore ajouter ${remaining} image(s) (max ${MAX_GALLERY_IMAGES} au total).`,
+      );
+    }
+
+    const results = await Promise.all(
+      files.map(async (file) => {
+        const uploaded = await this.mediaStorageService.uploadGalleryImage({
+          professionalId,
+          buffer: file.buffer,
+          mimeType: file.mimetype,
+        });
+        const galleryItem = await this.commandBus.execute<
+          UploadGalleryItemCommand,
+          unknown
+        >(new UploadGalleryItemCommand(professionalId, uploaded.url));
+        return { imageUrl: uploaded.url, fileId: uploaded.fileId, galleryItem };
+      }),
+    );
+
+    return {
+      uploaded: results,
+      count: results.length,
       maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
       acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
     };

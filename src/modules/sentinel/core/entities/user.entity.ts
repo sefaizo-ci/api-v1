@@ -11,6 +11,7 @@ export type ClientSecretData = {
 export class UserEntity {
   constructor(
     public readonly id: string,
+    public readonly phoneId: string,
     public readonly phone: string,
     public readonly firstName: string,
     public readonly lastName: string,
@@ -21,6 +22,8 @@ export class UserEntity {
     public readonly clientSecret: ClientSecretData | null,
     public readonly createdAt: Date,
     public readonly deletedAt: Date | null,
+    public readonly acceptedTermsAt: Date | null,
+    public readonly onboardingCompletedAt: Date | null,
   ) {}
 
   isPinBlocked(): boolean {

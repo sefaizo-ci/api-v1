@@ -1,9 +1,8 @@
-export class LoginCommand {
+export class ResetPinCommand {
   constructor(
     public readonly userId: string,
     public readonly pin: string,
-    public readonly deviceInfo?: string,
+    public readonly confirmPin: string,
     public readonly ipAddress?: string,
-    public readonly platform?: string,
   ) {}
 }

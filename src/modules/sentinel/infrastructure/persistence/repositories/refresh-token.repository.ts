@@ -30,6 +30,19 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
     return raw ? RefreshTokenMapper.toDomain(raw) : null;
   }
 
+  async findById(id: string): Promise<RefreshTokenEntity | null> {
+    const raw = await this.prisma.refreshToken.findUnique({ where: { id } });
+    return raw ? RefreshTokenMapper.toDomain(raw) : null;
+  }
+
+  async findAllActiveForUser(userId: string): Promise<RefreshTokenEntity[]> {
+    const rows = await this.prisma.refreshToken.findMany({
+      where: { userId, isRevoked: false, expiresAt: { gt: new Date() } },
+      orderBy: { lastUsedAt: 'desc' },
+    });
+    return rows.map((row) => RefreshTokenMapper.toDomain(row));
+  }
+
   async revoke(tokenId: string): Promise<void> {
     await this.prisma.refreshToken.update({
       where: { id: tokenId },

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../../libs/database/prisma.service';
 import { OtpEntity } from '../../../core/entities/otp.entity';
@@ -16,25 +15,36 @@ export class OtpRepository implements IOtpRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: {
-    userId: string;
+    phoneNumberId: string;
+    userId?: string;
     code: string;
     purpose: OtpPurpose;
     channel: OtpChannel;
     metadata?: Prisma.InputJsonValue;
     expiresAt: Date;
   }): Promise<OtpEntity> {
-    const raw = await this.prisma.challenge.create({ data });
+    const raw = await this.prisma.challenge.create({
+      data: {
+        phoneNumberId: data.phoneNumberId,
+        userId: data.userId,
+        code: data.code,
+        purpose: data.purpose,
+        channel: data.channel,
+        metadata: data.metadata,
+        expiresAt: data.expiresAt,
+      },
+    });
     return OtpMapper.toDomain(raw);
   }
 
   async findLatestValid(
-    userId: string,
+    phoneNumberId: string,
     purpose: OtpPurpose,
     app?: LoginApp,
   ): Promise<OtpEntity | null> {
     const raw = await this.prisma.challenge.findFirst({
       where: {
-        userId,
+        phoneNumberId,
         purpose,
         isUsed: false,
         deletedAt: null,
@@ -67,25 +77,19 @@ export class OtpRepository implements IOtpRepository {
   }
 
   async invalidatePrevious(
-    userId: string,
+    phoneNumberId: string,
     purpose: OtpPurpose,
-    reason?: string,
     app?: LoginApp,
   ): Promise<void> {
     await this.prisma.challenge.updateMany({
       where: {
-        userId,
+        phoneNumberId,
         purpose,
         isUsed: false,
         deletedAt: null,
         ...(app ? { metadata: { path: ['app'], equals: app } } : {}),
       },
-      data: {
-        isUsed: true,
-        metadata: {
-          reason: !reason ? 'unknown' : reason,
-        },
-      },
+      data: { isUsed: true },
     });
   }
 }

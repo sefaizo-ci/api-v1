@@ -12,6 +12,8 @@ export interface IRefreshTokenRepository {
     expiresAt: Date;
   }): Promise<{ id: string }>;
   findByHash(tokenHash: string): Promise<RefreshTokenEntity | null>;
+  findById(id: string): Promise<RefreshTokenEntity | null>;
+  findAllActiveForUser(userId: string): Promise<RefreshTokenEntity[]>;
   revoke(tokenId: string): Promise<void>;
   revokeAllForUser(userId: string): Promise<void>;
   updateLastUsed(tokenId: string): Promise<void>;

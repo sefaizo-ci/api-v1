@@ -1,78 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../../libs/database/prisma.service';
-
 import { UserEntity } from '../../../core/entities/user.entity';
-import { UserRole } from '../../../core/enums/auth.enums';
-import { IUserRepository } from '../../../core/services/user.service.interface';
+import { LoginApp, UserRole } from '../../../core/enums/auth.enums';
+import {
+  IUserRepository,
+  OnboardingStep,
+  PhoneRecord,
+} from '../../../core/services/user.service.interface';
 import { UserMapper } from '../../mappers/user.mapper';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getRolesByUserId(userId: string): Promise<UserRole[]> {
-    const roleRows = await this.prisma.phoneRole.findMany({
-      where: { userId },
-      select: { role: true },
-    });
-
-    if (roleRows.length > 0) {
-      return [...new Set(roleRows.map((row) => row.role))];
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    return user ? [user.role] : [];
-  }
-
-  async assignRole(userId: string, role: UserRole): Promise<void> {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, deletedAt: null, isActive: true },
-      select: { id: true, phoneId: true, isVerified: true },
-    });
-
-    if (!user) return;
-
-    await this.prisma.phoneNumber.update({
-      where: { id: user.phoneId },
-      data: { isVerified: user.isVerified, deletedAt: null },
-    });
-
-    await this.prisma.phoneRole.upsert({
-      where: { phoneId_role: { phoneId: user.phoneId, role } },
-      update: { userId },
-      create: { phoneId: user.phoneId, userId, role },
-    });
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { role },
-    });
-  }
-
-  async hasProfessionalProfile(userId: string): Promise<boolean> {
-    const profile = await this.prisma.professional.findFirst({
-      where: { userId, deletedAt: null },
-      select: { id: true },
-    });
-
-    return Boolean(profile);
-  }
-
-  async findByPhone(phone: string): Promise<UserEntity | null> {
-    const raw = await this.prisma.user.findFirst({
-      where: {
-        deletedAt: null,
-        isActive: true,
-        phone: { number: phone, deletedAt: null },
+  async findPhoneByNumber(phone: string): Promise<PhoneRecord | null> {
+    const raw = await this.prisma.phoneNumber.findUnique({
+      where: { number: phone, deletedAt: null },
+      select: {
+        id: true,
+        number: true,
+        clientUserId: true,
+        professionalUserId: true,
+        isVerified: true,
       },
-      include: { phone: true, clientSecret: true },
     });
-    return raw ? UserMapper.toDomain(raw) : null;
+    return raw ?? null;
+  }
+
+  async findOrCreatePhone(phone: string): Promise<PhoneRecord> {
+    const raw = await this.prisma.phoneNumber.upsert({
+      where: { number: phone },
+      update: { deletedAt: null },
+      create: { number: phone },
+      select: {
+        id: true,
+        number: true,
+        clientUserId: true,
+        professionalUserId: true,
+        isVerified: true,
+      },
+    });
+    return raw;
+  }
+
+  async findByPhone(phone: string, app: LoginApp): Promise<UserEntity | null> {
+    const phoneRecord = await this.prisma.phoneNumber.findUnique({
+      where: { number: phone, deletedAt: null },
+      select: { clientUserId: true, professionalUserId: true },
+    });
+    if (!phoneRecord) return null;
+
+    const userId =
+      app === UserRole.CLIENT
+        ? phoneRecord.clientUserId
+        : phoneRecord.professionalUserId;
+    if (!userId) return null;
+
+    return this.findById(userId);
   }
 
   async findById(id: string): Promise<UserEntity | null> {
@@ -83,41 +68,91 @@ export class UserRepository implements IUserRepository {
     return raw ? UserMapper.toDomain(raw) : null;
   }
 
-  async create(data: {
-    phone: string;
+  async findUserById(
+    id: string,
+  ): Promise<{ id: string; role: UserRole; isActive: boolean } | null> {
+    const raw = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, role: true, isActive: true, deletedAt: true },
+    });
+    if (!raw || raw.deletedAt !== null) return null;
+    return { id: raw.id, role: raw.role, isActive: raw.isActive };
+  }
+
+  async createAndLinkUser(data: {
+    phoneId: string;
+    app: LoginApp;
     firstName: string;
     lastName: string;
-    role?: Extract<UserRole, 'CLIENT' | 'PROFESSIONAL'>;
+    pinHash: string;
     metadata?: Prisma.InputJsonValue;
-  }): Promise<UserEntity> {
-    const raw = await this.prisma.$transaction(async (tx) => {
-      const createdPhone = await tx.phoneNumber.upsert({
-        where: { number: data.phone },
-        update: { deletedAt: null },
-        create: { number: data.phone },
-        select: { id: true },
-      });
+  }): Promise<{ user: UserEntity; professionalId: string | null }> {
+    const { raw, professionalId } = await this.prisma.$transaction(
+      async (tx) => {
+        // Lock the phone row and check for race condition
+        const phone = await tx.phoneNumber.findUniqueOrThrow({
+          where: { id: data.phoneId },
+          select: { clientUserId: true, professionalUserId: true },
+        });
 
-      const createdUser = await tx.user.create({
-        data: {
-          phoneId: createdPhone.id,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          role: data.role ?? UserRole.CLIENT,
-          metadata: data.metadata,
-        },
-        include: { phone: true, clientSecret: true },
-      });
+        const slotTaken =
+          data.app === UserRole.CLIENT
+            ? phone.clientUserId
+            : phone.professionalUserId;
 
-      await tx.phoneNumber.update({
-        where: { id: createdPhone.id },
-        data: { isVerified: createdUser.isVerified, deletedAt: null },
-      });
+        if (slotTaken) {
+          throw new ConflictException(
+            `Un compte ${data.app} existe déjà pour ce numéro.`,
+          );
+        }
 
-      return createdUser;
-    });
+        // Create the User
+        const user = await tx.user.create({
+          data: {
+            phoneId: data.phoneId,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            role: data.app,
+            isVerified: true,
+            isActive: true,
+            metadata: data.metadata,
+          },
+        });
 
-    return UserMapper.toDomain(raw);
+        // Create the ClientSecret (PIN)
+        await tx.clientSecret.create({
+          data: { clientId: user.id, secretHash: data.pinHash },
+        });
+
+        // Link PhoneNumber → User
+        await tx.phoneNumber.update({
+          where: { id: data.phoneId },
+          data:
+            data.app === UserRole.CLIENT
+              ? { clientUserId: user.id }
+              : { professionalUserId: user.id },
+        });
+
+        // Create Professional profile for PROFESSIONAL accounts
+        let professionalId: string | null = null;
+        if (data.app === UserRole.PROFESSIONAL) {
+          const professional = await tx.professional.create({
+            data: { userId: user.id, agencyName: '' },
+            select: { id: true },
+          });
+          professionalId = professional.id;
+        }
+
+        const raw = await tx.user.findUniqueOrThrow({
+          where: { id: user.id },
+          include: { phone: true, clientSecret: true },
+        });
+
+        return { raw, professionalId };
+      },
+    );
+
+    return { user: UserMapper.toDomain(raw), professionalId };
   }
 
   async update(
@@ -128,15 +163,9 @@ export class UserRepository implements IUserRepository {
       metadata?: Prisma.InputJsonValue;
     },
   ): Promise<UserEntity> {
-    const updateData: Prisma.UserUpdateInput = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      metadata: data.metadata,
-    };
-
     const raw = await this.prisma.user.update({
       where: { id: userId, deletedAt: null, isActive: true },
-      data: updateData,
+      data,
       include: { phone: true, clientSecret: true },
     });
     return UserMapper.toDomain(raw);
@@ -171,16 +200,10 @@ export class UserRepository implements IUserRepository {
     });
   }
 
-  async markVerified(userId: string): Promise<void> {
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId, deletedAt: null, isActive: true },
-      data: { isVerified: true },
-      select: { id: true, phoneId: true, isVerified: true },
-    });
-
+  async markPhoneVerified(phoneId: string): Promise<void> {
     await this.prisma.phoneNumber.update({
-      where: { id: updatedUser.phoneId },
-      data: { isVerified: true, deletedAt: null },
+      where: { id: phoneId },
+      data: { isVerified: true },
     });
   }
 
@@ -202,16 +225,7 @@ export class UserRepository implements IUserRepository {
     deviceInfo?: string;
     metadata?: Prisma.InputJsonValue;
   }): Promise<void> {
-    await this.prisma.authLog.create({
-      data: {
-        event: data.event,
-        userId: data.userId,
-        channel: data.channel,
-        ipAddress: data.ipAddress,
-        deviceInfo: data.deviceInfo,
-        metadata: data.metadata,
-      },
-    });
+    await this.prisma.authLog.create({ data });
   }
 
   async upsertDevice(data: {
@@ -261,6 +275,76 @@ export class UserRepository implements IUserRepository {
         refreshTokenId: data.refreshTokenId,
         lastActiveAt: new Date(),
       },
+    });
+  }
+
+  async hasProfessionalProfile(userId: string): Promise<boolean> {
+    const profile = await this.prisma.professional.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true },
+    });
+    return Boolean(profile);
+  }
+
+  async getProfessionalId(userId: string): Promise<string | null> {
+    const profile = await this.prisma.professional.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true },
+    });
+    return profile?.id ?? null;
+  }
+
+  async getOnboardingStep(userId: string): Promise<OnboardingStep> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        firstName: true,
+        acceptedTermsAt: true,
+        onboardingCompletedAt: true,
+        professional: {
+          where: { deletedAt: null },
+          select: {
+            address: true,
+            availabilities: { select: { id: true }, take: 1 },
+            services: {
+              where: { isActive: true, deletedAt: null },
+              select: { id: true },
+              take: 1,
+            },
+            gallery: {
+              where: { deletedAt: null },
+              select: { id: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) return 'PROFILE_PENDING';
+    if (user.onboardingCompletedAt) return 'COMPLETED';
+    if (!user.firstName || user.firstName.trim() === '')
+      return 'PROFILE_PENDING';
+    if (!user.professional) return 'ESTABLISHMENT_PENDING';
+    if (!user.professional.address) return 'LOCATION_PENDING';
+    if (!user.professional.availabilities.length) return 'AVAILABILITY_PENDING';
+    if (!user.professional.services.length) return 'SERVICES_PENDING';
+    if (!user.professional.gallery.length) return 'GALLERY_PENDING';
+    if (!user.acceptedTermsAt) return 'TERMS_PENDING';
+    return 'COMPLETED';
+  }
+
+  async completeOnboarding(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId, deletedAt: null, isActive: true },
+      data: { onboardingCompletedAt: new Date() },
+    });
+  }
+
+  async acceptTerms(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId, deletedAt: null, isActive: true },
+      data: { acceptedTermsAt: new Date() },
     });
   }
 }

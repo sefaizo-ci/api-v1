@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import type { Request } from 'express';
 
 @Injectable()
@@ -24,11 +25,15 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     const incomingApiKey = req.header('x-api-key');
-    if (
-      !incomingApiKey ||
-      this.normalizeApiKey(incomingApiKey) !==
-        this.normalizeApiKey(expectedApiKey)
-    ) {
+    if (!incomingApiKey) {
+      throw new UnauthorizedException('x-api-key invalide ou manquante.');
+    }
+
+    const a = Buffer.from(this.normalizeApiKey(incomingApiKey));
+    const b = Buffer.from(this.normalizeApiKey(expectedApiKey));
+    const valid = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+    if (!valid) {
       throw new UnauthorizedException('x-api-key invalide ou manquante.');
     }
 

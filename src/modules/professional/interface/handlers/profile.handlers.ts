@@ -33,21 +33,18 @@ export class CreateProfessionalProfileHandler implements ICommandHandler<CreateP
   async execute(
     command: CreateProfessionalProfileCommand,
   ): Promise<ProfessionalEntity> {
-    // Check if user already has a professional profile
     const existing = await this.repository.hasProfile(command.userId);
     if (existing) {
       throw new BadRequestException(
-        "Un utilisateur ne peut avoir qu'un seul profil professionnel",
+        "Un utilisateur ne peut avoir qu'un seul compte pro",
       );
     }
 
-    // Create new professional entity
     const professional = ProfessionalEntity.create({
       id: randomUUID(),
       userId: command.userId,
       agencyName: command.agencyName,
       bio: command.bio,
-      avatarUrl: command.avatarUrl,
       location: command.location,
       address: command.address,
       latitude: command.latitude,

@@ -1,86 +1,123 @@
 import { BadRequestException, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
+import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
 import type { IUserRepository } from '../../core/services/user.service.interface';
+import { TokenService } from '../../services/token.service';
 import { CreatePinCommand } from '../commands/create-pin.command';
-import { withAuthFlowMetadata } from '../utils/auth-metadata.util';
 
 const WEAK_PINS = [
-  '123456',
-  '654321',
-  '123123',
-  '000000',
-  '111111',
-  '222222',
-  '333333',
-  '444444',
-  '555555',
-  '666666',
-  '777777',
-  '888888',
-  '999999',
+  '0000',
+  '1234',
+  '4321',
+  '1111',
+  '2222',
+  '3333',
+  '4444',
+  '5555',
+  '6666',
+  '7777',
+  '8888',
+  '9999',
+  '1212',
+  '2580',
 ];
+
+type CreatePinResult = {
+  accessToken: string;
+  refreshToken: string;
+  professionalId: string | null;
+  clientId: string | null;
+  user: {
+    id: string;
+    phone: string;
+    firstName: string;
+    app: string;
+    hasAcceptedTerms: boolean;
+    acceptedTermsAt: string | null;
+    onboardingStep: string;
+  };
+};
 
 @CommandHandler(CreatePinCommand)
 export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
   constructor(
     @Inject('IUserRepository') private readonly userRepo: IUserRepository,
+    @Inject('IRefreshTokenRepository')
+    private readonly refreshRepo: IRefreshTokenRepository,
+    private readonly tokenService: TokenService,
   ) {}
 
-  async execute(cmd: CreatePinCommand): Promise<void> {
+  async execute(cmd: CreatePinCommand): Promise<CreatePinResult> {
     if (cmd.pin !== cmd.confirmPin) {
       throw new BadRequestException('Les deux PIN ne correspondent pas.');
     }
-    if (!/^\d{4,6}$/.test(cmd.pin)) {
+    if (!/^\d{4}$/.test(cmd.pin)) {
       throw new BadRequestException(
-        'Le PIN doit contenir entre 4 et 6 chiffres.',
+        'Le PIN doit contenir exactement 4 chiffres.',
       );
     }
-    if (WEAK_PINS.includes(cmd.pin) || /^(\d)\1+$/.test(cmd.pin)) {
+    if (WEAK_PINS.includes(cmd.pin)) {
       throw new BadRequestException(
-        'PIN trop simple. Choisissez un code plus sécurisé.',
+        'PIN non autorisé. Choisissez un code différent.',
       );
     }
-
-    const user = await this.userRepo.findById(cmd.userId);
-    if (!user || user.deletedAt !== null) {
-      throw new BadRequestException('Utilisateur introuvable.');
+    if (/^(\d)\1+$/.test(cmd.pin)) {
+      throw new BadRequestException(
+        'PIN trop simple. Évitez les chiffres identiques (ex: 1111).',
+      );
     }
 
     const pinHash = await bcrypt.hash(cmd.pin, 12);
-    await this.userRepo.updatePin(cmd.userId, pinHash);
 
-    const updateData: {
-      firstName?: string;
-      lastName?: string;
-      metadata?: any;
-    } = {
-      firstName: cmd.firstName,
-      lastName: cmd.lastName,
-      metadata: {
-        profileCompleted: true,
-        profileCompletedAt: new Date().toISOString(),
-      },
-    };
-
-    await this.userRepo.update(cmd.userId, updateData);
-
-    await this.userRepo.assignRole(cmd.userId, cmd.role);
-
-    await this.userRepo.updateMetadata(
-      cmd.userId,
-      withAuthFlowMetadata(user.metadata, {
-        status: 'ACTIVE',
-        currentStep: 'REGISTRATION_COMPLETED',
-        registrationCompleted: true,
-        registrationCompletedAt: new Date().toISOString(),
-      }),
-    );
+    const created = await this.userRepo.createAndLinkUser({
+      phoneId: cmd.phoneId,
+      app: cmd.app,
+      firstName: '',
+      lastName: '',
+      pinHash,
+    });
+    const user = created.user;
+    const professionalId = created.professionalId;
 
     await this.userRepo.logAuthEvent({
       event: 'REGISTRATION_COMPLETED',
-      userId: cmd.userId,
-      metadata: { role: cmd.role },
+      userId: user.id,
+      metadata: { app: cmd.app },
     });
+
+    const accessToken = this.tokenService.generateAccessToken({
+      sub: user.id,
+      phone: user.phone,
+      role: cmd.app,
+    });
+    const { raw, hash } = this.tokenService.generateRefreshToken();
+
+    await this.refreshRepo.create({
+      userId: user.id,
+      tokenHash: hash,
+      deviceInfo: cmd.deviceInfo,
+      platform: 'UNKNOWN',
+      metadata: { source: 'registration_completed', app: cmd.app },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    const onboardingStep = 'PROFILE_PENDING';
+
+    return {
+      accessToken,
+      refreshToken: raw,
+      professionalId,
+      clientId: cmd.app === 'CLIENT' ? user.id : null,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        firstName: user.firstName,
+        app: cmd.app,
+        hasAcceptedTerms: false,
+        acceptedTermsAt: null,
+        onboardingStep,
+      },
+    };
   }
 }

@@ -10,6 +10,7 @@ import { AvailabilityStatus } from '../../core/enums';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
   RemoveAvailabilityCommand,
+  SetAvailabilityBulkCommand,
   SetAvailabilityCommand,
   SetAvailabilityForAllWeekCommand,
   SetAvailabilityStatusCommand,
@@ -41,6 +42,48 @@ export class SetAvailabilityHandler implements ICommandHandler<SetAvailabilityCo
     await this.repository.save(professional);
 
     return availability;
+  }
+}
+
+@CommandHandler(SetAvailabilityBulkCommand)
+@Injectable()
+export class SetAvailabilityBulkHandler implements ICommandHandler<SetAvailabilityBulkCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(
+    command: SetAvailabilityBulkCommand,
+  ): Promise<AvailabilityEntity[]> {
+    const professional = await this.repository.findById(command.professionalId);
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouve');
+    }
+
+    const results: AvailabilityEntity[] = [];
+
+    for (const slot of command.slots) {
+      const existing = professional.getAvailability(slot.dayOfWeek);
+      const availability = AvailabilityEntity.create({
+        id: existing?.id ?? randomUUID(),
+        professionalId: professional.id,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        breakStartTime: slot.breakStartTime,
+        breakEndTime: slot.breakEndTime,
+      });
+
+      if (existing) {
+        availability.status = existing.status;
+        professional.updateAvailability(slot.dayOfWeek, availability);
+      } else {
+        professional.addAvailability(availability);
+      }
+
+      results.push(availability);
+    }
+
+    await this.repository.save(professional);
+    return results;
   }
 }
 

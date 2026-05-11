@@ -15,7 +15,6 @@ import type { INotificationService } from '../../core/services/notification.serv
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IUserRepository } from '../../core/services/user.service.interface';
 import { SendOtpCommand } from '../commands/send-otp.command';
-import { withAuthFlowMetadata } from '../utils/auth-metadata.util';
 
 const OTP_SEND_COOLDOWN_SECONDS = 60;
 const OTP_SEND_RATE_WINDOW_SECONDS = 15 * 60;
@@ -39,56 +38,62 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
     return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
   }
 
+  private isActiveRegisteredUser(
+    user: Awaited<ReturnType<IUserRepository['findById']>>,
+  ): boolean {
+    return Boolean(user && user.hasPin() && user.isAccountActive());
+  }
+
+  private isTooManyRequestsError(error: unknown): boolean {
+    return (
+      error instanceof HttpException &&
+      error.getStatus() === (HttpStatus.TOO_MANY_REQUESTS as number)
+    );
+  }
+
   async execute(cmd: SendOtpCommand): Promise<{ channel: OtpChannel }> {
-    const { phone, purpose } = cmd;
+    const { phone, purpose, app } = cmd;
 
     await this.enforceRateLimit(phone, purpose);
 
-    let user = await this.userRepo.findByPhone(phone);
+    // Find or create the PhoneNumber record (never creates a User here)
+    const phoneRecord = await this.userRepo.findOrCreatePhone(phone);
 
-    if (
-      purpose === OtpPurpose.REGISTRATION &&
-      user &&
-      user.hasPin() &&
-      user.isAccountActive() &&
-      user.deletedAt === null
-    ) {
-      throw new BadRequestException('Ce numéro est déjà enregistré.');
-    }
-    if (purpose !== OtpPurpose.REGISTRATION && !user) {
-      throw new BadRequestException('Numéro introuvable.');
-    }
+    if (purpose === OtpPurpose.REGISTRATION) {
+      // Reject if an active account already exists for this app
+      const slotTaken =
+        app === 'CLIENT'
+          ? phoneRecord.clientUserId
+          : phoneRecord.professionalUserId;
 
-    if (!user) {
-      user = await this.userRepo.create({
-        phone,
-        firstName: '',
-        lastName: '',
-        metadata: {
-          source: 'send_otp',
-          purpose,
-          createdAt: new Date().toISOString(),
-        },
-      });
+      if (slotTaken) {
+        const user = await this.userRepo.findById(slotTaken);
+        if (this.isActiveRegisteredUser(user)) {
+          throw new BadRequestException(
+            `Un compte ${app} existe déjà pour ce numéro.`,
+          );
+        }
+      }
     }
 
-    await this.otpRepo.invalidatePrevious(
-      user.id,
-      purpose,
-      'new OTP requested',
-    );
+    if (purpose === OtpPurpose.PIN_RESET) {
+      const user = await this.userRepo.findByPhone(phone, app);
+      if (!user || !user.isAccountActive()) {
+        throw new BadRequestException('Numéro introuvable.');
+      }
+    }
+
+    await this.otpRepo.invalidatePrevious(phoneRecord.id, purpose, app);
 
     const devMode = this.isDevModeEnabled();
-    const rawCode = devMode
-      ? '000000'
-      : crypto.randomInt(100000, 999999).toString();
+    const rawCode = devMode ? '0000' : crypto.randomInt(1000, 10000).toString();
     const codeHash = await bcrypt.hash(rawCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     let channel: OtpChannel;
     if (devMode) {
       this.logger.warn(
-        `[OTP_DEV_MODE] code=000000 skipping notification for phone=${phone}`,
+        `[OTP_DEV_MODE] code=0000 skipping notification phone=${phone}`,
       );
       channel = OtpChannel.SMS;
     } else {
@@ -96,27 +101,19 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
     }
 
     await this.otpRepo.create({
-      userId: user.id,
+      phoneNumberId: phoneRecord.id,
       code: codeHash,
       purpose,
       channel,
       metadata: {
         source: 'send_otp',
         purpose,
+        app: app ?? null,
         deviceInfo: cmd.deviceInfo ?? null,
+        ipAddress: cmd.ipAddress ?? null,
       },
       expiresAt,
     });
-
-    await this.userRepo.updateMetadata(
-      user.id,
-      withAuthFlowMetadata(user.metadata, {
-        status: purpose === OtpPurpose.PIN_RESET ? 'ACTIVE' : 'ONBOARDING',
-        currentStep:
-          purpose === OtpPurpose.PIN_RESET ? 'PIN_RESET_OTP_SENT' : 'OTP_SENT',
-        otpPurpose: purpose,
-      }),
-    );
 
     await this.storeCooldown(phone, purpose);
 
@@ -139,33 +136,37 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
     const attemptsKey = this.buildAttemptsKey(phone, purpose);
 
     try {
-      const hasCooldown = await this.redisService.exists(cooldownKey);
-      if (hasCooldown) {
-        const ttl = Math.max(await this.redisService.ttl(cooldownKey), 1);
-        throw new HttpException(
-          `Patientez ${ttl}s avant de redemander un code.`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
-
-      const attempts = await this.redisService.incrementWithWindow(
-        attemptsKey,
-        OTP_SEND_RATE_WINDOW_SECONDS,
-      );
-      if (attempts > OTP_SEND_MAX_ATTEMPTS_PER_WINDOW) {
-        const ttl = Math.max(await this.redisService.ttl(attemptsKey), 1);
-        throw new HttpException(
-          `Trop de demandes OTP. Réessayez dans ${ttl}s.`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
+      await this.checkCooldown(cooldownKey);
+      await this.checkAttempts(attemptsKey);
     } catch (error) {
-      if (error instanceof HttpException && error.getStatus() === 429) {
-        throw error;
-      }
-
+      if (this.isTooManyRequestsError(error)) throw error;
       this.logger.warn(
-        'Redis indisponible, OTP envoyé sans contrôle anti-spam temporairement.',
+        'Redis indisponible, OTP envoyé sans contrôle anti-spam.',
+      );
+    }
+  }
+
+  private async checkCooldown(cooldownKey: string): Promise<void> {
+    const hasCooldown = await this.redisService.exists(cooldownKey);
+    if (hasCooldown) {
+      const ttl = Math.max(await this.redisService.ttl(cooldownKey), 1);
+      throw new HttpException(
+        `Patientez ${ttl}s avant de redemander un code.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  private async checkAttempts(attemptsKey: string): Promise<void> {
+    const attempts = await this.redisService.incrementWithWindow(
+      attemptsKey,
+      OTP_SEND_RATE_WINDOW_SECONDS,
+    );
+    if (attempts > OTP_SEND_MAX_ATTEMPTS_PER_WINDOW) {
+      const ttl = Math.max(await this.redisService.ttl(attemptsKey), 1);
+      throw new HttpException(
+        `Trop de demandes OTP. Réessayez dans ${ttl}s.`,
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
   }
@@ -175,7 +176,6 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
     purpose: OtpPurpose,
   ): Promise<void> {
     const cooldownKey = this.buildCooldownKey(phone, purpose);
-
     try {
       await this.redisService.setWithExpiry(
         cooldownKey,
@@ -184,7 +184,7 @@ export class SendOtpHandler implements ICommandHandler<SendOtpCommand> {
       );
     } catch (error) {
       this.logger.warn(
-        `Impossible d'écrire le cooldown OTP dans Redis: ${(error as Error).message}`,
+        `Impossible d'écrire le cooldown OTP Redis: ${(error as Error).message}`,
       );
     }
   }

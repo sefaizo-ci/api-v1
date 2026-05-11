@@ -1,7 +1,3 @@
-/**
- * ValueObject for commune-specific fees
- * Represents travel fees and availability for a service in a specific commune
- */
 export class CommuneFeeVO {
   constructor(
     public readonly commune: string,
@@ -28,15 +24,12 @@ export class CommuneFeeVO {
   }
 }
 
-/**
- * ServiceOffering Entity
- * Represents a service offered by a professional
- */
 export class ServiceOfferingEntity {
   id: string;
   professionalId: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   durationMin: number;
   basePrice: number;
   category: string;
@@ -51,6 +44,7 @@ export class ServiceOfferingEntity {
     professionalId: string;
     name: string;
     description?: string;
+    imageUrl?: string;
     durationMin: number;
     basePrice: number;
     category: string;
@@ -64,6 +58,7 @@ export class ServiceOfferingEntity {
     this.professionalId = props.professionalId;
     this.name = props.name;
     this.description = props.description;
+    this.imageUrl = props.imageUrl;
     this.durationMin = props.durationMin;
     this.basePrice = props.basePrice;
     this.category = props.category;
@@ -95,15 +90,21 @@ export class ServiceOfferingEntity {
 
     return new ServiceOfferingEntity({
       ...props,
-      id: props.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
   }
 
-  /**
-   * Add or update commune fee for this service
-   */
+  setImage(url: string): void {
+    this.imageUrl = url;
+    this.updatedAt = new Date();
+  }
+
+  clearImage(): void {
+    this.imageUrl = undefined;
+    this.updatedAt = new Date();
+  }
+
   setCommeFee(commune: string, travelFee: number): void {
     const existing = this.communeFees.find((cf) => cf.commune === commune);
     if (existing) {
@@ -115,36 +116,24 @@ export class ServiceOfferingEntity {
     this.updatedAt = new Date();
   }
 
-  /**
-   * Get total price including commune travel fee
-   */
   getPriceForCommune(commune: string): number {
     const fee = this.communeFees.find((cf) => cf.commune === commune);
     if (!fee) {
-      return this.basePrice; // Return base price if no specific fee found
+      return this.basePrice;
     }
     return fee.calculateTotalPrice(this.basePrice);
   }
 
-  /**
-   * Deactivate this service
-   */
   deactivate(): void {
     this.isActive = false;
     this.updatedAt = new Date();
   }
 
-  /**
-   * Reactivate this service
-   */
   activate(): void {
     this.isActive = true;
     this.updatedAt = new Date();
   }
 
-  /**
-   * Check if service is available for booking
-   */
   isAvailable(): boolean {
     return this.isActive && !this.deletedAt;
   }

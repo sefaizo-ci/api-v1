@@ -1,10 +1,10 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsIn, IsString, Matches } from 'class-validator';
 import { LOGIN_APPS, type LoginApp } from '../../core/enums/auth.enums';
 
 export class StartLoginDto {
   @ApiProperty({
-    description: 'User phone number in Ivory Coast format',
+    description: 'Phone number (+225XXXXXXXXXX)',
     example: '+2250700000000',
   })
   @IsString()
@@ -12,22 +12,20 @@ export class StartLoginDto {
   phone!: string;
 
   @ApiProperty({
-    description: 'PIN code (4 to 6 digits)',
+    description: 'PIN code (4 digits)',
     example: '2580',
     minLength: 4,
-    maxLength: 6,
+    maxLength: 4,
   })
   @IsString()
-  @Matches(/^\d{4,6}$/, { message: 'PIN invalide.' })
+  @Matches(/^\d{4}$/, { message: 'PIN invalide.' })
   pin!: string;
 
-  @ApiPropertyOptional({
-    description:
-      'Application context for login OTP. Defaults to CLIENT when omitted.',
+  @ApiProperty({
+    description: 'Target app (CLIENT or PROFESSIONAL)',
     enum: LOGIN_APPS,
-    example: 'PROFESSIONAL',
+    example: 'CLIENT',
   })
-  @IsOptional()
   @IsIn(LOGIN_APPS)
-  app?: LoginApp;
+  app!: LoginApp;
 }

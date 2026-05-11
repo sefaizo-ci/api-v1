@@ -30,6 +30,7 @@ type RawServiceOffering = {
   };
   name: string;
   description: string | null;
+  imageUrl: string | null;
   durationMin: number;
   basePrice: number;
   isActive: boolean;
@@ -165,6 +166,7 @@ export class ServiceOfferingMapper {
       professionalId: raw.professionalId,
       name: raw.name,
       description: raw.description ?? undefined,
+      imageUrl: raw.imageUrl ?? undefined,
       durationMin: raw.durationMin,
       basePrice: raw.basePrice,
       category: raw.category.name,
@@ -182,6 +184,7 @@ export class ServiceOfferingMapper {
       professionalId: entity.professionalId,
       name: entity.name,
       description: entity.description,
+      imageUrl: entity.imageUrl ?? null,
       durationMin: entity.durationMin,
       basePrice: entity.basePrice,
       category: {
