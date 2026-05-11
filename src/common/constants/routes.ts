@@ -18,15 +18,25 @@ export const AUTH = {
     SEND: 'otp/send',
     VERIFY: 'otp/verify',
   },
-  REGISTER: {
-    COMPLETE: 'register/complete',
+  PIN: {
+    CREATE: 'pin/create',
+    RESET: 'pin/reset',
+    CHANGE: 'pin/change',
   },
   LOGIN: {
     START: 'login/start',
+    COMPLETE: 'login/complete',
+  },
+  TERMS: {
+    ACCEPT: 'terms/accept',
   },
   TOKEN_REFRESH: 'token/refresh',
   LOGOUT: 'logout',
   ME: 'me',
+  ME_UPDATE: 'me',
+  ONBOARDING_COMPLETE: 'me/onboarding/complete',
+  SESSIONS: 'me/sessions',
+  PUSH_TOKEN: 'me/push-token',
   COOKIE: {
     REFRESH: {
       NAME: 'refreshToken',

@@ -2,7 +2,8 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import type { UserRole } from '../../core/enums/auth.enums';
+import type { LoginApp, UserRole } from '../../core/enums/auth.enums';
+import type { OtpPurpose } from '../../core/enums/auth.enums';
 import type { IUserRepository } from '../../core/services/user.service.interface';
 
 export interface JwtPayload {
@@ -10,6 +11,10 @@ export interface JwtPayload {
   phone: string;
   role?: UserRole;
   roles?: UserRole[];
+  scope?: 'full' | 'challenge-only';
+  purpose?: OtpPurpose;
+  app?: LoginApp;
+  userId?: string;
 }
 
 @Injectable()
@@ -27,32 +32,34 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.userRepo.findById(payload.sub);
-    if (!user || !user.isAccountActive()) {
+    // Challenge-only tokens skip the DB lookup — the phone/user may not be fully created yet.
+    if (payload.scope === 'challenge-only') {
+      return {
+        id: payload.sub, // phoneId
+        phone: payload.phone,
+        scope: 'challenge-only' as const,
+        purpose: payload.purpose,
+        app: payload.app,
+        userId: payload.userId,
+      };
+    }
+
+    // Full access token — validate user is still active.
+    const user = await this.userRepo.findUserById(payload.sub);
+    if (!user || !user.isActive) {
       throw new UnauthorizedException('Session invalide.');
     }
 
-    const roles = await this.userRepo.getRolesByUserId(user.id);
     const hasProfessionalProfile = await this.userRepo.hasProfessionalProfile(
       user.id,
     );
 
-    const effectiveRoles = new Set<UserRole>(roles);
-    if (hasProfessionalProfile) {
-      effectiveRoles.add('PROFESSIONAL');
-    }
-
-    const role =
-      payload.role ??
-      [...effectiveRoles][0] ??
-      user.role ??
-      ('CLIENT' as UserRole);
+    const role = payload.role ?? user.role;
 
     return {
       id: user.id,
-      phone: user.phone,
+      phone: payload.phone,
       role,
-      roles: [...effectiveRoles],
       hasProfessionalProfile,
     };
   }

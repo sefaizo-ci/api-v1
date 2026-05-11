@@ -1,15 +1,15 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsIn, IsString, Length, Matches } from 'class-validator';
 import {
   LOGIN_APPS,
-  OTP_PUBLIC_PURPOSES,
+  OTP_SEND_PURPOSES,
   type LoginApp,
-  type PublicOtpPurpose,
+  type OtpSendPurpose,
 } from '../../core/enums/auth.enums';
 
 export class VerifyOtpDto {
   @ApiProperty({
-    description: 'User phone number in Ivory Coast format',
+    description: 'Phone number (+225XXXXXXXXXX)',
     example: '+2250700000000',
   })
   @IsString()
@@ -17,31 +17,29 @@ export class VerifyOtpDto {
   phone!: string;
 
   @ApiProperty({
-    description: '6-digit OTP code sent to the user',
-    example: '123456',
-    minLength: 6,
-    maxLength: 6,
+    description: '4-digit OTP code',
+    example: '4821',
+    minLength: 4,
+    maxLength: 4,
   })
   @IsString()
-  @Length(6, 6)
-  @Matches(/^\d{6}$/, { message: 'Code OTP invalide.' })
+  @Length(4, 4)
+  @Matches(/^\d{4}$/, { message: 'Code OTP invalide.' })
   code!: string;
 
   @ApiProperty({
-    description: 'OTP use-case',
-    enum: OTP_PUBLIC_PURPOSES,
+    description: 'OTP purpose (REGISTRATION or PIN_RESET)',
+    enum: OTP_SEND_PURPOSES,
     example: 'REGISTRATION',
   })
-  @IsIn(OTP_PUBLIC_PURPOSES)
-  purpose!: PublicOtpPurpose;
+  @IsIn(OTP_SEND_PURPOSES)
+  purpose!: OtpSendPurpose;
 
-  @ApiPropertyOptional({
-    description:
-      'Application context for LOGIN OTP verification. Defaults to CLIENT when omitted.',
+  @ApiProperty({
+    description: 'Target app (CLIENT or PROFESSIONAL)',
     enum: LOGIN_APPS,
-    example: 'PROFESSIONAL',
+    example: 'CLIENT',
   })
-  @IsOptional()
   @IsIn(LOGIN_APPS)
-  app?: LoginApp;
+  app!: LoginApp;
 }

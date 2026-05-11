@@ -4,7 +4,6 @@ import type { IUserRepository } from '../../core/services/user.service.interface
 import { InitAuthFlowQuery } from './init-auth-flow.query';
 
 type InitAuthFlowResponse = {
-  hasAccount: boolean;
   nextStep: 'PIN_THEN_OTP' | 'OTP';
 };
 
@@ -15,13 +14,21 @@ export class InitAuthFlowHandler implements IQueryHandler<InitAuthFlowQuery> {
   ) {}
 
   async execute(query: InitAuthFlowQuery): Promise<InitAuthFlowResponse> {
-    const user = await this.userRepo.findByPhone(query.phone);
+    const phone = await this.userRepo.findPhoneByNumber(query.phone);
+    if (!phone) return { nextStep: 'OTP' };
 
-    const hasAccount = !!(user && user.hasPin() && user.isAccountActive());
+    const app = query.app ?? 'CLIENT';
+    const userId =
+      app === 'PROFESSIONAL' ? phone.professionalUserId : phone.clientUserId;
+    if (!userId) return { nextStep: 'OTP' };
 
-    return {
-      hasAccount,
-      nextStep: hasAccount ? 'PIN_THEN_OTP' : 'OTP',
-    };
+    const user = await this.userRepo.findById(userId);
+    if (!user) return { nextStep: 'OTP' };
+
+    const hasPin = user.hasPin && user.hasPin();
+    const isActive = user.isAccountActive && user.isAccountActive();
+    if (!hasPin || !isActive) return { nextStep: 'OTP' };
+
+    return { nextStep: 'PIN_THEN_OTP' };
   }
 }

@@ -5,7 +5,8 @@ export class OtpMapper {
   static toDomain(raw: OtpPrismaEntity): OtpEntity {
     return new OtpEntity(
       raw.id,
-      raw.userId,
+      raw.phoneNumberId,
+      raw.userId ?? null,
       raw.code,
       raw.purpose,
       raw.channel,

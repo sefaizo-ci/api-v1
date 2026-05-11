@@ -12,14 +12,12 @@ export class GetMeHandler implements IQueryHandler<GetMeQuery> {
   async execute(query: GetMeQuery) {
     const user = await this.userRepo.findById(query.userId);
     if (!user) throw new NotFoundException('Utilisateur introuvable.');
-    const roles = await this.userRepo.getRolesByUserId(user.id);
     return {
       id: user.id,
       phone: user.phone,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: roles[0] ?? user.role,
-      roles,
+      role: user.role,
       isVerified: user.isVerified,
     };
   }

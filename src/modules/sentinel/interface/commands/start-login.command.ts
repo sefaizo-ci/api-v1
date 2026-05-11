@@ -7,5 +7,6 @@ export class StartLoginCommand {
     public readonly pin: string,
     public readonly deviceInfo?: string,
     public readonly app: LoginApp = Role.CLIENT,
+    public readonly ipAddress?: string,
   ) {}
 }

@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import type { StringValue } from 'ms';
-import type { UserRole } from '../core/enums/auth.enums';
+import type { LoginApp, UserRole } from '../core/enums/auth.enums';
+import type { OtpPurpose } from '../core/enums/auth.enums';
 
 @Injectable()
 export class TokenService {
@@ -20,9 +21,29 @@ export class TokenService {
   }): string {
     const expiresIn = (this.config.get<string>('JWT_EXPIRES_IN') ??
       '15m') as StringValue;
-    return this.jwt.sign(payload, {
-      expiresIn,
-    });
+    return this.jwt.sign(payload, { expiresIn });
+  }
+
+  // Issued after OTP verification or PIN validation.
+  // Only valid for the next step of the auth flow (register/complete, login/complete, pin/reset).
+  generateChallengeToken(payload: {
+    phoneId: string;
+    phone: string;
+    purpose: OtpPurpose;
+    app: LoginApp;
+    userId?: string;
+  }): string {
+    return this.jwt.sign(
+      {
+        sub: payload.phoneId,
+        phone: payload.phone,
+        scope: 'challenge-only',
+        purpose: payload.purpose,
+        app: payload.app,
+        userId: payload.userId,
+      },
+      { expiresIn: '10m' },
+    );
   }
 
   generateRefreshToken(): { raw: string; hash: string } {

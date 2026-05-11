@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { randomUUID } from 'crypto';
+import helmet from 'helmet';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { APP } from './common/constants/routes';
@@ -11,6 +12,8 @@ import { GlobalExceptionFilter } from './libs/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('HttpTrace');
+
+  app.use(helmet());
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     const incoming = req.header('x-request-id');
@@ -47,8 +50,15 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.use(cookieParser());
 
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map((o) =>
+    o.trim(),
+  );
+  if (!allowedOrigins && process.env.NODE_ENV === 'production') {
+    throw new Error('ALLOWED_ORIGINS must be set in production');
+  }
+
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*',
+    origin: allowedOrigins ?? true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });

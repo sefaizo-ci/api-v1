@@ -2,17 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsIn, IsString, Matches } from 'class-validator';
 import { LOGIN_APPS, type LoginApp } from '../../core/enums/auth.enums';
 
-export class StartLoginDto {
+export class AddRoleDto {
   @ApiProperty({
-    description: 'Phone number (+225XXXXXXXXXX)',
-    example: '+2250700000000',
+    description: 'User id returned by OTP verification',
+    example: '3f588642-25d6-4d73-8ec8-55a5f95a892a',
   })
   @IsString()
-  @Matches(/^\+225\d{10}$/, { message: 'Format : +225XXXXXXXXXX' })
-  phone!: string;
+  userId!: string;
 
   @ApiProperty({
-    description: 'PIN code (4 digits)',
+    description: 'Current account PIN (4 digits)',
     example: '2580',
     minLength: 4,
     maxLength: 4,
@@ -22,10 +21,10 @@ export class StartLoginDto {
   pin!: string;
 
   @ApiProperty({
-    description: 'Target app (CLIENT or PROFESSIONAL)',
+    description: 'Role to add',
     enum: LOGIN_APPS,
-    example: 'CLIENT',
+    example: 'PROFESSIONAL',
   })
   @IsIn(LOGIN_APPS)
-  app!: LoginApp;
+  role!: LoginApp;
 }

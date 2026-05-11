@@ -6,7 +6,8 @@ export class OtpEntity {
 
   constructor(
     public readonly id: string,
-    public readonly userId: string,
+    public readonly phoneNumberId: string,
+    public readonly userId: string | null,
     public readonly code: string,
     public readonly purpose: OtpPurpose,
     public readonly channel: OtpChannel,
