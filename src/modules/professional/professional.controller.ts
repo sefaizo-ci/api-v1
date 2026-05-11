@@ -116,7 +116,7 @@ type AuthenticatedRequest = Request & {
   };
 };
 
-@Controller('professional')
+@Controller('professionals')
 export class ProfessionalController {
   constructor(
     private readonly commandBus: CommandBus,
