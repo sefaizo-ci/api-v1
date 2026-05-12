@@ -1049,7 +1049,7 @@
                   "status": "OK",
                   "code": 200,
                   "_postman_previewlanguage": "json",
-                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000001\",\n    \"firstName\": \"Aya\",\n    \"app\": \"PROFESSIONAL\",\n    \"hasAcceptedTerms\": true,\n    \"acceptedTermsAt\": \"2026-05-09T10:30:00.000Z\",\n    \"onboardingStep\": \"ESTABLISHMENT_PENDING\"\n  }\n}"
+                  "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"refreshToken\": \"raw_refresh_token\",\n  \"clientId\": null,\n  \"professionalId\": \"7a1b2c3d-4e5f-6789-abcd-ef0123456789\",\n  \"user\": {\n    \"id\": \"3f588642-25d6-4d73-8ec8-55a5f95a892a\",\n    \"phone\": \"+2250700000001\",\n    \"firstName\": \"Aya\",\n    \"app\": \"PROFESSIONAL\",\n    \"hasAcceptedTerms\": true,\n    \"acceptedTermsAt\": \"2026-05-09T10:30:00.000Z\",\n    \"onboardingStep\": \"ESTABLISHMENT_PENDING\"\n  }\n}"
                 },
                 {
                   "name": "400 Code expiré",
@@ -2442,12 +2442,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/search/query?q={{searchQuery}}&location={{searchLocation}}&rating={{searchRating}}&page={{page}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/search/query?q={{searchQuery}}&location={{searchLocation}}&rating={{searchRating}}&page={{page}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "search",
                     "query"
                   ],
@@ -2496,12 +2496,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/discover/recommended?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/discover/recommended?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "discover",
                     "recommended"
                   ],
@@ -2562,12 +2562,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/discover/new?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/discover/new?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "discover",
                     "new"
                   ],
@@ -2628,12 +2628,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/discover/trending?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/discover/trending?lat={{latitude}}&lng={{longitude}}&radius={{searchRadius}}&commune={{commune}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "discover",
                     "trending"
                   ],
@@ -2694,12 +2694,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}"
                   ]
                 },
@@ -2725,12 +2725,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services?includeInactive={{includeInactive}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services?includeInactive={{includeInactive}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services"
                   ],
@@ -2763,12 +2763,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability?dayOfWeek={{dayOfWeek}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability?dayOfWeek={{dayOfWeek}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "availability"
                   ],
@@ -2801,12 +2801,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery?page={{page}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery?page={{page}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery"
                   ],
@@ -2853,12 +2853,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/profile/me",
+                  "raw": "{{baseUrl}}/professionals/profile/me",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "profile",
                     "me"
                   ]
@@ -2890,12 +2890,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/completion",
+                  "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/completion",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "profile",
                     "{{professionalId}}",
                     "completion"
@@ -2943,12 +2943,12 @@
                   "raw": "{\n  \"agencyName\": \"{{profileAgencyName}}\",\n  \"bio\": \"{{profileBio}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/profile",
+                  "raw": "{{baseUrl}}/professionals/profile",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "profile"
                   ]
                 },
@@ -2987,12 +2987,12 @@
                   "raw": "{\n  \"agencyName\": \"{{profileAgencyName}} - Updated\",\n  \"bio\": \"{{profileBio}}\",\n  \"location\": \"{{profileLocation}}\",\n  \"address\": \"{{profileAddress}}\",\n  \"latitude\": {{profileLatitude}},\n  \"longitude\": {{profileLongitude}}\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/profile/{{professionalId}}",
+                  "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "profile",
                     "{{professionalId}}"
                   ]
@@ -3042,12 +3042,12 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/avatar/upload",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "avatar",
                     "upload"
@@ -3077,12 +3077,12 @@
                       ]
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/{{professionalId}}/avatar/upload",
+                      "raw": "{{baseUrl}}/professionals/{{professionalId}}/avatar/upload",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "{{professionalId}}",
                         "avatar",
                         "upload"
@@ -3123,12 +3123,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
+                  "raw": "{{baseUrl}}/professionals/services/categories?page=1&limit=20",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "services",
                     "categories"
                   ],
@@ -3152,12 +3152,12 @@
                     "method": "GET",
                     "header": [],
                     "url": {
-                      "raw": "{{baseUrl}}/professional/services/categories?page=1&limit=20",
+                      "raw": "{{baseUrl}}/professionals/services/categories?page=1&limit=20",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "services",
                         "categories"
                       ],
@@ -3221,12 +3221,12 @@
                   "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/services/categories",
+                  "raw": "{{baseUrl}}/professionals/services/categories",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "services",
                     "categories"
                   ]
@@ -3266,12 +3266,12 @@
                   "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
+                  "raw": "{{baseUrl}}/professionals/services/categories/{{serviceCategoryId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "services",
                     "categories",
                     "{{serviceCategoryId}}"
@@ -3304,12 +3304,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/services/categories/{{serviceCategoryId}}",
+                  "raw": "{{baseUrl}}/professionals/services/categories/{{serviceCategoryId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "services",
                     "categories",
                     "{{serviceCategoryId}}"
@@ -3357,12 +3357,12 @@
                       "raw": "{\n  \"name\": \"{{serviceCategory}}\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/admin/services/categories",
+                      "raw": "{{baseUrl}}/professionals/admin/services/categories",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "admin",
                         "services",
                         "categories"
@@ -3403,12 +3403,12 @@
                       "raw": "{\n  \"name\": \"{{serviceCategory}} Updated\",\n  \"description\": \"{{serviceCategoryDescription}}\"\n}"
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/admin/services/categories/{{serviceCategoryId}}",
+                      "raw": "{{baseUrl}}/professionals/admin/services/categories/{{serviceCategoryId}}",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "admin",
                         "services",
                         "categories",
@@ -3442,12 +3442,12 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/professional/admin/services/categories/{{serviceCategoryId}}",
+                      "raw": "{{baseUrl}}/professionals/admin/services/categories/{{serviceCategoryId}}",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "admin",
                         "services",
                         "categories",
@@ -3495,12 +3495,12 @@
                   "raw": "{\n  \"proposedName\": \"{{categoryProposedName}}\",\n  \"proposedDescription\": \"{{categoryProposedDescription}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/category-requests",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services",
                     "category-requests"
@@ -3520,12 +3520,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/category-requests?status=PENDING&page=1&limit=20",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/category-requests?status=PENDING&page=1&limit=20",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services",
                     "category-requests"
@@ -3584,15 +3584,15 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"{{serviceName}}\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\"\n}"
+                  "raw": "{\n  \"name\": \"{{serviceName}}\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\",\n  \"imageUrl\": \"{{serviceImageUrl}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services"
                   ]
@@ -3632,12 +3632,12 @@
                   "raw": "{\n  \"name\": \"{{serviceName}} - Updated\",\n  \"description\": \"{{serviceDescription}}\",\n  \"durationMin\": {{serviceDurationMin}},\n  \"basePrice\": {{serviceBasePrice}},\n  \"category\": \"{{serviceCategory}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/services/{{serviceId}}",
+                  "raw": "{{baseUrl}}/professionals/services/{{serviceId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "services",
                     "{{serviceId}}"
                   ]
@@ -3669,12 +3669,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/deactivate",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}/deactivate",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services",
                     "{{serviceId}}",
@@ -3708,12 +3708,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/activate",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}/activate",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services",
                     "{{serviceId}}",
@@ -3747,12 +3747,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services",
                     "{{serviceId}}"
@@ -3793,12 +3793,12 @@
                   "raw": "{\n  \"commune\": \"{{commune}}\",\n  \"travelFee\": {{travelFee}}\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/services/{{serviceId}}/communes",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}/communes",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "services",
                     "{{serviceId}}",
@@ -3807,6 +3807,102 @@
                 },
                 "description": "Set or update travel fee for a commune."
               }
+            },
+            {
+              "name": "Upload Service Image File",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.imageUrl) {",
+                      "  pm.environment.set('serviceImageUrl', json.imageUrl);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "",
+                      "description": "Image (jpg, jpeg, png, webp — max 10 MB)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}/image/upload",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}",
+                    "image",
+                    "upload"
+                  ]
+                },
+                "description": "Upload an image file for a specific service offering.\n\nThe uploaded URL is auto-saved to `serviceImageUrl` — use it in *Add Service* or *Update Service* as the `imageUrl` field.\n\nAlternatively, after upload you can call `POST /professionals/:id/services/:serviceId/image` with `{ \"imageUrl\": \"{{serviceImageUrl}}\" }` to update an existing service."
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "src": ""
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}/image/upload",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professionals",
+                        "{{professionalId}}",
+                        "services",
+                        "{{serviceId}}",
+                        "image",
+                        "upload"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "body": "{\n  \"imageUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"fileId\": \"FILE_ID\",\n  \"path\": \"professionals/PROF_ID/service/uuid.jpg\"\n}"
+                }
+              ]
             }
           ]
         },
@@ -3845,12 +3941,12 @@
                   "raw": "{\n  \"dayOfWeek\": {{dayOfWeek}},\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "availability"
                   ]
@@ -3890,12 +3986,12 @@
                   "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability/{{dayOfWeek}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "availability",
                     "{{dayOfWeek}}"
@@ -3936,12 +4032,12 @@
                   "raw": "{\n  \"status\": \"{{availabilityStatus}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}/status",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability/{{dayOfWeek}}/status",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "availability",
                     "{{dayOfWeek}}",
@@ -3983,18 +4079,101 @@
                   "raw": "{\n  \"startTime\": \"{{availabilityStartTime}}\",\n  \"endTime\": \"{{availabilityEndTime}}\",\n  \"breakStartTime\": \"{{breakStartTime}}\",\n  \"breakEndTime\": \"{{breakEndTime}}\",\n  \"excludeDays\": {{excludeDays}}\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "availability"
                   ]
                 },
                 "description": "Set the same availability across the week."
               }
+            },
+            {
+              "name": "Set Availability Bulk",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"availabilities\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"18:00\",\n      \"breakStartTime\": \"12:00\",\n      \"breakEndTime\": \"13:00\"\n    },\n    {\n      \"dayOfWeek\": 2,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"18:00\"\n    },\n    {\n      \"dayOfWeek\": 5,\n      \"startTime\": \"10:00\",\n      \"endTime\": \"16:00\"\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability/bulk",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "availability",
+                    "bulk"
+                  ]
+                },
+                "description": "Set or update multiple availability slots in a single request (upsert). Each slot is identified by `dayOfWeek` (0=Sunday … 6=Saturday).\n\nExisting slots for provided days are updated; new days are created.\n\n**Body:** `availabilities` array — each item requires `dayOfWeek`, `startTime`, `endTime`; optional `breakStartTime` / `breakEndTime`."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"availabilities\": [\n    { \"dayOfWeek\": 1, \"startTime\": \"09:00\", \"endTime\": \"18:00\" },\n    { \"dayOfWeek\": 2, \"startTime\": \"09:00\", \"endTime\": \"18:00\" }\n  ]\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability/bulk",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professionals",
+                        "{{professionalId}}",
+                        "availability",
+                        "bulk"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "[{\"id\":\"uuid-1\",\"dayOfWeek\":1,\"startTime\":\"09:00\",\"endTime\":\"18:00\",\"breakStartTime\":null,\"breakEndTime\":null,\"status\":\"OPEN\",\"isActive\":true},{\"id\":\"uuid-2\",\"dayOfWeek\":2,\"startTime\":\"09:00\",\"endTime\":\"18:00\",\"breakStartTime\":null,\"breakEndTime\":null,\"status\":\"OPEN\",\"isActive\":true}]"
+                }
+              ]
             },
             {
               "name": "Remove Availability",
@@ -4020,12 +4199,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/availability/{{dayOfWeek}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/availability/{{dayOfWeek}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "availability",
                     "{{dayOfWeek}}"
@@ -4081,12 +4260,12 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/upload",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery",
                     "upload"
@@ -4116,12 +4295,12 @@
                       ]
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/upload",
+                      "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/upload",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "{{professionalId}}",
                         "gallery",
                         "upload"
@@ -4131,6 +4310,102 @@
                   "status": "Created",
                   "code": 201,
                   "body": "{\n  \"imageUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"fileId\": \"FILE_ID\",\n  \"path\": \"professionals/PROF_ID/gallery/uuid.jpg\",\n  \"maxSizeBytes\": 10485760,\n  \"acceptedFormats\": [\"image/jpg\", \"image/jpeg\", \"image/png\", \"image/webp\"]\n}"
+                }
+              ]
+            },
+            {
+              "name": "Upload Gallery Images Bulk",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 201', function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "const json = pm.response.json();",
+                      "if (json && json.items && json.items.length > 0) {",
+                      "  pm.environment.set('galleryItemId', json.items[0].id);",
+                      "  pm.environment.set('galleryImageUrl', json.items[0].imageUrl);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{professionalAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "files",
+                      "type": "file",
+                      "src": "",
+                      "description": "First image (jpg, jpeg, png, webp — max 10 MB each)"
+                    },
+                    {
+                      "key": "files",
+                      "type": "file",
+                      "src": "",
+                      "description": "Second image (optional)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/upload-bulk",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "gallery",
+                    "upload-bulk"
+                  ]
+                },
+                "description": "Upload multiple gallery images in a single multipart request.\n\nSend up to 10 files using the field name `files` (repeat the field for each image).\n\nAll images are uploaded to Appwrite and persisted as `GalleryItem` records in a single call.\n\n**Response:** `{ items: GalleryItem[], uploaded: number, failed: number }`"
+              },
+              "response": [
+                {
+                  "name": "201 Created",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{professionalAccessToken}}"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        { "key": "files", "type": "file", "src": "" },
+                        { "key": "files", "type": "file", "src": "" }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/upload-bulk",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "professionals",
+                        "{{professionalId}}",
+                        "gallery",
+                        "upload-bulk"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "body": "{\n  \"items\": [\n    { \"id\": \"uuid-1\", \"imageUrl\": \"https://cdn.appwrite.io/.../file1.jpg\", \"order\": 0, \"isPublic\": true },\n    { \"id\": \"uuid-2\", \"imageUrl\": \"https://cdn.appwrite.io/.../file2.jpg\", \"order\": 1, \"isPublic\": true }\n  ],\n  \"uploaded\": 2,\n  \"failed\": 0\n}"
                 }
               ]
             },
@@ -4173,12 +4448,12 @@
                   "raw": "{\n  \"imageUrl\": \"{{galleryImageUrl}}\",\n  \"caption\": \"{{galleryCaption}}\",\n  \"category\": \"{{galleryCategory}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery"
                   ]
@@ -4218,12 +4493,12 @@
                   "raw": "{\n  \"caption\": \"{{galleryCaption}} - Updated\",\n  \"category\": \"{{galleryCategory}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/{{galleryItemId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery",
                     "{{galleryItemId}}"
@@ -4256,12 +4531,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/publish",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/{{galleryItemId}}/publish",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery",
                     "{{galleryItemId}}",
@@ -4295,12 +4570,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}/unpublish",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/{{galleryItemId}}/unpublish",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery",
                     "{{galleryItemId}}",
@@ -4342,12 +4617,12 @@
                   "raw": "{\n  \"itemOrders\": [\n    { \"id\": \"{{galleryItemId}}\", \"order\": 0 }\n  ]\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/reorder",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/reorder",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery",
                     "reorder"
@@ -4380,12 +4655,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/gallery/{{galleryItemId}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/{{galleryItemId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "gallery",
                     "{{galleryItemId}}"
@@ -4654,12 +4929,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings?status={{bookingStatus}}&page={{page}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings"
                   ],
@@ -4705,12 +4980,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/confirm",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/{{bookingId}}/confirm",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "{{bookingId}}",
@@ -4752,12 +5027,12 @@
                   "raw": "{\n  \"reason\": \"{{bookingReason}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/reject",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/{{bookingId}}/reject",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "{{bookingId}}",
@@ -4791,12 +5066,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/complete",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/{{bookingId}}/complete",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "{{bookingId}}",
@@ -4830,12 +5105,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/no-show",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/{{bookingId}}/no-show",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "{{bookingId}}",
@@ -4869,12 +5144,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/cancellation-requests?page={{page}}&limit={{limit}}",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/cancellation-requests?page={{page}}&limit={{limit}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "cancellation-requests"
@@ -4917,12 +5192,12 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/approve",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/approve",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "{{bookingId}}",
@@ -4965,12 +5240,12 @@
                   "raw": "{\n  \"reason\": \"{{rejectionReason}}\"\n}"
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/professional/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/reject",
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/bookings/{{bookingId}}/cancellation-request/reject",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "professional",
+                    "professionals",
                     "{{professionalId}}",
                     "bookings",
                     "{{bookingId}}",
@@ -5013,12 +5288,12 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/verify",
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/verify",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "profile",
                         "{{professionalId}}",
                         "verify"
@@ -5059,12 +5334,12 @@
                       "raw": "{\n  \"reason\": \"{{professionalStatusReason}}\"\n}"
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/suspend",
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/suspend",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "profile",
                         "{{professionalId}}",
                         "suspend"
@@ -5097,12 +5372,12 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/professional/profile/{{professionalId}}/reactivate",
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/reactivate",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "profile",
                         "{{professionalId}}",
                         "reactivate"
@@ -5127,12 +5402,12 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/professional/services/category-requests/admin?status=PENDING&page=1&limit=20",
+                      "raw": "{{baseUrl}}/professionals/services/category-requests/admin?status=PENDING&page=1&limit=20",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "services",
                         "category-requests",
                         "admin"
@@ -5174,12 +5449,12 @@
                       "raw": "{\n  \"approvedName\": \"{{categoryApprovedName}}\",\n  \"approvedDescription\": \"{{categoryApprovedDescription}}\"\n}"
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/approve",
+                      "raw": "{{baseUrl}}/professionals/services/category-requests/admin/{{serviceCategoryRequestId}}/approve",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "services",
                         "category-requests",
                         "admin",
@@ -5209,12 +5484,12 @@
                       "raw": "{\n  \"reviewNote\": \"{{categoryReviewNote}}\"\n}"
                     },
                     "url": {
-                      "raw": "{{baseUrl}}/professional/services/category-requests/admin/{{serviceCategoryRequestId}}/reject",
+                      "raw": "{{baseUrl}}/professionals/services/category-requests/admin/{{serviceCategoryRequestId}}/reject",
                       "host": [
                         "{{baseUrl}}"
                       ],
                       "path": [
-                        "professional",
+                        "professionals",
                         "services",
                         "category-requests",
                         "admin",
