@@ -1,15 +1,48 @@
-import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import {
+  Logger,
+  RequestMethod,
+  ValidationPipe,
+  type INestApplication,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { randomUUID } from 'crypto';
-import helmet from 'helmet';
 import type { NextFunction, Request, Response } from 'express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { APP } from './common/constants/routes';
 import { GlobalExceptionFilter } from './libs/filters/http-exception.filter';
 
-async function bootstrap() {
+function resolveAllowedOrigins() {
+  const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configuredOrigins?.length) {
+    return configuredOrigins;
+  }
+
+  const vercelOrigins = [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_URL,
+  ]
+    .filter((origin): origin is string => Boolean(origin))
+    .map((origin) => `https://${origin}`);
+
+  if (vercelOrigins.length > 0) {
+    return vercelOrigins;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('ALLOWED_ORIGINS must be set in production');
+  }
+
+  return true;
+}
+
+export async function createNestApp(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('HttpTrace');
 
@@ -50,15 +83,8 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.use(cookieParser());
 
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map((o) =>
-    o.trim(),
-  );
-  if (!allowedOrigins && process.env.NODE_ENV === 'production') {
-    throw new Error('ALLOWED_ORIGINS must be set in production');
-  }
-
   app.enableCors({
-    origin: allowedOrigins ?? true,
+    origin: resolveAllowedOrigins(),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
@@ -84,10 +110,20 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup(APP.DOCS.BASE, app, swaggerDocument);
 
+  return app;
+}
+
+async function bootstrap() {
+  const app = await createNestApp();
+  const logger = new Logger('HttpTrace');
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
   logger.log(
     `SEFAIZO API running on http://localhost:${port}/${APP.API.PREFIX}`,
   );
 }
-void bootstrap();
+
+if (!process.env.VERCEL) {
+  void bootstrap();
+}
