@@ -19,11 +19,18 @@ export default async function handler(req: Request, res: Response) {
   const app = await getApp();
   const server = app.getHttpAdapter().getInstance() as RequestHandler;
 
-  server(req, res, ((error?: unknown) => {
-    if (error) {
-      throw error instanceof Error
-        ? error
-        : new Error('Express handler failed');
-    }
-  }) as NextFunction);
+  return new Promise<void>((resolve, reject) => {
+    res.on('finish', resolve);
+    res.on('error', reject);
+
+    server(req, res, ((error?: unknown) => {
+      if (error) {
+        reject(
+          error instanceof Error
+            ? error
+            : new Error('Express handler failed'),
+        );
+      }
+    }) as NextFunction);
+  });
 }
