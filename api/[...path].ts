@@ -26,9 +26,7 @@ export default async function handler(req: Request, res: Response) {
     server(req, res, ((error?: unknown) => {
       if (error) {
         reject(
-          error instanceof Error
-            ? error
-            : new Error('Express handler failed'),
+          error instanceof Error ? error : new Error('Express handler failed'),
         );
       }
     }) as NextFunction);
