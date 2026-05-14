@@ -18,6 +18,7 @@ import {
   GetProfessionalBookingsQuery,
   GetProfessionalGalleryQuery,
   GetProfessionalProfileQuery,
+  GetProfessionalRevenueSummaryQuery,
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
   GetRecommendedProfessionalsQuery,
@@ -254,6 +255,66 @@ function toQueryPrismaFacade(
   prisma: PrismaService,
 ): PrismaService & ProfessionalQueryPrisma {
   return prisma as PrismaService & ProfessionalQueryPrisma;
+}
+
+type RevenuePeriodSummary = {
+  from: string;
+  to: string;
+  completedBookings: number;
+  grossRevenue: number;
+  travelRevenue: number;
+  serviceRevenue: number;
+  averageRevenuePerBooking: number;
+};
+
+type RevenueComparison = {
+  grossRevenueDifference: number;
+  grossRevenueDifferencePercent: number | null;
+  completedBookingsDifference: number;
+  completedBookingsDifferencePercent: number | null;
+};
+
+function toMoney(value: number | null | undefined): number {
+  return Math.round((value ?? 0) * 100) / 100;
+}
+
+function toPercentageChange(
+  currentValue: number,
+  previousValue: number,
+): number | null {
+  if (previousValue === 0) return currentValue === 0 ? 0 : null;
+  return (
+    Math.round(((currentValue - previousValue) / previousValue) * 100 * 10) / 10
+  );
+}
+
+function getMonthToDateWindows(now = new Date()) {
+  const currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  currentStart.setHours(0, 0, 0, 0);
+
+  const previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  previousStart.setHours(0, 0, 0, 0);
+
+  const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  previousMonthEnd.setHours(23, 59, 59, 999);
+
+  const elapsedMs = now.getTime() - currentStart.getTime();
+  const previousCandidateEnd = new Date(previousStart.getTime() + elapsedMs);
+  const previousEnd =
+    previousCandidateEnd.getTime() > previousMonthEnd.getTime()
+      ? previousMonthEnd
+      : previousCandidateEnd;
+
+  return {
+    current: {
+      from: currentStart,
+      to: now,
+    },
+    previous: {
+      from: previousStart,
+      to: previousEnd,
+    },
+  };
 }
 
 @QueryHandler(ListServiceCategoriesQuery)
@@ -663,6 +724,105 @@ export class ListBookingCancellationRequestsHandler implements IQueryHandler<Lis
         total,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+}
+
+@QueryHandler(GetProfessionalRevenueSummaryQuery)
+@Injectable()
+export class GetProfessionalRevenueSummaryHandler implements IQueryHandler<GetProfessionalRevenueSummaryQuery> {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly repository: ProfessionalRepository,
+  ) {}
+
+  private async aggregateRevenue(
+    professionalId: string,
+    from: Date,
+    to: Date,
+  ): Promise<RevenuePeriodSummary> {
+    const aggregate = await this.prisma.booking.aggregate({
+      where: {
+        professionalId,
+        deletedAt: null,
+        status: BookingStatus.COMPLETED,
+        updatedAt: {
+          gte: from,
+          lte: to,
+        },
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        totalPrice: true,
+        travelFee: true,
+      },
+    });
+
+    const completedBookings = aggregate._count.id ?? 0;
+    const grossRevenue = toMoney(aggregate._sum.totalPrice);
+    const travelRevenue = toMoney(aggregate._sum.travelFee);
+    const serviceRevenue = toMoney(grossRevenue - travelRevenue);
+
+    return {
+      from: from.toISOString(),
+      to: to.toISOString(),
+      completedBookings,
+      grossRevenue,
+      travelRevenue,
+      serviceRevenue,
+      averageRevenuePerBooking:
+        completedBookings > 0 ? toMoney(grossRevenue / completedBookings) : 0,
+    };
+  }
+
+  async execute(query: GetProfessionalRevenueSummaryQuery) {
+    const professional = await this.repository.findByUserId(query.userId);
+    if (!professional) {
+      throw new NotFoundException('Profil professionnel non trouvé');
+    }
+
+    const now = new Date();
+    const windows = getMonthToDateWindows(now);
+
+    const [currentPeriod, previousPeriod] = await Promise.all([
+      this.aggregateRevenue(
+        professional.id,
+        windows.current.from,
+        windows.current.to,
+      ),
+      this.aggregateRevenue(
+        professional.id,
+        windows.previous.from,
+        windows.previous.to,
+      ),
+    ]);
+
+    const comparison: RevenueComparison = {
+      grossRevenueDifference: toMoney(
+        currentPeriod.grossRevenue - previousPeriod.grossRevenue,
+      ),
+      grossRevenueDifferencePercent: toPercentageChange(
+        currentPeriod.grossRevenue,
+        previousPeriod.grossRevenue,
+      ),
+      completedBookingsDifference:
+        currentPeriod.completedBookings - previousPeriod.completedBookings,
+      completedBookingsDifferencePercent: toPercentageChange(
+        currentPeriod.completedBookings,
+        previousPeriod.completedBookings,
+      ),
+    };
+
+    return {
+      professionalId: professional.id,
+      currency: 'XOF',
+      basis: 'BOOKING_COMPLETED_AT',
+      generatedAt: now.toISOString(),
+      currentPeriod,
+      previousPeriod,
+      comparison,
     };
   }
 }
