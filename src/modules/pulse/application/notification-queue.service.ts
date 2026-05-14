@@ -33,7 +33,7 @@ export class NotificationQueueService implements OnModuleDestroy {
     const delay = scheduledFor ? Math.max(scheduledFor.getTime() - now, 0) : 0;
 
     const options: JobsOptions = {
-      jobId: `notification:${notificationId}`,
+      jobId: `notification_${notificationId}`,
       delay,
       attempts: 3,
       backoff: {

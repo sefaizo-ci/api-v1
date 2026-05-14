@@ -17,5 +17,6 @@ import { PulseController } from './pulse.controller';
     NotificationWorkerService,
     ...NotificationEventHandlers,
   ],
+  exports: [NotificationsService],
 })
 export class PulseModule {}

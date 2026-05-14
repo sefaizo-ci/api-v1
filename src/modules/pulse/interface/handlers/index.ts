@@ -8,12 +8,19 @@ import {
   OnBookingCreatedNotificationHandler,
   OnBookingNoShowNotificationHandler,
   OnBookingRejectedNotificationHandler,
+  OnProfessionalCreatedNotificationHandler,
   OnProfessionalReactivatedNotificationHandler,
+  OnProfessionalRejectedNotificationHandler,
   OnProfessionalSuspendedNotificationHandler,
   OnProfessionalVerifiedNotificationHandler,
 } from './notifications-event.handlers';
 
 export const NotificationEventHandlers = [
+  OnProfessionalCreatedNotificationHandler,
+  OnProfessionalVerifiedNotificationHandler,
+  OnProfessionalRejectedNotificationHandler,
+  OnProfessionalSuspendedNotificationHandler,
+  OnProfessionalReactivatedNotificationHandler,
   OnBookingCreatedNotificationHandler,
   OnBookingCancellationRequestedNotificationHandler,
   OnBookingConfirmedNotificationHandler,
@@ -23,7 +30,4 @@ export const NotificationEventHandlers = [
   OnBookingCancellationRequestApprovedNotificationHandler,
   OnBookingCancellationRequestRejectedNotificationHandler,
   OnBookingNoShowNotificationHandler,
-  OnProfessionalVerifiedNotificationHandler,
-  OnProfessionalSuspendedNotificationHandler,
-  OnProfessionalReactivatedNotificationHandler,
 ];
