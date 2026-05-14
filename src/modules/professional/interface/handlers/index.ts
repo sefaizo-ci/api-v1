@@ -43,8 +43,11 @@ import {
 } from './professional.query.handlers';
 import {
   CreateProfessionalProfileHandler,
+  PauseBookingsHandler,
   ReactivateProfessionalHandler,
+  ResumeBookingsHandler,
   SuspendProfessionalHandler,
+  ToggleListingHandler,
   UpdateProfessionalProfileHandler,
   VerifyProfessionalHandler,
 } from './profile.handlers';
@@ -71,6 +74,9 @@ export const ProfessionalCommandHandlers = [
   VerifyProfessionalHandler,
   SuspendProfessionalHandler,
   ReactivateProfessionalHandler,
+  ToggleListingHandler,
+  PauseBookingsHandler,
+  ResumeBookingsHandler,
   CreateServiceCategoryHandler,
   UpdateServiceCategoryHandler,
   DeleteServiceCategoryHandler,
