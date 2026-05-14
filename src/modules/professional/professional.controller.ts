@@ -34,6 +34,9 @@ import {
   ConfirmBookingCommand,
   CreateProfessionalProfileCommand,
   CreateServiceCategoryRequestCommand,
+  PauseBookingsCommand,
+  ResumeBookingsCommand,
+  ToggleListingCommand,
   DeactivateServiceCommand,
   DeleteGalleryItemCommand,
   DeleteServiceCommand,
@@ -149,6 +152,59 @@ export class ProfessionalController {
         body.latitude,
         body.longitude,
       ),
+    );
+  }
+
+  /**
+   * Toggle public listing visibility (pro-controlled)
+   */
+  @Put('profile/:professionalId/listing')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async toggleListing(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body('active') active: boolean,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<ToggleListingCommand, unknown>(
+      new ToggleListingCommand(professionalId, active),
+    );
+  }
+
+  /**
+   * Pause new bookings — body: { resumeAt?: string (ISO date) }
+   */
+  @Put('profile/:professionalId/bookings/pause')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async pauseBookings(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body('resumeAt') resumeAt?: string,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<PauseBookingsCommand, unknown>(
+      new PauseBookingsCommand(
+        professionalId,
+        resumeAt ? new Date(resumeAt) : undefined,
+      ),
+    );
+  }
+
+  /**
+   * Resume bookings immediately
+   */
+  @Put('profile/:professionalId/bookings/resume')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async resumeBookings(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<ResumeBookingsCommand, unknown>(
+      new ResumeBookingsCommand(professionalId),
     );
   }
 
