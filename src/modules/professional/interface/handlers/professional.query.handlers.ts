@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -628,6 +629,12 @@ export class GetProfessionalBookingsHandler implements IQueryHandler<GetProfessi
     };
 
     if (query.status) {
+      const validStatuses = Object.values(BookingStatus);
+      if (!validStatuses.includes(query.status as BookingStatus)) {
+        throw new BadRequestException(
+          `Invalid status "${query.status}". Valid values: ${validStatuses.join(', ')}`,
+        );
+      }
       where.status = query.status as BookingStatus;
     }
 

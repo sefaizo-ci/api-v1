@@ -8,6 +8,8 @@
   "scripts": {
     "studio": "npx prisma studio",
     "db:seed": "npx prisma db seed",
+    "db:seed:mobile-demo:api": "tsx scripts/seed-mobile-via-api.ts",
+    "db:seed:mobile-demo:api:reset": "SEED_DEMO_RESET=true tsx scripts/seed-mobile-via-api.ts",
     "db:sync:preprod": "bash scripts/sync-preprod-db.sh",
     "hooks:install": "bash scripts/install-hooks.sh",
     "postinstall": "npm run hooks:install",
@@ -38,6 +40,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/schedule": "^6.1.3",
     "@nestjs/swagger": "^11.2.7",
     "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.7.0",

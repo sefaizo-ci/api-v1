@@ -308,8 +308,11 @@ model Professional {
   address    String?
   latitude   Float?
   longitude  Float?
-  status     String          @default("PENDING")
-  isVerified Boolean         @default(false)
+  status              String          @default("PENDING")
+  isVerified          Boolean         @default(false)
+  isListingActive     Boolean         @default(true)
+  isAcceptingBookings Boolean         @default(true)
+  bookingsPausedUntil DateTime?
   rating      Float           @default(0)
   reviewCount Int             @default(0)
   bookingCount Int            @default(0)

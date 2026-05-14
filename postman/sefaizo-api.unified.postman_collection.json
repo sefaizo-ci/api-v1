@@ -2581,6 +2581,180 @@
               }
             },
             {
+              "name": "Toggle Listing Visibility",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"active\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/listing",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professionals", "profile", "{{professionalId}}", "listing"]
+                },
+                "description": "Affiche ou masque le profil du professionnel dans les listes de découverte côté client.\n\n**Body**\n- `active` (boolean, requis) — `true` pour réapparaître, `false` pour disparaître.\n\nQuand `active: false` le profil devient introuvable dans les recherches et les listes. Seul l'admin peut forcer la visibilité via le statut du compte."
+              },
+              "response": [
+                {
+                  "name": "200 OK – Listing désactivé",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Content-Type", "value": "application/json" },
+                      { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                    ],
+                    "body": { "mode": "raw", "raw": "{\n  \"active\": false\n}" },
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/listing",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professionals", "profile", "{{professionalId}}", "listing"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"id\": \"{{professionalId}}\",\n  \"agencyName\": \"Studio Awa Hair\",\n  \"isListingActive\": false,\n  \"isAcceptingBookings\": true,\n  \"isPubliclyVisible\": false,\n  \"canAcceptBookings\": false,\n  \"status\": \"ACTIVE\",\n  \"isVerified\": true\n}"
+                }
+              ]
+            },
+            {
+              "name": "Pause Bookings",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resumeAt\": \"2026-06-01T00:00:00.000Z\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/bookings/pause",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professionals", "profile", "{{professionalId}}", "bookings", "pause"]
+                },
+                "description": "Bloque les nouvelles réservations tout en restant visible dans les listes.\n\n**Body**\n- `resumeAt` (string ISO date, optionnel) — date à laquelle les réservations se rouvrent automatiquement. Si absent, la pause est indéfinie.\n\nUn job cron vérifie toutes les 5 minutes et réactive automatiquement les pros dont la date `resumeAt` est dépassée."
+              },
+              "response": [
+                {
+                  "name": "200 OK – Réservations pausées jusqu'au 1er juin",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Content-Type", "value": "application/json" },
+                      { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                    ],
+                    "body": { "mode": "raw", "raw": "{\n  \"resumeAt\": \"2026-06-01T00:00:00.000Z\"\n}" },
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/bookings/pause",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professionals", "profile", "{{professionalId}}", "bookings", "pause"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"id\": \"{{professionalId}}\",\n  \"agencyName\": \"Studio Awa Hair\",\n  \"isListingActive\": true,\n  \"isAcceptingBookings\": false,\n  \"bookingsPausedUntil\": \"2026-06-01T00:00:00.000Z\",\n  \"isPubliclyVisible\": true,\n  \"canAcceptBookings\": false,\n  \"status\": \"ACTIVE\",\n  \"isVerified\": true\n}"
+                },
+                {
+                  "name": "200 OK – Réservations pausées indéfiniment",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Content-Type", "value": "application/json" },
+                      { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                    ],
+                    "body": { "mode": "raw", "raw": "{}" },
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/bookings/pause",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professionals", "profile", "{{professionalId}}", "bookings", "pause"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"id\": \"{{professionalId}}\",\n  \"agencyName\": \"Studio Awa Hair\",\n  \"isListingActive\": true,\n  \"isAcceptingBookings\": false,\n  \"bookingsPausedUntil\": null,\n  \"isPubliclyVisible\": true,\n  \"canAcceptBookings\": false,\n  \"status\": \"ACTIVE\",\n  \"isVerified\": true\n}"
+                }
+              ]
+            },
+            {
+              "name": "Resume Bookings",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/bookings/resume",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professionals", "profile", "{{professionalId}}", "bookings", "resume"]
+                },
+                "description": "Rouvre manuellement les réservations avant la date `resumeAt` planifiée. Efface également la date de reprise automatique."
+              },
+              "response": [
+                {
+                  "name": "200 OK – Réservations réouvertes",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      { "key": "Authorization", "value": "Bearer {{professionalAccessToken}}" }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/profile/{{professionalId}}/bookings/resume",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professionals", "profile", "{{professionalId}}", "bookings", "resume"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"id\": \"{{professionalId}}\",\n  \"agencyName\": \"Studio Awa Hair\",\n  \"isListingActive\": true,\n  \"isAcceptingBookings\": true,\n  \"bookingsPausedUntil\": null,\n  \"isPubliclyVisible\": true,\n  \"canAcceptBookings\": true,\n  \"status\": \"ACTIVE\",\n  \"isVerified\": true\n}"
+                }
+              ]
+            },
+            {
               "name": "Upload Avatar",
               "event": [
                 {

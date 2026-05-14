@@ -61,3 +61,33 @@ export class SuspendProfessionalCommand implements ICommand {
 export class ReactivateProfessionalCommand implements ICommand {
   constructor(public readonly professionalId: string) {}
 }
+
+/**
+ * ToggleListingCommand
+ * Command for the professional to show/hide their own profile from public discovery
+ */
+export class ToggleListingCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly active: boolean,
+  ) {}
+}
+
+/**
+ * PauseBookingsCommand
+ * Command for the professional to stop accepting new bookings, with an optional resume date
+ */
+export class PauseBookingsCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly resumeAt?: Date,
+  ) {}
+}
+
+/**
+ * ResumeBookingsCommand
+ * Command for the professional to manually reopen bookings before the scheduled date
+ */
+export class ResumeBookingsCommand implements ICommand {
+  constructor(public readonly professionalId: string) {}
+}

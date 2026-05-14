@@ -9,8 +9,11 @@ import { ProfessionalEntity } from '../../core/entities/professional.entity';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
   CreateProfessionalProfileCommand,
+  PauseBookingsCommand,
   ReactivateProfessionalCommand,
+  ResumeBookingsCommand,
   SuspendProfessionalCommand,
+  ToggleListingCommand,
   UpdateProfessionalProfileCommand,
   VerifyProfessionalCommand,
 } from '../../interface/commands';
@@ -19,6 +22,29 @@ import {
   ProfessionalSuspendedEvent,
   ProfessionalVerifiedEvent,
 } from '../events/profile.events';
+
+async function findProfessionalOrFail(
+  repository: ProfessionalRepository,
+  id: string,
+): Promise<ProfessionalEntity> {
+  const professional = await repository.findById(id);
+  if (!professional) throw new NotFoundException('Professionnel non trouvé');
+  return professional;
+}
+
+async function executeStatusAction(
+  repository: ProfessionalRepository,
+  eventBus: EventBus,
+  professionalId: string,
+  action: (pro: ProfessionalEntity) => void,
+  buildEvent: (id: string) => object,
+): Promise<ProfessionalEntity> {
+  const professional = await findProfessionalOrFail(repository, professionalId);
+  action(professional);
+  await repository.save(professional);
+  eventBus.publish(buildEvent(professional.id));
+  return professional;
+}
 
 /**
  * CreateProfessionalProfileHandler
@@ -70,10 +96,10 @@ export class UpdateProfessionalProfileHandler implements ICommandHandler<UpdateP
     command: UpdateProfessionalProfileCommand,
   ): Promise<ProfessionalEntity> {
     // Fetch existing professional
-    const professional = await this.repository.findById(command.professionalId);
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
-    }
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
 
     // Update profile
     professional.updateProfile({
@@ -107,16 +133,13 @@ export class VerifyProfessionalHandler implements ICommandHandler<VerifyProfessi
   async execute(
     command: VerifyProfessionalCommand,
   ): Promise<ProfessionalEntity> {
-    const professional = await this.repository.findById(command.professionalId);
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
-    }
-
-    professional.verify();
-    await this.repository.save(professional);
-    this.eventBus.publish(new ProfessionalVerifiedEvent(professional.id));
-
-    return professional;
+    return executeStatusAction(
+      this.repository,
+      this.eventBus,
+      command.professionalId,
+      (pro) => pro.verify(),
+      (id) => new ProfessionalVerifiedEvent(id),
+    );
   }
 }
 
@@ -135,16 +158,13 @@ export class SuspendProfessionalHandler implements ICommandHandler<SuspendProfes
   async execute(
     command: SuspendProfessionalCommand,
   ): Promise<ProfessionalEntity> {
-    const professional = await this.repository.findById(command.professionalId);
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
-    }
-
-    professional.suspend();
-    await this.repository.save(professional);
-    this.eventBus.publish(new ProfessionalSuspendedEvent(professional.id));
-
-    return professional;
+    return executeStatusAction(
+      this.repository,
+      this.eventBus,
+      command.professionalId,
+      (pro) => pro.suspend(),
+      (id) => new ProfessionalSuspendedEvent(id),
+    );
   }
 }
 
@@ -163,15 +183,80 @@ export class ReactivateProfessionalHandler implements ICommandHandler<Reactivate
   async execute(
     command: ReactivateProfessionalCommand,
   ): Promise<ProfessionalEntity> {
-    const professional = await this.repository.findById(command.professionalId);
-    if (!professional) {
-      throw new NotFoundException('Professionnel non trouvé');
+    return executeStatusAction(
+      this.repository,
+      this.eventBus,
+      command.professionalId,
+      (pro) => pro.reactivate(),
+      (id) => new ProfessionalReactivatedEvent(id),
+    );
+  }
+}
+
+/**
+ * ToggleListingHandler
+ * Allows the professional to show or hide their profile from public discovery
+ */
+@CommandHandler(ToggleListingCommand)
+@Injectable()
+export class ToggleListingHandler implements ICommandHandler<ToggleListingCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: ToggleListingCommand): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+
+    if (command.active) {
+      professional.activateListing();
+    } else {
+      professional.deactivateListing();
     }
 
-    professional.reactivate();
     await this.repository.save(professional);
-    this.eventBus.publish(new ProfessionalReactivatedEvent(professional.id));
+    return professional;
+  }
+}
 
+/**
+ * PauseBookingsHandler
+ * Stops accepting new bookings, with an optional automatic resume date
+ */
+@CommandHandler(PauseBookingsCommand)
+@Injectable()
+export class PauseBookingsHandler implements ICommandHandler<PauseBookingsCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: PauseBookingsCommand): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+
+    professional.pauseBookings(command.resumeAt);
+    await this.repository.save(professional);
+    return professional;
+  }
+}
+
+/**
+ * ResumeBookingsHandler
+ * Manually reopens bookings before the scheduled resume date
+ */
+@CommandHandler(ResumeBookingsCommand)
+@Injectable()
+export class ResumeBookingsHandler implements ICommandHandler<ResumeBookingsCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: ResumeBookingsCommand): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+
+    professional.resumeBookings();
+    await this.repository.save(professional);
     return professional;
   }
 }

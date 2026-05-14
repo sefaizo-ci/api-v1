@@ -17,6 +17,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
   private buildWhere(filters?: {
     status?: string;
     isVerified?: boolean;
+    isListingActive?: boolean;
     location?: string;
     search?: string;
     rating?: number;
@@ -26,6 +27,9 @@ export class ProfessionalRepository implements IProfessionalRepository {
     if (filters?.status) where.status = filters.status;
     if (filters?.isVerified !== undefined) {
       where.isVerified = filters.isVerified;
+    }
+    if (filters?.isListingActive !== undefined) {
+      where.isListingActive = filters.isListingActive;
     }
     if (filters?.location) {
       where.location =
@@ -329,6 +333,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
   async findAll(filters?: {
     status?: string;
     isVerified?: boolean;
+    isListingActive?: boolean;
     location?: string;
   }): Promise<ProfessionalEntity[]> {
     return this.fetchProfessionals(this.buildWhere(filters));
@@ -338,6 +343,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
     filters?: {
       status?: string;
       isVerified?: boolean;
+      isListingActive?: boolean;
       location?: string;
       search?: string;
       rating?: number;
@@ -361,6 +367,29 @@ export class ProfessionalRepository implements IProfessionalRepository {
     ]);
 
     return { data, total };
+  }
+
+  async findWithExpiredBookingPause(): Promise<ProfessionalEntity[]> {
+    const now = new Date();
+    const raws = await this.prisma.professional.findMany({
+      where: {
+        deletedAt: null,
+        isAcceptingBookings: false,
+        bookingsPausedUntil: { lte: now },
+      },
+      include: {
+        services: {
+          where: { deletedAt: null },
+          include: {
+            communeFees: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
+        availabilities: { where: { deletedAt: null } },
+        gallery: { where: { deletedAt: null } },
+      },
+    });
+    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
   }
 
   async delete(id: string): Promise<void> {

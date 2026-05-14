@@ -24,6 +24,9 @@ export class ProfessionalEntity {
   // Status
   status: ProfessionalStatus;
   isVerified: boolean;
+  isListingActive: boolean;
+  isAcceptingBookings: boolean = true;
+  bookingsPausedUntil?: Date;
 
   // Ratings
   rating: number = 0;
@@ -51,6 +54,9 @@ export class ProfessionalEntity {
     longitude?: number;
     status?: ProfessionalStatus;
     isVerified?: boolean;
+    isListingActive?: boolean;
+    isAcceptingBookings?: boolean;
+    bookingsPausedUntil?: Date;
     rating?: number;
     reviewCount?: number;
     services?: ServiceOfferingEntity[];
@@ -71,6 +77,9 @@ export class ProfessionalEntity {
     this.longitude = props.longitude;
     this.status = props.status ?? ProfessionalStatus.PENDING;
     this.isVerified = props.isVerified ?? false;
+    this.isListingActive = props.isListingActive ?? true;
+    this.isAcceptingBookings = props.isAcceptingBookings ?? true;
+    this.bookingsPausedUntil = props.bookingsPausedUntil;
     this.rating = props.rating ?? 0;
     this.reviewCount = props.reviewCount ?? 0;
     this.services = props.services ?? [];
@@ -172,14 +181,63 @@ export class ProfessionalEntity {
   }
 
   /**
-   * Check if professional can accept bookings
+   * Activate the public listing (pro-controlled toggle)
    */
-  canAcceptBookings(): boolean {
+  activateListing(): void {
+    this.isListingActive = true;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Deactivate the public listing (pro-controlled toggle)
+   */
+  deactivateListing(): void {
+    this.isListingActive = false;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Pause new bookings until an optional date (pro-controlled).
+   * If no date is given, the pause is indefinite.
+   */
+  pauseBookings(resumeAt?: Date): void {
+    this.isAcceptingBookings = false;
+    this.bookingsPausedUntil = resumeAt;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Resume bookings immediately and clear the scheduled resume date.
+   */
+  resumeBookings(): void {
+    this.isAcceptingBookings = true;
+    this.bookingsPausedUntil = undefined;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Whether the professional appears in public discovery lists.
+   * Admin gate: ACTIVE + verified.
+   * Pro gate: isListingActive + at least 1 service.
+   */
+  isPubliclyVisible(): boolean {
     return (
       this.isVerified &&
       this.status === ProfessionalStatus.ACTIVE &&
       !this.deletedAt &&
-      this.hasServices() &&
+      this.isListingActive &&
+      this.hasServices()
+    );
+  }
+
+  /**
+   * Whether the professional can accept new bookings.
+   * Requires public visibility + isAcceptingBookings + at least 1 availability.
+   */
+  canAcceptBookings(): boolean {
+    return (
+      this.isPubliclyVisible() &&
+      this.isAcceptingBookings &&
       this.hasAvailability()
     );
   }
@@ -430,6 +488,10 @@ export class ProfessionalEntity {
       location: this.location,
       status: this.status,
       isVerified: this.isVerified,
+      isListingActive: this.isListingActive,
+      isAcceptingBookings: this.isAcceptingBookings,
+      bookingsPausedUntil: this.bookingsPausedUntil,
+      isPubliclyVisible: this.isPubliclyVisible(),
       rating: this.rating,
       reviewCount: this.reviewCount,
       minPrice,
