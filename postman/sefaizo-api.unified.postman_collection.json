@@ -338,7 +338,7 @@
                   "host": ["{{baseUrl}}"],
                   "path": ["sentinel", "otp", "verify"]
                 },
-                "description": "Vérifie le code OTP. Retourne un `challengeToken` à durée limitée (10 min) requis pour `register/complete`.\n\nLe token a `scope: 'challenge-only'` — il ne peut pas être utilisé comme accessToken.",
+                "description": "Vérifie le code OTP. Retourne un `challengeToken` à durée limitée (10 min) requis pour `pin/create`.\n\nLe token a `scope: 'challenge-only'` — il ne peut pas être utilisé comme accessToken.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otpCode}}\",\n  \"purpose\": \"REGISTRATION\",\n  \"app\": \"{{loginApp}}\"\n}"
@@ -475,9 +475,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/sentinel/register/complete",
+                  "raw": "{{baseUrl}}/sentinel/pin/create",
                   "host": ["{{baseUrl}}"],
-                  "path": ["sentinel", "register", "complete"]
+                  "path": ["sentinel", "pin", "create"]
                 },
                 "description": "Crée le compte et le PIN. Requiert le `challengeToken` de `otp/verify`.\n\n**Auth:** `Authorization: Bearer {{challengeToken}}`\n\n**Règles PIN :** exactement 4 chiffres, pas de motifs trop simples (0000, 1234, 1111…).\n\n`firstName` et `lastName` sont **optionnels** ici — ils peuvent être fournis plus tard via `PATCH /sentinel/me`.\n\nRetourne `accessToken` + `refreshToken` + profil avec `onboardingStep` :\n- `PROFILE_PENDING` → nom non renseigné, rediriger vers l'écran « Compléter profil »\n- `TERMS_PENDING` → nom OK, rediriger vers l'écran CGU",
                 "body": {
@@ -501,9 +501,9 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "raw": "{{baseUrl}}/sentinel/pin/create",
                       "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "register", "complete"]
+                      "path": ["sentinel", "pin", "create"]
                     },
                     "body": {
                       "mode": "raw",
@@ -530,9 +530,9 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "raw": "{{baseUrl}}/sentinel/pin/create",
                       "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "register", "complete"]
+                      "path": ["sentinel", "pin", "create"]
                     },
                     "body": {
                       "mode": "raw",
@@ -559,9 +559,9 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "raw": "{{baseUrl}}/sentinel/pin/create",
                       "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "register", "complete"]
+                      "path": ["sentinel", "pin", "create"]
                     },
                     "body": {
                       "mode": "raw",
@@ -588,9 +588,9 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "raw": "{{baseUrl}}/sentinel/pin/create",
                       "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "register", "complete"]
+                      "path": ["sentinel", "pin", "create"]
                     },
                     "body": {
                       "mode": "raw",
@@ -617,9 +617,9 @@
                       }
                     ],
                     "url": {
-                      "raw": "{{baseUrl}}/sentinel/register/complete",
+                      "raw": "{{baseUrl}}/sentinel/pin/create",
                       "host": ["{{baseUrl}}"],
-                      "path": ["sentinel", "register", "complete"]
+                      "path": ["sentinel", "pin", "create"]
                     },
                     "body": {
                       "mode": "raw",
@@ -633,6 +633,23 @@
                 }
               ],
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const token = pm.environment.get('challengeToken');",
+                      "if (!token) {",
+                      "  console.error('❌ ERREUR: challengeToken non trouvé!');",
+                      "  console.log('📋 Étapes à suivre:');",
+                      "  console.log('1️⃣  Exécutez d\\'abord: 3️⃣ Verify OTP → challengeToken');",
+                      "  console.log('2️⃣  Puis exécutez: 4️⃣ Create PIN - Complete Registration');",
+                      "  console.log('');",
+                      "  pm.environment.set('challengeToken', 'MISSING_TOKEN_ERROR');",
+                      "}"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -1444,7 +1461,7 @@
                   "host": ["{{baseUrl}}"],
                   "path": ["sentinel", "terms", "accept"]
                 },
-                "description": "Enregistre l'acceptation des CGU par l'utilisateur connecté. Stocke un timestamp `acceptedTermsAt` en base.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\n**Idempotent** — peut être appelé plusieurs fois sans effet de bord.\n\n**Flow onboarding pro :**\n1. `register/complete` → `hasAcceptedTerms: false`\n2. → **`terms/accept`** ← vous êtes ici\n3. `professional/profile` → crée le profil\n4. `professional/:id/avatar/upload` → upload avatar"
+                "description": "Enregistre l'acceptation des CGU par l'utilisateur connecté. Stocke un timestamp `acceptedTermsAt` en base.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\n**Idempotent** — peut être appelé plusieurs fois sans effet de bord.\n\n**Flow onboarding pro :**\n1. `pin/create` → `hasAcceptedTerms: false`\n2. → **`terms/accept`** ← vous êtes ici\n3. `professional/profile` → crée le profil\n4. `professional/:id/avatar/upload` → upload avatar"
               },
               "response": [
                 {
@@ -1630,7 +1647,7 @@
                   "host": ["{{baseUrl}}"],
                   "path": ["sentinel", "me"]
                 },
-                "description": "Met à jour le prénom et/ou le nom de l'utilisateur connecté.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\nRetourne le profil mis à jour + `onboardingStep` recalculé.\n\nUne fois le nom renseigné après `register/complete`, `onboardingStep` passe de `PROFILE_PENDING` à `TERMS_PENDING`.",
+                "description": "Met à jour le prénom et/ou le nom de l'utilisateur connecté.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\nRetourne le profil mis à jour + `onboardingStep` recalculé.\n\nUne fois le nom renseigné après `pin/create`, `onboardingStep` passe de `PROFILE_PENDING` à `TERMS_PENDING`.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"firstName\": \"{{firstName}}\",\n  \"lastName\": \"{{lastName}}\"\n}"
@@ -4672,6 +4689,53 @@
                 },
                 "description": "Professional rejects the client's cancellation request. Booking stays CONFIRMED."
               }
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "item": [
+            {
+              "name": "Revenue Summary",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/revenue/summary",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["professionals", "revenue", "summary"]
+                },
+                "description": "Get revenue summary for the current professional with month-to-date comparison.\n\n**Auth:** `Authorization: Bearer {{accessToken}}`\n\n**Returns:**\n- `currentPeriod`: Revenue metrics for current month (1st to today)\n- `previousPeriod`: Revenue metrics for same elapsed duration in previous month\n- `comparison`: Month-over-month comparison with percentage changes\n\n**Metrics per period:**\n- `completedBookings`: Count of completed bookings\n- `grossRevenue`: Total revenue (service + travel fees) in XOF\n- `serviceRevenue`: Service fees only in XOF\n- `travelRevenue`: Travel fees only in XOF\n- `averageRevenuePerBooking`: Average revenue per booking in XOF\n\n**Note:** Revenue calculation basis is `BOOKING_COMPLETED_AT` (when booking status changed to COMPLETED)."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/professionals/revenue/summary",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["professionals", "revenue", "summary"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"currentPeriod\": {\n    \"from\": \"2026-05-01T00:00:00.000Z\",\n    \"to\": \"2026-05-13T23:59:59.999Z\",\n    \"completedBookings\": 8,\n    \"grossRevenue\": 185000.00,\n    \"serviceRevenue\": 165000.00,\n    \"travelRevenue\": 20000.00,\n    \"averageRevenuePerBooking\": 23125.00\n  },\n  \"previousPeriod\": {\n    \"from\": \"2026-04-01T00:00:00.000Z\",\n    \"to\": \"2026-04-13T23:59:59.999Z\",\n    \"completedBookings\": 5,\n    \"grossRevenue\": 95000.00,\n    \"serviceRevenue\": 85000.00,\n    \"travelRevenue\": 10000.00,\n    \"averageRevenuePerBooking\": 19000.00\n  },\n  \"comparison\": {\n    \"bookingCountChange\": 60,\n    \"grossRevenueChange\": 94.74,\n    \"serviceRevenueChange\": 94.12,\n    \"travelRevenueChange\": 100.00,\n    \"averageRevenuePerBookingChange\": 21.71\n  }\n}"
+                }
+              ]
             }
           ]
         },

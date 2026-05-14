@@ -83,6 +83,7 @@ import {
   GetProfessionalBookingsQuery,
   GetProfessionalGalleryQuery,
   GetProfessionalProfileQuery,
+  GetProfessionalRevenueSummaryQuery,
   GetProfessionalServicesQuery,
   GetProfileCompletionQuery,
   GetRecommendedProfessionalsQuery,
@@ -184,6 +185,18 @@ export class ProfessionalController {
   async getMyProfile(@Req() req: AuthenticatedRequest) {
     return this.queryBus.execute<GetMyProfessionalProfileQuery, unknown>(
       new GetMyProfessionalProfileQuery(req.user.id),
+    );
+  }
+
+  /**
+   * Get my revenue summary for the mobile widget
+   */
+  @Get('revenue/summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async getMyRevenueSummary(@Req() req: AuthenticatedRequest) {
+    return this.queryBus.execute<GetProfessionalRevenueSummaryQuery, unknown>(
+      new GetProfessionalRevenueSummaryQuery(req.user.id),
     );
   }
 

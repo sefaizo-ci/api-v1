@@ -52,6 +52,10 @@ export class GetProfessionalBookingsQuery implements IQuery {
   ) {}
 }
 
+export class GetProfessionalRevenueSummaryQuery implements IQuery {
+  constructor(public readonly userId: string) {}
+}
+
 export class ListBookingCancellationRequestsQuery implements IQuery {
   constructor(
     public readonly professionalId: string,
