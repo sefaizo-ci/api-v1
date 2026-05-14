@@ -85,7 +85,9 @@ export class CreateProfessionalProfileHandler implements ICommandHandler<CreateP
     });
 
     await this.repository.save(professional);
-    this.eventBus.publish(new ProfessionalCreatedEvent(professional.id, professional.agencyName));
+    this.eventBus.publish(
+      new ProfessionalCreatedEvent(professional.id, professional.agencyName),
+    );
 
     return professional;
   }
@@ -163,11 +165,18 @@ export class RejectProfessionalHandler implements ICommandHandler<RejectProfessi
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(command: RejectProfessionalCommand): Promise<ProfessionalEntity> {
-    const professional = await findProfessionalOrFail(this.repository, command.professionalId);
+  async execute(
+    command: RejectProfessionalCommand,
+  ): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
     professional.reject(command.reason);
     await this.repository.save(professional);
-    this.eventBus.publish(new ProfessionalRejectedEvent(professional.id, command.reason));
+    this.eventBus.publish(
+      new ProfessionalRejectedEvent(professional.id, command.reason),
+    );
     return professional;
   }
 }
@@ -299,7 +308,9 @@ export class ResumeBookingsHandler implements ICommandHandler<ResumeBookingsComm
 export class ResubmitProfessionalHandler implements ICommandHandler<ResubmitProfessionalCommand> {
   constructor(private readonly repository: ProfessionalRepository) {}
 
-  async execute(command: ResubmitProfessionalCommand): Promise<ProfessionalEntity> {
+  async execute(
+    command: ResubmitProfessionalCommand,
+  ): Promise<ProfessionalEntity> {
     const professional = await findProfessionalOrFail(
       this.repository,
       command.professionalId,
