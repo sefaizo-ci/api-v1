@@ -80,6 +80,7 @@ type RawProfessional = {
   longitude: number | null;
   status: string;
   isVerified: boolean;
+  rejectionReason: string | null;
   isListingActive: boolean;
   isAcceptingBookings: boolean;
   bookingsPausedUntil: Date | null;
@@ -114,6 +115,7 @@ export class ProfessionalMapper {
       longitude: raw.longitude ?? undefined,
       status: (raw.status as ProfessionalStatus) || ProfessionalStatus.PENDING,
       isVerified: raw.isVerified,
+      rejectionReason: raw.rejectionReason ?? undefined,
       isListingActive: raw.isListingActive,
       isAcceptingBookings: raw.isAcceptingBookings,
       bookingsPausedUntil: raw.bookingsPausedUntil ?? undefined,
@@ -146,6 +148,7 @@ export class ProfessionalMapper {
       longitude: entity.longitude,
       status: entity.status,
       isVerified: entity.isVerified,
+      rejectionReason: entity.rejectionReason ?? null,
       isListingActive: entity.isListingActive,
       isAcceptingBookings: entity.isAcceptingBookings,
       bookingsPausedUntil: entity.bookingsPausedUntil ?? null,

@@ -24,6 +24,7 @@ export class ProfessionalEntity {
   // Status
   status: ProfessionalStatus;
   isVerified: boolean;
+  rejectionReason?: string;
   isListingActive: boolean;
   isAcceptingBookings: boolean = true;
   bookingsPausedUntil?: Date;
@@ -54,6 +55,7 @@ export class ProfessionalEntity {
     longitude?: number;
     status?: ProfessionalStatus;
     isVerified?: boolean;
+    rejectionReason?: string;
     isListingActive?: boolean;
     isAcceptingBookings?: boolean;
     bookingsPausedUntil?: Date;
@@ -77,6 +79,7 @@ export class ProfessionalEntity {
     this.longitude = props.longitude;
     this.status = props.status ?? ProfessionalStatus.PENDING;
     this.isVerified = props.isVerified ?? false;
+    this.rejectionReason = props.rejectionReason;
     this.isListingActive = props.isListingActive ?? true;
     this.isAcceptingBookings = props.isAcceptingBookings ?? true;
     this.bookingsPausedUntil = props.bookingsPausedUntil;
@@ -158,6 +161,28 @@ export class ProfessionalEntity {
     }
     this.isVerified = true;
     this.status = ProfessionalStatus.ACTIVE;
+    this.rejectionReason = undefined;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Reject professional profile (by admin), with a mandatory reason
+   */
+  reject(reason: string): void {
+    if (this.isVerified) {
+      throw new Error('Cannot reject an already verified professional');
+    }
+    this.status = ProfessionalStatus.REJECTED;
+    this.rejectionReason = reason;
+    this.updatedAt = new Date();
+  }
+
+  resubmit(): void {
+    if (this.status !== ProfessionalStatus.REJECTED) {
+      throw new Error('Only rejected professionals can resubmit');
+    }
+    this.status = ProfessionalStatus.PENDING;
+    this.rejectionReason = undefined;
     this.updatedAt = new Date();
   }
 
@@ -488,6 +513,7 @@ export class ProfessionalEntity {
       location: this.location,
       status: this.status,
       isVerified: this.isVerified,
+      rejectionReason: this.rejectionReason,
       isListingActive: this.isListingActive,
       isAcceptingBookings: this.isAcceptingBookings,
       bookingsPausedUntil: this.bookingsPausedUntil,
