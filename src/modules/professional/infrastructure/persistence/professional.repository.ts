@@ -369,6 +369,62 @@ export class ProfessionalRepository implements IProfessionalRepository {
     return { data, total };
   }
 
+  async findEligibleForAutoVerification(): Promise<ProfessionalEntity[]> {
+    const raws = await this.prisma.professional.findMany({
+      where: {
+        deletedAt: null,
+        status: 'PENDING',
+        isVerified: false,
+        avatarUrl: { not: null },
+        services: { some: { deletedAt: null, isActive: true } },
+        availabilities: { some: { deletedAt: null, isActive: true } },
+      },
+      include: {
+        services: {
+          where: { deletedAt: null },
+          include: {
+            communeFees: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
+        availabilities: { where: { deletedAt: null } },
+        gallery: { where: { deletedAt: null } },
+      },
+    });
+    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+  }
+
+  async findIncompleteAfterGracePeriod(
+    gracePeriodHours: number,
+  ): Promise<ProfessionalEntity[]> {
+    const cutoff = new Date(Date.now() - gracePeriodHours * 3600 * 1000);
+    const raws = await this.prisma.professional.findMany({
+      where: {
+        deletedAt: null,
+        status: 'PENDING',
+        isVerified: false,
+        createdAt: { lte: cutoff },
+        OR: [
+          { avatarUrl: null },
+          { services: { none: { deletedAt: null, isActive: true } } },
+          { availabilities: { none: { deletedAt: null, isActive: true } } },
+        ],
+      },
+      include: {
+        services: {
+          where: { deletedAt: null },
+          include: {
+            communeFees: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
+        availabilities: { where: { deletedAt: null } },
+        gallery: { where: { deletedAt: null } },
+      },
+    });
+    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+  }
+
   async findWithExpiredBookingPause(): Promise<ProfessionalEntity[]> {
     const now = new Date();
     const raws = await this.prisma.professional.findMany({

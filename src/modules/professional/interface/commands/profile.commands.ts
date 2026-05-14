@@ -55,6 +55,17 @@ export class SuspendProfessionalCommand implements ICommand {
 }
 
 /**
+ * RejectProfessionalCommand
+ * Command to reject a professional profile (admin only), with a mandatory reason
+ */
+export class RejectProfessionalCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly reason: string,
+  ) {}
+}
+
+/**
  * ReactivateProfessionalCommand
  * Command to reactivate a suspended professional
  */
@@ -89,5 +100,13 @@ export class PauseBookingsCommand implements ICommand {
  * Command for the professional to manually reopen bookings before the scheduled date
  */
 export class ResumeBookingsCommand implements ICommand {
+  constructor(public readonly professionalId: string) {}
+}
+
+/**
+ * ResubmitProfessionalCommand
+ * Allows a rejected professional to reset their status back to PENDING for re-review
+ */
+export class ResubmitProfessionalCommand implements ICommand {
   constructor(public readonly professionalId: string) {}
 }
