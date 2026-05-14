@@ -35,6 +35,7 @@ import {
   CreateProfessionalProfileCommand,
   CreateServiceCategoryRequestCommand,
   PauseBookingsCommand,
+  ResubmitProfessionalCommand,
   ResumeBookingsCommand,
   ToggleListingCommand,
   DeactivateServiceCommand,
@@ -205,6 +206,22 @@ export class ProfessionalController {
     await this.assertProfessionalOwnership(professionalId, req.user.id);
     return this.commandBus.execute<ResumeBookingsCommand, unknown>(
       new ResumeBookingsCommand(professionalId),
+    );
+  }
+
+  /**
+   * Re-submit after rejection — resets status to PENDING for re-review
+   */
+  @Put('profile/:professionalId/resubmit')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async resubmitProfile(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<ResubmitProfessionalCommand, unknown>(
+      new ResubmitProfessionalCommand(professionalId),
     );
   }
 

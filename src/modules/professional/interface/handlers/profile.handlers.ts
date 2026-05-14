@@ -11,6 +11,8 @@ import {
   CreateProfessionalProfileCommand,
   PauseBookingsCommand,
   ReactivateProfessionalCommand,
+  RejectProfessionalCommand,
+  ResubmitProfessionalCommand,
   ResumeBookingsCommand,
   SuspendProfessionalCommand,
   ToggleListingCommand,
@@ -18,7 +20,9 @@ import {
   VerifyProfessionalCommand,
 } from '../../interface/commands';
 import {
+  ProfessionalCreatedEvent,
   ProfessionalReactivatedEvent,
+  ProfessionalRejectedEvent,
   ProfessionalSuspendedEvent,
   ProfessionalVerifiedEvent,
 } from '../events/profile.events';
@@ -54,7 +58,10 @@ async function executeStatusAction(
 @CommandHandler(CreateProfessionalProfileCommand)
 @Injectable()
 export class CreateProfessionalProfileHandler implements ICommandHandler<CreateProfessionalProfileCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: CreateProfessionalProfileCommand,
@@ -78,6 +85,9 @@ export class CreateProfessionalProfileHandler implements ICommandHandler<CreateP
     });
 
     await this.repository.save(professional);
+    this.eventBus.publish(
+      new ProfessionalCreatedEvent(professional.id, professional.agencyName),
+    );
 
     return professional;
   }
@@ -140,6 +150,34 @@ export class VerifyProfessionalHandler implements ICommandHandler<VerifyProfessi
       (pro) => pro.verify(),
       (id) => new ProfessionalVerifiedEvent(id),
     );
+  }
+}
+
+/**
+ * RejectProfessionalHandler
+ * Handles rejection of a professional profile (admin only)
+ */
+@CommandHandler(RejectProfessionalCommand)
+@Injectable()
+export class RejectProfessionalHandler implements ICommandHandler<RejectProfessionalCommand> {
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eventBus: EventBus,
+  ) {}
+
+  async execute(
+    command: RejectProfessionalCommand,
+  ): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+    professional.reject(command.reason);
+    await this.repository.save(professional);
+    this.eventBus.publish(
+      new ProfessionalRejectedEvent(professional.id, command.reason),
+    );
+    return professional;
   }
 }
 
@@ -256,6 +294,29 @@ export class ResumeBookingsHandler implements ICommandHandler<ResumeBookingsComm
     );
 
     professional.resumeBookings();
+    await this.repository.save(professional);
+    return professional;
+  }
+}
+
+/**
+ * ResubmitProfessionalHandler
+ * Allows a rejected professional to reset their status to PENDING for re-review
+ */
+@CommandHandler(ResubmitProfessionalCommand)
+@Injectable()
+export class ResubmitProfessionalHandler implements ICommandHandler<ResubmitProfessionalCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(
+    command: ResubmitProfessionalCommand,
+  ): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+
+    professional.resubmit();
     await this.repository.save(professional);
     return professional;
   }

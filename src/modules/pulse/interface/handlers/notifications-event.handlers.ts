@@ -16,7 +16,9 @@ import {
   BookingRejectedEvent,
 } from '../../../professional/interface/events/booking.events';
 import {
+  ProfessionalCreatedEvent,
   ProfessionalReactivatedEvent,
+  ProfessionalRejectedEvent,
   ProfessionalSuspendedEvent,
   ProfessionalVerifiedEvent,
 } from '../../../professional/interface/events/profile.events';
@@ -51,7 +53,52 @@ async function fetchBookingForNotification(
   });
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+async function fetchAdminUserIds(prisma: PrismaService): Promise<string[]> {
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN', isActive: true, deletedAt: null },
+    select: { id: true },
+  });
+  return admins.map((a) => a.id);
+}
+
 // ─── Handlers ────────────────────────────────────────────────────────────────
+
+@EventsHandler(ProfessionalCreatedEvent)
+@Injectable()
+export class OnProfessionalCreatedNotificationHandler implements IEventHandler<ProfessionalCreatedEvent> {
+  private readonly logger = new Logger(
+    OnProfessionalCreatedNotificationHandler.name,
+  );
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+
+  async handle(event: ProfessionalCreatedEvent): Promise<void> {
+    try {
+      const adminIds = await fetchAdminUserIds(this.prisma);
+      if (adminIds.length === 0) return;
+
+      await Promise.all(
+        adminIds.map((adminId) =>
+          this.notificationsService.createFanoutNotification({
+            userId: adminId,
+            type: 'PROFESSIONAL_CREATED',
+            title: 'Nouveau professionnel',
+            body: `${event.agencyName} vient de créer un compte et attend la vérification.`,
+            channels: CH_APP_PUSH,
+            metadata: { professionalId: event.professionalId },
+          }),
+        ),
+      );
+    } catch (err) {
+      this.logger.error('OnProfessionalCreatedNotificationHandler failed', err);
+    }
+  }
+}
 
 @EventsHandler(BookingCreatedEvent)
 @Injectable()
@@ -543,6 +590,43 @@ export class OnProfessionalReactivatedNotificationHandler implements IEventHandl
     } catch (err) {
       this.logger.error(
         'OnProfessionalReactivatedNotificationHandler failed',
+        err,
+      );
+    }
+  }
+}
+
+@EventsHandler(ProfessionalRejectedEvent)
+@Injectable()
+export class OnProfessionalRejectedNotificationHandler implements IEventHandler<ProfessionalRejectedEvent> {
+  private readonly logger = new Logger(
+    OnProfessionalRejectedNotificationHandler.name,
+  );
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+
+  async handle(event: ProfessionalRejectedEvent): Promise<void> {
+    try {
+      const professional = await this.prisma.professional.findFirst({
+        where: { id: event.professionalId, deletedAt: null },
+        select: { userId: true },
+      });
+      if (!professional) return;
+
+      await this.notificationsService.createFanoutNotification({
+        userId: professional.userId,
+        type: 'PROFESSIONAL_REJECTED',
+        title: 'Profil refuse',
+        body: event.reason,
+        channels: CH_APP_PUSH_SMS,
+        metadata: { professionalId: event.professionalId },
+      });
+    } catch (err) {
+      this.logger.error(
+        'OnProfessionalRejectedNotificationHandler failed',
         err,
       );
     }

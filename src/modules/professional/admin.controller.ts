@@ -20,6 +20,7 @@ import {
   CreateServiceCategoryCommand,
   DeleteServiceCategoryCommand,
   ReactivateProfessionalCommand,
+  RejectProfessionalCommand,
   RejectServiceCategoryRequestCommand,
   SuspendProfessionalCommand,
   UpdateServiceCategoryCommand,
@@ -28,6 +29,7 @@ import {
 import {
   ApproveServiceCategoryRequestDto,
   CreateServiceCategoryDto,
+  RejectProfessionalDto,
   RejectServiceCategoryRequestDto,
   SuspendProfessionalDto,
   UpdateServiceCategoryDto,
@@ -55,6 +57,16 @@ export class ProfessionalAdminController {
   async verifyProfessional(@Param('professionalId') professionalId: string) {
     return this.commandBus.execute<VerifyProfessionalCommand, unknown>(
       new VerifyProfessionalCommand(professionalId),
+    );
+  }
+
+  @Put('profile/:professionalId/reject')
+  async rejectProfessional(
+    @Param('professionalId') professionalId: string,
+    @Body() body: RejectProfessionalDto,
+  ) {
+    return this.commandBus.execute<RejectProfessionalCommand, unknown>(
+      new RejectProfessionalCommand(professionalId, body.reason),
     );
   }
 

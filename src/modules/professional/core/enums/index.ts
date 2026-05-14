@@ -2,6 +2,7 @@ export enum ProfessionalStatus {
   PENDING = 'PENDING',
   ACTIVE = 'ACTIVE',
   SUSPENDED = 'SUSPENDED',
+  REJECTED = 'REJECTED',
 }
 
 export enum ServiceLocation {

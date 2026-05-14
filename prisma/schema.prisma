@@ -310,6 +310,7 @@ model Professional {
   longitude  Float?
   status              String          @default("PENDING")
   isVerified          Boolean         @default(false)
+  rejectionReason     String?
   isListingActive     Boolean         @default(true)
   isAcceptingBookings Boolean         @default(true)
   bookingsPausedUntil DateTime?

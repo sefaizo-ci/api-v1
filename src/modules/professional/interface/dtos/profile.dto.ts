@@ -105,3 +105,13 @@ export class SuspendProfessionalDto {
   @MaxLength(500)
   reason?: string;
 }
+
+export class RejectProfessionalDto {
+  @ApiProperty({
+    example: 'Pièces justificatives insuffisantes ou non conformes.',
+  })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(500)
+  reason!: string;
+}

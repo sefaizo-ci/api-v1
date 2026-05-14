@@ -1,16 +1,92 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { EventBus } from '@nestjs/cqrs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ProfessionalEntity } from './core/entities/professional.entity';
 import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
+import {
+  ProfessionalRejectedEvent,
+  ProfessionalVerifiedEvent,
+} from './interface/events/profile.events';
+
+const AUTO_REJECTION_GRACE_HOURS = 72;
+
+function buildAutoRejectionReason(pro: ProfessionalEntity): string {
+  const missing: string[] = [];
+  if (!pro.avatarUrl) missing.push('photo de profil');
+  if (!pro.hasServices()) missing.push('service actif');
+  if (!pro.hasAvailability()) missing.push('disponibilite active');
+  return `Profil incomplet apres ${AUTO_REJECTION_GRACE_HOURS}h. Elements manquants : ${missing.join(', ')}.`;
+}
 
 @Injectable()
 export class ProfessionalSchedulerService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ProfessionalSchedulerService.name);
 
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     await this.reactivateExpiredBookingPauses();
+    await this.autoVerifyEligibleProfessionals();
+    await this.autoRejectIncompleteProfessionals();
+  }
+
+  /**
+   * Every 10 minutes: auto-verify professionals who completed their onboarding
+   * (PENDING + photo + at least 1 active service + at least 1 active availability).
+   */
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async autoVerifyEligibleProfessionals(): Promise<void> {
+    this.logger.log(
+      `Lancement de l'auto-vérification des professionnels éligibles`,
+    );
+    const professionals =
+      await this.repository.findEligibleForAutoVerification();
+
+    if (professionals.length === 0) return;
+
+    this.logger.log(
+      `Auto-vérification de ${professionals.length} professionnel(s)`,
+    );
+
+    await Promise.all(
+      professionals.map(async (pro: ProfessionalEntity) => {
+        pro.verify();
+        await this.repository.save(pro);
+        this.eventBus.publish(new ProfessionalVerifiedEvent(pro.id));
+      }),
+    );
+  }
+
+  /**
+   * Every hour: auto-reject professionals who have been PENDING for more than 72h
+   * without completing their required profile (photo, service, availability).
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async autoRejectIncompleteProfessionals(): Promise<void> {
+    this.logger.log(
+      `Lancement de l'auto-rejet des professionnels incomplets après ${AUTO_REJECTION_GRACE_HOURS}h`,
+    );
+    const professionals = await this.repository.findIncompleteAfterGracePeriod(
+      AUTO_REJECTION_GRACE_HOURS,
+    );
+
+    if (professionals.length === 0) return;
+
+    this.logger.log(
+      `Auto-rejet de ${professionals.length} professionnel(s) incomplet(s)`,
+    );
+
+    await Promise.all(
+      professionals.map(async (pro: ProfessionalEntity) => {
+        const reason = buildAutoRejectionReason(pro);
+        pro.reject(reason);
+        await this.repository.save(pro);
+        this.eventBus.publish(new ProfessionalRejectedEvent(pro.id, reason));
+      }),
+    );
   }
 
   /**
@@ -18,10 +94,9 @@ export class ProfessionalSchedulerService implements OnApplicationBootstrap {
    */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async reactivateExpiredBookingPauses(): Promise<void> {
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+    this.logger.log(`Lancement de la réactivation des pauses de réservation`);
     const professionals: ProfessionalEntity[] =
       await this.repository.findWithExpiredBookingPause();
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     if (professionals.length === 0) return;
 
