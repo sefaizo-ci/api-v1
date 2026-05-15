@@ -8,14 +8,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { CurrentUser } from '../../libs/decorators/current-user.decorator';
-import { SubmitReviewDto, EditReviewDto } from './interface/dtos';
-import { SubmitReviewCommand, EditReviewCommand } from './interface/commands';
+import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
+import { EditReviewCommand, SubmitReviewCommand } from './interface/commands';
+import { EditReviewDto, SubmitReviewDto } from './interface/dtos';
 import {
-  GetProfessionalReviewsQuery,
   GetClientReviewsQuery,
   GetMyReviewSessionsQuery,
+  GetProfessionalReviewsQuery,
 } from './interface/queries';
 
 @Controller('reviews')
@@ -51,7 +51,9 @@ export class ReviewController {
   @Get('professionals/:professionalId')
   @UseGuards()
   getProfessionalReviews(@Param('professionalId') professionalId: string) {
-    return this.queryBus.execute(new GetProfessionalReviewsQuery(professionalId));
+    return this.queryBus.execute(
+      new GetProfessionalReviewsQuery(professionalId),
+    );
   }
 
   @Get('clients/:clientId')
@@ -59,9 +61,7 @@ export class ReviewController {
     @Param('clientId') clientId: string,
     @CurrentUser() user: { id: string },
   ) {
-    return this.queryBus.execute(
-      new GetClientReviewsQuery(clientId, user.id),
-    );
+    return this.queryBus.execute(new GetClientReviewsQuery(clientId, user.id));
   }
 
   @Get('sessions/me')
