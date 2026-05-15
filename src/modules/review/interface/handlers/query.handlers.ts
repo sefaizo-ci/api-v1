@@ -18,9 +18,7 @@ function maskName(firstName: string, lastName: string): string {
 
 @QueryHandler(GetProfessionalReviewsQuery)
 @Injectable()
-export class GetProfessionalReviewsHandler
-  implements IQueryHandler<GetProfessionalReviewsQuery>
-{
+export class GetProfessionalReviewsHandler implements IQueryHandler<GetProfessionalReviewsQuery> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetProfessionalReviewsQuery) {
@@ -83,7 +81,9 @@ export class GetProfessionalReviewsHandler
           isEdited: r.isEdited,
           createdAt: r.createdAt,
           bookingId: r.bookingId,
-          reviewerName: user ? maskName(user.firstName, user.lastName) : 'Anonyme',
+          reviewerName: user
+            ? maskName(user.firstName, user.lastName)
+            : 'Anonyme',
         };
       }),
       summary: {
@@ -102,9 +102,7 @@ export class GetProfessionalReviewsHandler
 
 @QueryHandler(GetClientReviewsQuery)
 @Injectable()
-export class GetClientReviewsHandler
-  implements IQueryHandler<GetClientReviewsQuery>
-{
+export class GetClientReviewsHandler implements IQueryHandler<GetClientReviewsQuery> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetClientReviewsQuery) {
@@ -184,9 +182,7 @@ export class GetClientReviewsHandler
 
 @QueryHandler(GetMyReviewSessionsQuery)
 @Injectable()
-export class GetMyReviewSessionsHandler
-  implements IQueryHandler<GetMyReviewSessionsQuery>
-{
+export class GetMyReviewSessionsHandler implements IQueryHandler<GetMyReviewSessionsQuery> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetMyReviewSessionsQuery) {
@@ -199,10 +195,7 @@ export class GetMyReviewSessionsHandler
 
     const bookingWhere = professional
       ? {
-          OR: [
-            { clientId: query.userId },
-            { professionalId: professional.id },
-          ],
+          OR: [{ clientId: query.userId }, { professionalId: professional.id }],
         }
       : { clientId: query.userId };
 

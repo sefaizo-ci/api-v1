@@ -14,9 +14,7 @@ const EDIT_WINDOW_MINUTES = 30;
 
 @CommandHandler(SubmitReviewCommand)
 @Injectable()
-export class SubmitReviewHandler
-  implements ICommandHandler<SubmitReviewCommand>
-{
+export class SubmitReviewHandler implements ICommandHandler<SubmitReviewCommand> {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBus,
@@ -41,7 +39,7 @@ export class SubmitReviewHandler
 
     const session = booking.reviewSession;
     if (!session) {
-      throw new NotFoundException('Session d\'avis non trouvee');
+      throw new NotFoundException("Session d'avis non trouvee");
     }
 
     const now = new Date();
@@ -102,9 +100,11 @@ export class SubmitReviewHandler
     });
 
     const allReviews = [...session.reviews, review];
-    const bothSubmitted = [ReviewerType.CLIENT, ReviewerType.PROFESSIONAL].every(
-      (type) =>
-        allReviews.some((r) => r.reviewerType === type && r.deletedAt === null),
+    const bothSubmitted = [
+      ReviewerType.CLIENT,
+      ReviewerType.PROFESSIONAL,
+    ].every((type) =>
+      allReviews.some((r) => r.reviewerType === type && r.deletedAt === null),
     );
 
     if (bothSubmitted) {

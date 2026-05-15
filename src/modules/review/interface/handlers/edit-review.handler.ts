@@ -22,12 +22,14 @@ export class EditReviewHandler implements ICommandHandler<EditReviewCommand> {
     if (!review) throw new NotFoundException('Avis non trouvé');
 
     if (review.reviewerId !== command.reviewerId) {
-      throw new ForbiddenException('Vous ne pouvez modifier que vos propres avis');
+      throw new ForbiddenException(
+        'Vous ne pouvez modifier que vos propres avis',
+      );
     }
 
     if (review.isEdited) {
       throw new BadRequestException(
-        'Un avis ne peut être modifié qu\'une seule fois',
+        "Un avis ne peut être modifié qu'une seule fois",
       );
     }
 
