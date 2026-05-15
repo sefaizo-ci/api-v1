@@ -66,6 +66,20 @@ enum BookingCancellationRequestStatus {
   @@schema("public")
 }
 
+enum ReviewerType {
+  CLIENT
+  PROFESSIONAL
+
+  @@schema("public")
+}
+
+enum CancellationInitiator {
+  CLIENT
+  PROFESSIONAL
+
+  @@schema("public")
+}
+
 enum ServiceCategoryRequestStatus {
   PENDING
   APPROVED
@@ -328,6 +342,7 @@ model Professional {
   gallery                 GalleryItem[]
   bookings                Booking[]        @relation("ProfessionalBookings")
   reviews                 Review[]
+  cancellationEvents      CancellationEvent[]
 
   @@map("professionals")
   @@schema("public")
@@ -469,26 +484,69 @@ model Booking {
   updatedAt                        DateTime                         @updatedAt
   deletedAt                        DateTime?
 
-  review Review?
+  reviewSession     ReviewSession?
+  cancellationEvents CancellationEvent[]
 
   @@map("bookings")
   @@schema("public")
 }
 
+model ReviewSession {
+  id         String    @id @default(uuid())
+  bookingId  String    @unique
+  booking    Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  revealedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  reviews Review[]
+
+  @@map("review_sessions")
+  @@schema("public")
+}
+
 model Review {
-  id             String       @id @default(uuid())
-  bookingId      String       @unique
-  booking        Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id             String        @id @default(uuid())
+  sessionId      String
+  session        ReviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  bookingId      String
+  reviewerType   ReviewerType
+  reviewerId     String
+  revieweeId     String
   professionalId String
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  professional   Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   rating         Int
   comment        String?
+  editableUntil  DateTime
+  isEdited       Boolean       @default(false)
+  isVisible      Boolean       @default(false)
   metadata       Json?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   deletedAt      DateTime?
 
+  @@unique([sessionId, reviewerType])
+  @@index([professionalId, reviewerType, isVisible])
+  @@index([revieweeId, reviewerType, isVisible])
   @@map("reviews")
+  @@schema("public")
+}
+
+model CancellationEvent {
+  id             String                @id @default(uuid())
+  bookingId      String
+  booking        Booking               @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  initiatedBy    CancellationInitiator
+  clientId       String
+  professionalId String
+  professional   Professional          @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  reason         String?
+  createdAt      DateTime              @default(now())
+
+  @@index([clientId])
+  @@index([professionalId])
+  @@map("cancellation_events")
   @@schema("public")
 }
 

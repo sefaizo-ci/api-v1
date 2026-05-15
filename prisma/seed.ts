@@ -1202,9 +1202,11 @@ async function seedReviews(proIds: string[]): Promise<void> {
       professionalId: { in: proIds },
       status: 'COMPLETED',
       deletedAt: null,
-      review: null,
+      reviewSession: null,
     },
-    select: { id: true, professionalId: true, clientId: true },
+    include: {
+      professional: { select: { id: true, userId: true } },
+    },
     take: 10,
   });
 
@@ -1221,14 +1223,31 @@ async function seedReviews(proIds: string[]): Promise<void> {
   for (let i = 0; i < completedBookings.length; i++) {
     const booking = completedBookings[i];
     const tpl = reviewTemplates[i % reviewTemplates.length];
+    const now = new Date();
+
+    const session = await prisma.reviewSession.create({
+      data: {
+        id: randomUUID(),
+        bookingId: booking.id,
+        expiresAt: new Date(now.getTime() - 1),
+        revealedAt: now,
+      },
+    });
 
     await prisma.review.create({
       data: {
         id: randomUUID(),
+        sessionId: session.id,
         bookingId: booking.id,
+        reviewerType: 'CLIENT',
+        reviewerId: booking.clientId,
+        revieweeId: booking.professional.userId,
         professionalId: booking.professionalId,
         rating: tpl.rating,
         comment: tpl.comment,
+        editableUntil: now,
+        isEdited: false,
+        isVisible: true,
         metadata: { seededBy: SEED_TAG },
       },
     });
