@@ -5530,6 +5530,346 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Reviews",
+      "description": "Système d'avis bilatéral et aveugle. Clients et professionnels soumettent leurs avis indépendamment. Les avis sont révélés quand les deux ont soumis ou après expiration de la fenêtre de 48h.",
+      "item": [
+        {
+          "name": "Soumettre un avis",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.reviewId) pm.collectionVariables.set('reviewId', json.reviewId);",
+                  "}",
+                  "pm.test('Status is 201', function () {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Prestation impeccable, très professionnel et ponctuel.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "{{bookingId}}"]
+            },
+            "description": "Soumet un avis sur un booking COMPLETED. Accessible par le client et le professionnel du booking.\n\n**Règles :**\n- Fenêtre de soumission : 48h après la fin de la prestation\n- Un seul avis par partie par session\n- rating : entier 1–5 (obligatoire)\n- comment : texte libre (optionnel)\n\n**Révélation automatique :** si les deux parties ont soumis, les avis deviennent visibles immédiatement. Sinon ils seront révélés à l'expiration des 48h."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Prestation impeccable, très professionnel et ponctuel.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{bookingId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{bookingId}}"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"reviewId\": \"uuid-de-l-avis\"\n}"
+            },
+            {
+              "name": "400 Fenêtre expirée",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{bookingId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{bookingId}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"La fenetre de soumission de 48h est expirée\"\n}"
+            },
+            {
+              "name": "400 Avis déjà soumis",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{bookingId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{bookingId}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Vous avez déjà soumis un avis\"\n}"
+            },
+            {
+              "name": "400 Booking non terminé",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{bookingId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{bookingId}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Les avis ne sont possibles que sur une prestation terminee\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Modifier un avis",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Très bon travail, quelques minutes de retard.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "{{reviewId}}"]
+            },
+            "description": "Modifie un avis déjà soumis.\n\n**Contraintes :**\n- Une seule modification autorisée (isEdited passe à true)\n- Fenêtre de 30 minutes après la soumission initiale\n- Verrouillé immédiatement si les avis ont été révélés (les deux parties ont soumis)\n- Seul l'auteur de l'avis peut le modifier"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{reviewId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{}"
+            },
+            {
+              "name": "400 Fenêtre de modification expirée",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{reviewId}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"La fenêtre de modification de 30 minutes est expirée\"\n}"
+            },
+            {
+              "name": "400 Déjà modifié une fois",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{reviewId}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Un avis ne peut être modifié qu'une seule fois\"\n}"
+            },
+            {
+              "name": "400 Avis déjà révélé",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{reviewId}}"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Les avis ont été révélés, toute modification est verrouillée\"\n}"
+            },
+            {
+              "name": "403 Pas votre avis",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "{{reviewId}}"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"statusCode\": 403,\n  \"message\": \"Vous ne pouvez modifier que vos propres avis\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Avis publics d'un professionnel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/professionals/{{professionalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "professionals", "{{professionalId}}"]
+            },
+            "description": "Retourne les avis clients visibles pour un professionnel (endpoint public, pas de JWT requis).\n\n**Données retournées :**\n- Note et commentaire de chaque avis client\n- Nom du client partiellement masqué : \"Andy M.\"\n- bookingId associé (le pro peut identifier le booking)\n- Résumé : note moyenne + nombre d'avis\n- Pagination"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/professionals/{{professionalId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "professionals", "{{professionalId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"uuid-review\",\n      \"rating\": 5,\n      \"comment\": \"Prestation parfaite !\",\n      \"isEdited\": false,\n      \"createdAt\": \"2025-03-10T14:00:00.000Z\",\n      \"bookingId\": \"uuid-booking\",\n      \"reviewerName\": \"Andy M.\"\n    }\n  ],\n  \"summary\": {\n    \"rating\": 4.8,\n    \"reviewCount\": 47\n  },\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 47,\n    \"totalPages\": 3\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Avis privés d'un client (Pro uniquement)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/clients/{{clientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "clients", "{{clientId}}"]
+            },
+            "description": "Retourne les avis professionnels sur un client. **Accessible uniquement aux professionnels ayant un booking PENDING ou CONFIRMED avec ce client.**\n\n**Données retournées :**\n- Note moyenne et avis des pros\n- Compteur d'annulations initiées par le client\n- Prénom et nom du client (visibles par le pro)\n\n**Règle de visibilité :** une fois le booking terminé ou annulé, le pro ne voit plus que prénom + photo du client."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "clients", "{{clientId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"client\": {\n    \"firstName\": \"Andy\",\n    \"lastName\": \"Melone\",\n    \"cancellationCount\": 2\n  },\n  \"summary\": {\n    \"rating\": 4.2,\n    \"reviewCount\": 3\n  },\n  \"data\": [\n    {\n      \"id\": \"uuid-review\",\n      \"rating\": 4,\n      \"comment\": \"Client ponctuel et respectueux.\",\n      \"isEdited\": false,\n      \"createdAt\": \"2025-03-10T14:00:00.000Z\",\n      \"bookingId\": \"uuid-booking\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "403 Pas de booking actif avec ce client",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "clients", "{{clientId}}"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"statusCode\": 403,\n  \"message\": \"Vous devez avoir un booking actif avec ce client pour voir ses avis\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mes sessions d'avis en attente",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/sessions/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "sessions", "me"]
+            },
+            "description": "Retourne les sessions d'avis encore ouvertes (non expirées, non révélées) pour l'utilisateur authentifié (client ou professionnel).\n\n**Données retournées par session :**\n- sessionId, bookingId, nom du service, agence\n- Date de la prestation\n- expiresAt : deadline de soumission\n- hasSubmitted : l'utilisateur a-t-il déjà soumis son avis ?\n- partnerSubmitted : l'autre partie a-t-elle soumis ?"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reviews/sessions/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reviews", "sessions", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"sessionId\": \"uuid-session\",\n    \"bookingId\": \"uuid-booking\",\n    \"serviceName\": \"Coiffure domicile\",\n    \"agencyName\": \"Beauty by Kore\",\n    \"scheduledAt\": \"2025-03-10T10:00:00.000Z\",\n    \"expiresAt\": \"2025-03-12T10:00:00.000Z\",\n    \"hasSubmitted\": false,\n    \"partnerSubmitted\": true\n  }\n]"
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -5920,6 +6260,16 @@
     },
     {
       "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reviewId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
       "value": "",
       "type": "string"
     }
