@@ -110,3 +110,14 @@ export class ResumeBookingsCommand implements ICommand {
 export class ResubmitProfessionalCommand implements ICommand {
   constructor(public readonly professionalId: string) {}
 }
+
+/**
+ * UpdateProfessionalSettingsCommand
+ * Updates operational settings for a professional (e.g., travel buffer)
+ */
+export class UpdateProfessionalSettingsCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly travelBufferMin: number,
+  ) {}
+}

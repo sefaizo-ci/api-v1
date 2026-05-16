@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaService } from '../../../../libs/database/prisma.service';
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { randomUUID } from 'node:crypto';
 import { ProfessionalEntity } from '../../core/entities/professional.entity';
@@ -17,6 +18,7 @@ import {
   SuspendProfessionalCommand,
   ToggleListingCommand,
   UpdateProfessionalProfileCommand,
+  UpdateProfessionalSettingsCommand,
   VerifyProfessionalCommand,
 } from '../../interface/commands';
 import {
@@ -319,5 +321,27 @@ export class ResubmitProfessionalHandler implements ICommandHandler<ResubmitProf
     professional.resubmit();
     await this.repository.save(professional);
     return professional;
+  }
+}
+
+@CommandHandler(UpdateProfessionalSettingsCommand)
+@Injectable()
+export class UpdateProfessionalSettingsHandler implements ICommandHandler<UpdateProfessionalSettingsCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: UpdateProfessionalSettingsCommand): Promise<void> {
+    const professional = await this.prisma.professional.findFirst({
+      where: { id: command.professionalId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouvé');
+    }
+
+    await this.prisma.professional.update({
+      where: { id: command.professionalId },
+      data: { travelBufferMin: command.travelBufferMin },
+    });
   }
 }

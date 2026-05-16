@@ -24,9 +24,11 @@ import {
   UploadGalleryItemHandler,
 } from './gallery.handlers';
 import {
+  GetAvailableSlotsHandler,
   GetMyProfessionalProfileHandler,
   GetNewProfessionalsHandler,
   GetProfessionalAvailabilityHandler,
+  GetProfessionalBookingsCalendarHandler,
   GetProfessionalBookingsHandler,
   GetProfessionalGalleryHandler,
   GetProfessionalProfileHandler,
@@ -51,6 +53,7 @@ import {
   SuspendProfessionalHandler,
   ToggleListingHandler,
   UpdateProfessionalProfileHandler,
+  UpdateProfessionalSettingsHandler,
   VerifyProfessionalHandler,
 } from './profile.handlers';
 import {
@@ -81,6 +84,7 @@ export const ProfessionalCommandHandlers = [
   PauseBookingsHandler,
   ResumeBookingsHandler,
   ResubmitProfessionalHandler,
+  UpdateProfessionalSettingsHandler,
   CreateServiceCategoryHandler,
   UpdateServiceCategoryHandler,
   DeleteServiceCategoryHandler,
@@ -124,6 +128,7 @@ export const ProfessionalQueryHandlers = [
   GetProfessionalAvailabilityHandler,
   GetProfessionalGalleryHandler,
   GetProfessionalBookingsHandler,
+  GetProfessionalBookingsCalendarHandler,
   ListBookingCancellationRequestsHandler,
   GetProfileCompletionHandler,
   GetProfessionalRevenueSummaryHandler,
@@ -133,6 +138,7 @@ export const ProfessionalQueryHandlers = [
   GetRecommendedProfessionalsHandler,
   GetNewProfessionalsHandler,
   GetTrendingProfessionalsHandler,
+  GetAvailableSlotsHandler,
 ];
 
 export * from './availability.handlers';
