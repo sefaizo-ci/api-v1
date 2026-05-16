@@ -648,12 +648,22 @@ export class GetProfessionalBookingsHandler implements IQueryHandler<GetProfessi
             select: { id: true, firstName: true, lastName: true, phone: true },
           },
           service: {
-            select: { id: true, name: true, durationMin: true, basePrice: true },
+            select: {
+              id: true,
+              name: true,
+              durationMin: true,
+              basePrice: true,
+            },
           },
           bookingServices: {
             include: {
               service: {
-                select: { id: true, name: true, durationMin: true, basePrice: true },
+                select: {
+                  id: true,
+                  name: true,
+                  durationMin: true,
+                  basePrice: true,
+                },
               },
             },
             orderBy: { order: 'asc' },
@@ -703,12 +713,22 @@ export class ListBookingCancellationRequestsHandler implements IQueryHandler<Lis
             select: { id: true, firstName: true, lastName: true, phone: true },
           },
           service: {
-            select: { id: true, name: true, durationMin: true, basePrice: true },
+            select: {
+              id: true,
+              name: true,
+              durationMin: true,
+              basePrice: true,
+            },
           },
           bookingServices: {
             include: {
               service: {
-                select: { id: true, name: true, durationMin: true, basePrice: true },
+                select: {
+                  id: true,
+                  name: true,
+                  durationMin: true,
+                  basePrice: true,
+                },
               },
             },
             orderBy: { order: 'asc' },
@@ -978,7 +998,10 @@ export class GetAvailableSlotsHandler implements IQueryHandler<GetAvailableSlots
       );
     }
 
-    const totalDurationMin = services.reduce((sum, s) => sum + s.durationMin, 0);
+    const totalDurationMin = services.reduce(
+      (sum, s) => sum + s.durationMin,
+      0,
+    );
 
     const date = new Date(query.date + 'T00:00:00.000Z');
     const dayOfWeek = date.getUTCDay();
@@ -994,7 +1017,12 @@ export class GetAvailableSlotsHandler implements IQueryHandler<GetAvailableSlots
     });
 
     if (!availability) {
-      return { date: query.date, totalDurationMin, available: false, slots: [] };
+      return {
+        date: query.date,
+        totalDurationMin,
+        available: false,
+        slots: [],
+      };
     }
 
     const toMin = (time: string): number => {
@@ -1052,7 +1080,8 @@ export class GetAvailableSlotsHandler implements IQueryHandler<GetAvailableSlots
         const bookedStartMin =
           booking.scheduledAt.getUTCHours() * 60 +
           booking.scheduledAt.getUTCMinutes();
-        const bookedEndMin = bookedStartMin + booking.durationMin + travelBufferMin;
+        const bookedEndMin =
+          bookedStartMin + booking.durationMin + travelBufferMin;
         if (startMin < bookedEndMin && bookedStartMin < endMin) {
           confirmedBookingsCount++;
         }

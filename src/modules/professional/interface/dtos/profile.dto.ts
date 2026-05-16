@@ -119,7 +119,8 @@ export class RejectProfessionalDto {
 export class UpdateProfessionalSettingsDto {
   @ApiProperty({
     example: 30,
-    description: 'Temps de déplacement (en minutes) bloqué après chaque réservation à domicile',
+    description:
+      'Temps de déplacement (en minutes) bloqué après chaque réservation à domicile',
   })
   @Type(() => Number)
   @IsNumber()

@@ -97,7 +97,10 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
       throw new BadRequestException('Date de réservation invalide');
     }
 
-    const totalDurationMin = services.reduce((sum, s) => sum + s.durationMin, 0);
+    const totalDurationMin = services.reduce(
+      (sum, s) => sum + s.durationMin,
+      0,
+    );
     const totalBasePrice = services.reduce((sum, s) => sum + s.basePrice, 0);
 
     await validateBookingSlot(this.prisma, {
@@ -107,7 +110,8 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
     });
 
     const primaryServiceId = command.serviceIds[0];
-    const primaryService = services.find((s) => s.id === primaryServiceId) ?? services[0];
+    const primaryService =
+      services.find((s) => s.id === primaryServiceId) ?? services[0];
 
     let travelFee = 0;
     if (primaryService.communeFees.length > 0) {
@@ -162,7 +166,12 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
         bookingServices: {
           include: {
             service: {
-              select: { id: true, name: true, durationMin: true, basePrice: true },
+              select: {
+                id: true,
+                name: true,
+                durationMin: true,
+                basePrice: true,
+              },
             },
           },
           orderBy: { order: 'asc' },
@@ -263,12 +272,22 @@ export class GetMyBookingsHandler implements IQueryHandler<GetMyBookingsQuery> {
             select: { id: true, agencyName: true, avatarUrl: true },
           },
           service: {
-            select: { id: true, name: true, durationMin: true, basePrice: true },
+            select: {
+              id: true,
+              name: true,
+              durationMin: true,
+              basePrice: true,
+            },
           },
           bookingServices: {
             include: {
               service: {
-                select: { id: true, name: true, durationMin: true, basePrice: true },
+                select: {
+                  id: true,
+                  name: true,
+                  durationMin: true,
+                  basePrice: true,
+                },
               },
             },
             orderBy: { order: 'asc' },
@@ -315,7 +334,12 @@ export class GetMyBookingByIdHandler implements IQueryHandler<GetMyBookingByIdQu
         bookingServices: {
           include: {
             service: {
-              select: { id: true, name: true, durationMin: true, basePrice: true },
+              select: {
+                id: true,
+                name: true,
+                durationMin: true,
+                basePrice: true,
+              },
             },
           },
           orderBy: { order: 'asc' },

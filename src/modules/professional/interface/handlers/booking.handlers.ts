@@ -69,7 +69,9 @@ export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingComm
     });
 
     const conflicts = overlappingConfirmed.filter((item) => {
-      const itemEnd = new Date(item.scheduledAt.getTime() + item.durationMin * 60000);
+      const itemEnd = new Date(
+        item.scheduledAt.getTime() + item.durationMin * 60000,
+      );
       return item.scheduledAt < end && scheduledAt < itemEnd;
     });
 

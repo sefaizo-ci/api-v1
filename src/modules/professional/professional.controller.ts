@@ -81,7 +81,10 @@ import {
   UpdateServiceDto,
   UploadGalleryItemDto,
 } from './interface/dtos';
-import { SuspendProfessionalDto, UpdateProfessionalSettingsDto } from './interface/dtos/profile.dto';
+import {
+  SuspendProfessionalDto,
+  UpdateProfessionalSettingsDto,
+} from './interface/dtos/profile.dto';
 import { ReorderGalleryDto } from './interface/dtos/gallery.dto';
 import {
   GetAvailableSlotsQuery,
@@ -1114,7 +1117,9 @@ export class ProfessionalController {
     @Query('serviceIds') serviceIdsParam: string,
   ) {
     if (!date || !serviceIdsParam) {
-      throw new BadRequestException('Les paramètres date et serviceIds sont requis');
+      throw new BadRequestException(
+        'Les paramètres date et serviceIds sont requis',
+      );
     }
     const serviceIds = serviceIdsParam.split(',').filter(Boolean);
     return this.queryBus.execute<GetAvailableSlotsQuery, unknown>(
