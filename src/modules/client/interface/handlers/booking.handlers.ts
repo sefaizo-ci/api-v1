@@ -15,7 +15,6 @@ import { PrismaService } from '../../../../libs/database/prisma.service';
 import {
   CreateClientBookingCommand,
   RequestBookingCancellationCommand,
-  UpdatePendingBookingCommand,
 } from '../commands';
 import {
   BookingCancellationRequestedEvent,
@@ -35,59 +34,88 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
   ) {}
 
   async execute(command: CreateClientBookingCommand) {
-    const service = await this.prisma.serviceOffering.findFirst({
-      where: {
-        id: command.serviceId,
-        professionalId: command.professionalId,
-        isActive: true,
-        deletedAt: null,
-      },
-      include: {
-        professional: {
-          select: {
-            id: true,
-            isVerified: true,
-            status: true,
-            deletedAt: true,
+    const [services, professional] = await Promise.all([
+      this.prisma.serviceOffering.findMany({
+        where: {
+          id: { in: command.serviceIds },
+          professionalId: command.professionalId,
+          isActive: true,
+          deletedAt: null,
+        },
+        include: {
+          communeFees: {
+            where: { deletedAt: null, isAvailable: true },
           },
         },
-        communeFees: {
-          where: {
-            deletedAt: null,
-            isAvailable: true,
-          },
+      }),
+      this.prisma.professional.findFirst({
+        where: { id: command.professionalId, deletedAt: null },
+        select: {
+          id: true,
+          isVerified: true,
+          status: true,
+          isAcceptingBookings: true,
+          bookingsPausedUntil: true,
+          travelBufferMin: true,
         },
-      },
-    });
+      }),
+    ]);
 
-    if (!service) {
-      throw new NotFoundException('Service non trouve pour ce professionnel');
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouvé');
+    }
+
+    if (services.length !== command.serviceIds.length) {
+      throw new NotFoundException(
+        'Un ou plusieurs services sont introuvables pour ce professionnel',
+      );
+    }
+
+    if (!professional.isVerified || professional.status !== 'ACTIVE') {
+      throw new BadRequestException(
+        'Le professionnel ne peut pas accepter de réservations pour le moment',
+      );
+    }
+
+    if (!professional.isAcceptingBookings) {
+      throw new BadRequestException(
+        'Le professionnel ne prend pas de réservations en ce moment',
+      );
     }
 
     if (
-      !service.professional.isVerified ||
-      service.professional.status !== 'ACTIVE' ||
-      service.professional.deletedAt
+      professional.bookingsPausedUntil &&
+      professional.bookingsPausedUntil > new Date()
     ) {
       throw new BadRequestException(
-        'Le professionnel ne peut pas accepter de reservations pour le moment',
+        `Les réservations reprennent le ${professional.bookingsPausedUntil.toLocaleDateString('fr-FR')}`,
       );
     }
 
     const scheduledAt = new Date(command.scheduledAt);
     if (Number.isNaN(scheduledAt.getTime())) {
-      throw new BadRequestException('Date de reservation invalide');
+      throw new BadRequestException('Date de réservation invalide');
     }
+
+    const totalDurationMin = services.reduce(
+      (sum, s) => sum + s.durationMin,
+      0,
+    );
+    const totalBasePrice = services.reduce((sum, s) => sum + s.basePrice, 0);
 
     await validateBookingSlot(this.prisma, {
       professionalId: command.professionalId,
       scheduledAt,
-      durationMin: service.durationMin,
+      durationMin: totalDurationMin,
     });
 
+    const primaryServiceId = command.serviceIds[0];
+    const primaryService =
+      services.find((s) => s.id === primaryServiceId) ?? services[0];
+
     let travelFee = 0;
-    if (service.communeFees.length > 0) {
-      const fee = service.communeFees.find(
+    if (primaryService.communeFees.length > 0) {
+      const fee = primaryService.communeFees.find(
         (f) => f.commune === command.commune,
       );
       if (!fee) {
@@ -101,39 +129,54 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
     const overlaps = await findOverlappingBookings(this.prisma, {
       professionalId: command.professionalId,
       scheduledAt,
-      durationMin: service.durationMin,
+      durationMin: totalDurationMin,
+      travelBufferMin: professional.travelBufferMin,
     });
 
     const booking = await this.prisma.booking.create({
       data: {
         clientId: command.clientId,
         professionalId: command.professionalId,
-        serviceId: command.serviceId,
+        serviceId: primaryServiceId,
         scheduledAt,
-        durationMin: service.durationMin,
+        durationMin: totalDurationMin,
         travelFee,
-        totalPrice: service.basePrice + travelFee,
+        totalPrice: totalBasePrice + travelFee,
         commune: command.commune,
         address: command.address,
         clientNotes: command.clientNotes,
         status: BookingStatus.PENDING,
         cancellationRequestStatus: BOOKING_CANCELLATION_REQUEST_STATUS_NONE,
+        bookingServices: {
+          create: command.serviceIds.map((id, index) => {
+            const service = services.find((s) => s.id === id)!;
+            return {
+              serviceId: id,
+              durationMin: service.durationMin,
+              basePrice: service.basePrice,
+              order: index,
+            };
+          }),
+        },
       },
       include: {
         service: {
-          select: {
-            id: true,
-            name: true,
-            durationMin: true,
-            basePrice: true,
-          },
+          select: { id: true, name: true, durationMin: true, basePrice: true },
         },
-        professional: {
-          select: {
-            id: true,
-            agencyName: true,
+        bookingServices: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                durationMin: true,
+                basePrice: true,
+              },
+            },
           },
+          orderBy: { order: 'asc' },
         },
+        professional: { select: { id: true, agencyName: true } },
       },
     });
 
@@ -141,115 +184,6 @@ export class CreateClientBookingHandler implements ICommandHandler<CreateClientB
 
     return {
       data: booking,
-      bookingWarnings: {
-        hasScheduleConflict: overlaps.length > 0,
-        overlappingBookingIds: overlaps.map((item) => item.id),
-      },
-    };
-  }
-}
-
-@CommandHandler(UpdatePendingBookingCommand)
-@Injectable()
-export class UpdatePendingBookingHandler implements ICommandHandler<UpdatePendingBookingCommand> {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async execute(command: UpdatePendingBookingCommand) {
-    const booking = await this.prisma.booking.findFirst({
-      where: {
-        id: command.bookingId,
-        clientId: command.clientId,
-        deletedAt: null,
-      },
-      include: {
-        service: {
-          include: {
-            communeFees: {
-              where: {
-                deletedAt: null,
-                isAvailable: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!booking) {
-      throw new NotFoundException('Reservation non trouvee');
-    }
-
-    if (booking.status !== BookingStatus.PENDING) {
-      throw new BadRequestException(
-        'Seules les reservations en attente peuvent etre modifiees',
-      );
-    }
-
-    const nextScheduledAt = command.scheduledAt
-      ? new Date(command.scheduledAt)
-      : booking.scheduledAt;
-
-    if (Number.isNaN(nextScheduledAt.getTime())) {
-      throw new BadRequestException('Date de reservation invalide');
-    }
-
-    await validateBookingSlot(this.prisma, {
-      professionalId: booking.professionalId,
-      scheduledAt: nextScheduledAt,
-      durationMin: booking.durationMin,
-    });
-
-    const nextCommune = command.commune ?? booking.commune;
-    let travelFee = 0;
-    if (booking.service.communeFees.length > 0) {
-      const fee = booking.service.communeFees.find(
-        (f) => f.commune === nextCommune,
-      );
-      if (!fee) {
-        throw new BadRequestException(
-          `Ce professionnel n'est pas disponible dans la commune "${nextCommune}".`,
-        );
-      }
-      travelFee = fee.travelFee;
-    }
-
-    const overlaps = await findOverlappingBookings(this.prisma, {
-      professionalId: booking.professionalId,
-      scheduledAt: nextScheduledAt,
-      durationMin: booking.durationMin,
-      excludeBookingId: booking.id,
-    });
-
-    const updated = await this.prisma.booking.update({
-      where: { id: booking.id },
-      data: {
-        scheduledAt: nextScheduledAt,
-        commune: nextCommune,
-        address: command.address ?? booking.address,
-        clientNotes: command.clientNotes ?? booking.clientNotes,
-        travelFee,
-        totalPrice: booking.service.basePrice + travelFee,
-      },
-      include: {
-        service: {
-          select: {
-            id: true,
-            name: true,
-            durationMin: true,
-            basePrice: true,
-          },
-        },
-        professional: {
-          select: {
-            id: true,
-            agencyName: true,
-          },
-        },
-      },
-    });
-
-    return {
-      data: updated,
       bookingWarnings: {
         hasScheduleConflict: overlaps.length > 0,
         overlappingBookingIds: overlaps.map((item) => item.id),
@@ -335,11 +269,7 @@ export class GetMyBookingsHandler implements IQueryHandler<GetMyBookingsQuery> {
         where,
         include: {
           professional: {
-            select: {
-              id: true,
-              agencyName: true,
-              avatarUrl: true,
-            },
+            select: { id: true, agencyName: true, avatarUrl: true },
           },
           service: {
             select: {
@@ -349,10 +279,21 @@ export class GetMyBookingsHandler implements IQueryHandler<GetMyBookingsQuery> {
               basePrice: true,
             },
           },
+          bookingServices: {
+            include: {
+              service: {
+                select: {
+                  id: true,
+                  name: true,
+                  durationMin: true,
+                  basePrice: true,
+                },
+              },
+            },
+            orderBy: { order: 'asc' },
+          },
         },
-        orderBy: {
-          scheduledAt: 'desc',
-        },
+        orderBy: { scheduledAt: 'desc' },
         skip,
         take: limit,
       }),
@@ -385,19 +326,23 @@ export class GetMyBookingByIdHandler implements IQueryHandler<GetMyBookingByIdQu
       },
       include: {
         professional: {
-          select: {
-            id: true,
-            agencyName: true,
-            avatarUrl: true,
-          },
+          select: { id: true, agencyName: true, avatarUrl: true },
         },
         service: {
-          select: {
-            id: true,
-            name: true,
-            durationMin: true,
-            basePrice: true,
+          select: { id: true, name: true, durationMin: true, basePrice: true },
+        },
+        bookingServices: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                durationMin: true,
+                basePrice: true,
+              },
+            },
           },
+          orderBy: { order: 'asc' },
         },
       },
     });
@@ -411,16 +356,11 @@ export class GetMyBookingByIdHandler implements IQueryHandler<GetMyBookingByIdQu
 }
 
 function toBookingStatus(status?: string): BookingStatus | undefined {
-  if (!status) {
-    return undefined;
-  }
-
+  if (!status) return undefined;
   const normalized = status.toUpperCase();
-
   if (!(normalized in BookingStatus)) {
     throw new BadRequestException('Statut de reservation invalide');
   }
-
   return BookingStatus[normalized as keyof typeof BookingStatus];
 }
 
@@ -480,9 +420,11 @@ async function findOverlappingBookings(
     professionalId: string;
     scheduledAt: Date;
     durationMin: number;
+    travelBufferMin?: number;
     excludeBookingId?: string;
   },
-): Promise<Array<{ id: string }>> {
+): Promise<Array<{ id: string; scheduledAt: Date; durationMin: number }>> {
+  const buffer = args.travelBufferMin ?? 0;
   const start = args.scheduledAt;
   const end = new Date(start.getTime() + args.durationMin * 60000);
 
@@ -490,27 +432,21 @@ async function findOverlappingBookings(
     where: {
       professionalId: args.professionalId,
       deletedAt: null,
-      status: {
-        in: [BookingStatus.PENDING, BookingStatus.CONFIRMED],
-      },
+      status: BookingStatus.CONFIRMED,
       ...(args.excludeBookingId ? { id: { not: args.excludeBookingId } } : {}),
       scheduledAt: {
-        gte: new Date(start.getTime() - args.durationMin * 60000),
+        gte: new Date(start.getTime() - (args.durationMin + buffer) * 60000),
         lte: end,
       },
     },
-    select: {
-      id: true,
-      scheduledAt: true,
-      durationMin: true,
-    },
+    select: { id: true, scheduledAt: true, durationMin: true },
   });
 
-  return candidates
-    .filter((item) => {
-      const itemStart = item.scheduledAt;
-      const itemEnd = new Date(itemStart.getTime() + item.durationMin * 60000);
-      return start < itemEnd && itemStart < end;
-    })
-    .map((item) => ({ id: item.id }));
+  return candidates.filter((item) => {
+    const itemStart = item.scheduledAt;
+    const itemEnd = new Date(
+      itemStart.getTime() + (item.durationMin + buffer) * 60000,
+    );
+    return start < itemEnd && itemStart < end;
+  });
 }

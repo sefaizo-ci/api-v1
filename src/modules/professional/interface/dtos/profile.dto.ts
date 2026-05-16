@@ -115,3 +115,16 @@ export class RejectProfessionalDto {
   @MaxLength(500)
   reason!: string;
 }
+
+export class UpdateProfessionalSettingsDto {
+  @ApiProperty({
+    example: 30,
+    description:
+      'Temps de déplacement (en minutes) bloqué après chaque réservation à domicile',
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(120)
+  travelBufferMin!: number;
+}

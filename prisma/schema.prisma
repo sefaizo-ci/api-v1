@@ -50,6 +50,7 @@ enum ChallengeType {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  REJECTED
   CANCELLED
   COMPLETED
   NO_SHOW
@@ -330,7 +331,8 @@ model Professional {
   bookingsPausedUntil DateTime?
   rating      Float           @default(0)
   reviewCount Int             @default(0)
-  bookingCount Int            @default(0)
+  bookingCount    Int             @default(0)
+  travelBufferMin Int             @default(0)
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   deletedAt  DateTime?
@@ -365,8 +367,9 @@ model ServiceOffering {
   deletedAt      DateTime?
   metadata       Json?
 
-  communeFees CommuneFee[]
-  bookings    Booking[]
+  communeFees     CommuneFee[]
+  bookings        Booking[]
+  bookingServices BookingService[]
 
   @@unique([professionalId, name])
   @@index([categoryId])
@@ -484,10 +487,27 @@ model Booking {
   updatedAt                        DateTime                         @updatedAt
   deletedAt                        DateTime?
 
-  reviewSession     ReviewSession?
+  reviewSession      ReviewSession?
   cancellationEvents CancellationEvent[]
+  bookingServices    BookingService[]
 
   @@map("bookings")
+  @@schema("public")
+}
+
+model BookingService {
+  id          String          @id @default(uuid())
+  bookingId   String
+  booking     Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  serviceId   String
+  service     ServiceOffering @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  durationMin Int
+  basePrice   Float
+  order       Int             @default(0)
+
+  @@unique([bookingId, serviceId])
+  @@index([bookingId])
+  @@map("booking_services")
   @@schema("public")
 }
 

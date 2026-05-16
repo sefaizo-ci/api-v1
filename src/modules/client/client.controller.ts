@@ -1,9 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Req,
@@ -12,17 +12,16 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
+import { CancelBookingCommand } from '../professional/interface/commands/booking.commands';
 import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import {
   CreateClientBookingCommand,
   RequestBookingCancellationCommand,
-  UpdatePendingBookingCommand,
 } from './interface/commands';
 import {
   CreateClientBookingDto,
   RequestBookingCancellationDto,
-  UpdatePendingBookingDto,
 } from './interface/dtos';
 import { GetMyBookingByIdQuery, GetMyBookingsQuery } from './interface/queries';
 
@@ -50,25 +49,7 @@ export class ClientController {
       new CreateClientBookingCommand(
         req.user.id,
         body.professionalId,
-        body.serviceId,
-        body.scheduledAt,
-        body.commune,
-        body.address,
-        body.clientNotes,
-      ),
-    );
-  }
-
-  @Patch('me/bookings/:bookingId')
-  async updatePendingBooking(
-    @Req() req: AuthenticatedRequest,
-    @Param('bookingId') bookingId: string,
-    @Body() body: UpdatePendingBookingDto,
-  ) {
-    return this.commandBus.execute<UpdatePendingBookingCommand, unknown>(
-      new UpdatePendingBookingCommand(
-        bookingId,
-        req.user.id,
+        body.serviceIds,
         body.scheduledAt,
         body.commune,
         body.address,
@@ -89,6 +70,17 @@ export class ClientController {
         req.user.id,
         body.reason,
       ),
+    );
+  }
+
+  @Delete('me/bookings/:bookingId')
+  async cancelBooking(
+    @Req() req: AuthenticatedRequest,
+    @Param('bookingId') bookingId: string,
+    @Body() body: RequestBookingCancellationDto,
+  ) {
+    return this.commandBus.execute<CancelBookingCommand, unknown>(
+      new CancelBookingCommand(bookingId, req.user.id, body.reason),
     );
   }
 

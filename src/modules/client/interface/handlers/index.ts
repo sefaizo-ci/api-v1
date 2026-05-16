@@ -3,12 +3,10 @@ import {
   GetMyBookingByIdHandler,
   GetMyBookingsHandler,
   RequestBookingCancellationHandler,
-  UpdatePendingBookingHandler,
 } from './booking.handlers';
 
 export const ClientCommandHandlers = [
   CreateClientBookingHandler,
-  UpdatePendingBookingHandler,
   RequestBookingCancellationHandler,
 ];
 

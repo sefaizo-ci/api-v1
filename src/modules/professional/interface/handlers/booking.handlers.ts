@@ -32,7 +32,7 @@ export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingComm
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(command: ConfirmBookingCommand): Promise<void> {
+  async execute(command: ConfirmBookingCommand) {
     const booking = await this.prisma.booking.findFirst({
       where: {
         id: command.bookingId,
@@ -51,6 +51,30 @@ export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingComm
       );
     }
 
+    const scheduledAt = booking.scheduledAt;
+    const end = new Date(scheduledAt.getTime() + booking.durationMin * 60000);
+
+    const overlappingConfirmed = await this.prisma.booking.findMany({
+      where: {
+        professionalId: command.professionalId,
+        id: { not: booking.id },
+        status: 'CONFIRMED',
+        deletedAt: null,
+        scheduledAt: {
+          gte: new Date(scheduledAt.getTime() - booking.durationMin * 60000),
+          lt: end,
+        },
+      },
+      select: { id: true, scheduledAt: true, durationMin: true },
+    });
+
+    const conflicts = overlappingConfirmed.filter((item) => {
+      const itemEnd = new Date(
+        item.scheduledAt.getTime() + item.durationMin * 60000,
+      );
+      return item.scheduledAt < end && scheduledAt < itemEnd;
+    });
+
     await Promise.all([
       this.prisma.booking.update({
         where: { id: booking.id },
@@ -63,6 +87,14 @@ export class ConfirmBookingHandler implements ICommandHandler<ConfirmBookingComm
     ]);
 
     this.eventBus.publish(new BookingConfirmedEvent(booking.id));
+
+    return {
+      confirmed: true,
+      warnings: {
+        hasScheduleConflict: conflicts.length > 0,
+        conflictingBookingIds: conflicts.map((c) => c.id),
+      },
+    };
   }
 }
 
@@ -96,7 +128,7 @@ export class RejectBookingHandler implements ICommandHandler<RejectBookingComman
     await this.prisma.booking.update({
       where: { id: booking.id },
       data: {
-        status: 'CANCELLED',
+        status: 'REJECTED',
         cancelledAt: new Date(),
         cancellationNote: command.reason,
       },
@@ -176,12 +208,6 @@ export class CancelBookingHandler implements ICommandHandler<CancelBookingComman
     if (!['PENDING', 'CONFIRMED'].includes(booking.status)) {
       throw new BadRequestException(
         'Cette reservation ne peut plus etre annulee',
-      );
-    }
-
-    if (booking.status === 'CONFIRMED' && booking.clientId === command.userId) {
-      throw new BadRequestException(
-        "Le client ne peut pas annuler directement une reservation confirmee. Envoyez une demande d'annulation.",
       );
     }
 

@@ -127,3 +127,19 @@ export class ListServiceCategoryRequestsQuery implements IQuery {
     public readonly requesterUserId?: string,
   ) {}
 }
+
+export class GetAvailableSlotsQuery implements IQuery {
+  constructor(
+    public readonly professionalId: string,
+    public readonly date: string,
+    public readonly serviceIds: string[],
+  ) {}
+}
+
+export class GetProfessionalBookingsCalendarQuery implements IQuery {
+  constructor(
+    public readonly professionalId: string,
+    public readonly from: string,
+    public readonly to: string,
+  ) {}
+}
