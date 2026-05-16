@@ -13,9 +13,11 @@ import {
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
+  GetAvailableSlotsQuery,
   GetMyProfessionalProfileQuery,
   GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
+  GetProfessionalBookingsCalendarQuery,
   GetProfessionalBookingsQuery,
   GetProfessionalGalleryQuery,
   GetProfessionalProfileQuery,
@@ -643,20 +645,18 @@ export class GetProfessionalBookingsHandler implements IQueryHandler<GetProfessi
         where,
         include: {
           client: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              phone: true,
-            },
+            select: { id: true, firstName: true, lastName: true, phone: true },
           },
           service: {
-            select: {
-              id: true,
-              name: true,
-              durationMin: true,
-              basePrice: true,
+            select: { id: true, name: true, durationMin: true, basePrice: true },
+          },
+          bookingServices: {
+            include: {
+              service: {
+                select: { id: true, name: true, durationMin: true, basePrice: true },
+              },
             },
+            orderBy: { order: 'asc' },
           },
         },
         orderBy: { scheduledAt: 'asc' },
@@ -700,20 +700,18 @@ export class ListBookingCancellationRequestsHandler implements IQueryHandler<Lis
         where,
         include: {
           client: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              phone: true,
-            },
+            select: { id: true, firstName: true, lastName: true, phone: true },
           },
           service: {
-            select: {
-              id: true,
-              name: true,
-              durationMin: true,
-              basePrice: true,
+            select: { id: true, name: true, durationMin: true, basePrice: true },
+          },
+          bookingServices: {
+            include: {
+              service: {
+                select: { id: true, name: true, durationMin: true, basePrice: true },
+              },
             },
+            orderBy: { order: 'asc' },
           },
         },
         orderBy: { cancellationRequestedAt: 'asc' },
@@ -936,5 +934,222 @@ export class GetTrendingProfessionalsHandler implements IQueryHandler<GetTrendin
       '',
       `p."bookingCount" DESC, p.rating DESC`,
     );
+  }
+}
+
+// ─── Available Slots ──────────────────────────────────────────────────────────
+
+const SLOT_STEP_MIN = 15;
+
+@QueryHandler(GetAvailableSlotsQuery)
+@Injectable()
+export class GetAvailableSlotsHandler implements IQueryHandler<GetAvailableSlotsQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: GetAvailableSlotsQuery) {
+    const [professional, services] = await Promise.all([
+      this.prisma.professional.findFirst({
+        where: { id: query.professionalId, deletedAt: null },
+        select: {
+          id: true,
+          travelBufferMin: true,
+          isAcceptingBookings: true,
+          bookingsPausedUntil: true,
+        },
+      }),
+      this.prisma.serviceOffering.findMany({
+        where: {
+          id: { in: query.serviceIds },
+          professionalId: query.professionalId,
+          isActive: true,
+          deletedAt: null,
+        },
+        select: { id: true, durationMin: true },
+      }),
+    ]);
+
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouvé');
+    }
+
+    if (services.length !== query.serviceIds.length) {
+      throw new BadRequestException(
+        'Un ou plusieurs services sont introuvables pour ce professionnel',
+      );
+    }
+
+    const totalDurationMin = services.reduce((sum, s) => sum + s.durationMin, 0);
+
+    const date = new Date(query.date + 'T00:00:00.000Z');
+    const dayOfWeek = date.getUTCDay();
+
+    const availability = await this.prisma.availability.findFirst({
+      where: {
+        professionalId: query.professionalId,
+        dayOfWeek,
+        isActive: true,
+        deletedAt: null,
+        status: 'OPEN',
+      },
+    });
+
+    if (!availability) {
+      return { date: query.date, totalDurationMin, available: false, slots: [] };
+    }
+
+    const toMin = (time: string): number => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const workStartMin = toMin(availability.startTime);
+    const workEndMin = toMin(availability.endTime);
+    const breakStartMin = availability.breakStartTime
+      ? toMin(availability.breakStartTime)
+      : null;
+    const breakEndMin = availability.breakEndTime
+      ? toMin(availability.breakEndTime)
+      : null;
+
+    const dayStart = new Date(query.date + 'T00:00:00.000Z');
+    const dayEnd = new Date(query.date + 'T23:59:59.999Z');
+
+    const confirmedBookings = await this.prisma.booking.findMany({
+      where: {
+        professionalId: query.professionalId,
+        deletedAt: null,
+        status: BookingStatus.CONFIRMED,
+        scheduledAt: { gte: dayStart, lte: dayEnd },
+      },
+      select: { scheduledAt: true, durationMin: true },
+    });
+
+    const travelBufferMin = professional.travelBufferMin;
+
+    const toTimeStr = (min: number): string =>
+      `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+
+    const slots: Array<{
+      startTime: string;
+      endTime: string;
+      scheduledAt: string;
+      confirmedBookingsCount: number;
+    }> = [];
+
+    for (
+      let startMin = workStartMin;
+      startMin + totalDurationMin <= workEndMin;
+      startMin += SLOT_STEP_MIN
+    ) {
+      const endMin = startMin + totalDurationMin;
+
+      if (breakStartMin !== null && breakEndMin !== null) {
+        if (startMin < breakEndMin && endMin > breakStartMin) continue;
+      }
+
+      let confirmedBookingsCount = 0;
+      for (const booking of confirmedBookings) {
+        const bookedStartMin =
+          booking.scheduledAt.getUTCHours() * 60 +
+          booking.scheduledAt.getUTCMinutes();
+        const bookedEndMin = bookedStartMin + booking.durationMin + travelBufferMin;
+        if (startMin < bookedEndMin && bookedStartMin < endMin) {
+          confirmedBookingsCount++;
+        }
+      }
+
+      slots.push({
+        startTime: toTimeStr(startMin),
+        endTime: toTimeStr(endMin),
+        scheduledAt: new Date(
+          query.date + 'T' + toTimeStr(startMin) + ':00.000Z',
+        ).toISOString(),
+        confirmedBookingsCount,
+      });
+    }
+
+    return {
+      date: query.date,
+      totalDurationMin,
+      travelBufferMin,
+      available: true,
+      slots,
+    };
+  }
+}
+
+// ─── Pro Calendar ─────────────────────────────────────────────────────────────
+
+const CALENDAR_MAX_DAYS = 31;
+
+@QueryHandler(GetProfessionalBookingsCalendarQuery)
+@Injectable()
+export class GetProfessionalBookingsCalendarHandler implements IQueryHandler<GetProfessionalBookingsCalendarQuery> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(query: GetProfessionalBookingsCalendarQuery) {
+    const from = new Date(query.from + 'T00:00:00.000Z');
+    const to = new Date(query.to + 'T23:59:59.999Z');
+
+    const diffDays = Math.ceil(
+      (to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000),
+    );
+    if (diffDays > CALENDAR_MAX_DAYS) {
+      throw new BadRequestException(
+        `La plage ne peut pas dépasser ${CALENDAR_MAX_DAYS} jours`,
+      );
+    }
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        professionalId: query.professionalId,
+        deletedAt: null,
+        scheduledAt: { gte: from, lte: to },
+        status: {
+          notIn: [BookingStatus.CANCELLED, BookingStatus.REJECTED],
+        },
+      },
+      include: {
+        client: { select: { id: true, firstName: true, lastName: true } },
+        bookingServices: {
+          include: {
+            service: { select: { id: true, name: true } },
+          },
+          orderBy: { order: 'asc' },
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    const grouped = new Map<string, typeof bookings>();
+    for (const booking of bookings) {
+      const dateKey = booking.scheduledAt.toISOString().split('T')[0];
+      if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+      grouped.get(dateKey)!.push(booking);
+    }
+
+    const days = Array.from(grouped.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, dayBookings]) => ({
+        date,
+        count: dayBookings.length,
+        bookings: dayBookings.map((b) => ({
+          id: b.id,
+          scheduledAt: b.scheduledAt,
+          durationMin: b.durationMin,
+          status: b.status,
+          client: {
+            id: b.client.id,
+            firstName: b.client.firstName,
+            lastName: b.client.lastName,
+          },
+          services: b.bookingServices.map((bs) => ({
+            id: bs.service.id,
+            name: bs.service.name,
+          })),
+        })),
+      }));
+
+    return { from: query.from, to: query.to, days };
   }
 }
