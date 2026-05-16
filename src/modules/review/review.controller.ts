@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../../libs/decorators/current-user.decorator';
+import { Public } from '../../libs/decorators/public.decorator';
 import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { EditReviewCommand, SubmitReviewCommand } from './interface/commands';
 import { EditReviewDto, SubmitReviewDto } from './interface/dtos';
@@ -49,7 +50,7 @@ export class ReviewController {
   }
 
   @Get('professionals/:professionalId')
-  @UseGuards()
+  @Public()
   getProfessionalReviews(@Param('professionalId') professionalId: string) {
     return this.queryBus.execute(
       new GetProfessionalReviewsQuery(professionalId),
