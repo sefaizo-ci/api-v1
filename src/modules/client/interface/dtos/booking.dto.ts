@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsDateString,
   IsOptional,
   IsString,
@@ -13,9 +16,15 @@ export class CreateClientBookingDto {
   @IsUUID()
   professionalId!: string;
 
-  @ApiProperty({ example: '2a49900b-bc27-4bfd-b7f1-78a9a32f43e7' })
-  @IsUUID()
-  serviceId!: string;
+  @ApiProperty({
+    example: ['2a49900b-bc27-4bfd-b7f1-78a9a32f43e7'],
+    description: 'Liste des services réservés (1 à 5)',
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(5)
+  @IsUUID('all', { each: true })
+  serviceIds!: string[];
 
   @ApiProperty({ example: '2026-05-05T09:00:00.000Z' })
   @IsDateString()
@@ -34,32 +43,6 @@ export class CreateClientBookingDto {
   address?: string;
 
   @ApiPropertyOptional({ example: 'Merci de me contacter 10 min avant' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  clientNotes?: string;
-}
-
-export class UpdatePendingBookingDto {
-  @ApiPropertyOptional({ example: '2026-05-05T10:00:00.000Z' })
-  @IsOptional()
-  @IsDateString()
-  scheduledAt?: string;
-
-  @ApiPropertyOptional({ example: 'Marcory' })
-  @IsOptional()
-  @IsString()
-  @MinLength(2)
-  @MaxLength(120)
-  commune?: string;
-
-  @ApiPropertyOptional({ example: 'Zone 4, Abidjan' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  address?: string;
-
-  @ApiPropertyOptional({ example: 'Je serai a la maison apres 18h' })
   @IsOptional()
   @IsString()
   @MaxLength(500)
