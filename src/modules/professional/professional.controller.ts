@@ -59,9 +59,11 @@ import {
 } from './interface/commands';
 import {
   ApproveBookingCancellationRequestCommand,
+  CancelBookingCommand,
   MarkNoShowCommand,
   RejectBookingCancellationRequestCommand,
 } from './interface/commands/booking.commands';
+import { UpdateProfessionalSettingsCommand } from './interface/commands/profile.commands';
 import {
   AddServiceDto,
   CreateProfessionalProfileDto,
@@ -79,11 +81,14 @@ import {
   UpdateServiceDto,
   UploadGalleryItemDto,
 } from './interface/dtos';
+import { SuspendProfessionalDto, UpdateProfessionalSettingsDto } from './interface/dtos/profile.dto';
 import { ReorderGalleryDto } from './interface/dtos/gallery.dto';
 import {
+  GetAvailableSlotsQuery,
   GetMyProfessionalProfileQuery,
   GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
+  GetProfessionalBookingsCalendarQuery,
   GetProfessionalBookingsQuery,
   GetProfessionalGalleryQuery,
   GetProfessionalProfileQuery,
@@ -1052,6 +1057,19 @@ export class ProfessionalController {
     );
   }
 
+  @Put(':professionalId/bookings/:bookingId/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL', 'ADMIN')
+  async cancelBooking(
+    @Param('professionalId') professionalId: string,
+    @Param('bookingId') bookingId: string,
+    @Body() body: SuspendProfessionalDto,
+  ) {
+    return this.commandBus.execute<CancelBookingCommand, unknown>(
+      new CancelBookingCommand(bookingId, professionalId, body.reason),
+    );
+  }
+
   @Put(':professionalId/bookings/:bookingId/cancellation-request/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('PROFESSIONAL')
@@ -1081,6 +1099,66 @@ export class ProfessionalController {
         bookingId,
         professionalId,
         body.reason,
+      ),
+    );
+  }
+
+  /**
+   * Get available booking slots for a given date and service list
+   * GET /professionals/:id/slots?date=YYYY-MM-DD&serviceIds=id1,id2
+   */
+  @Get(':professionalId/slots')
+  async getAvailableSlots(
+    @Param('professionalId') professionalId: string,
+    @Query('date') date: string,
+    @Query('serviceIds') serviceIdsParam: string,
+  ) {
+    if (!date || !serviceIdsParam) {
+      throw new BadRequestException('Les paramètres date et serviceIds sont requis');
+    }
+    const serviceIds = serviceIdsParam.split(',').filter(Boolean);
+    return this.queryBus.execute<GetAvailableSlotsQuery, unknown>(
+      new GetAvailableSlotsQuery(professionalId, date, serviceIds),
+    );
+  }
+
+  /**
+   * Get bookings in calendar view (grouped by day)
+   * GET /professionals/:id/bookings/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD
+   */
+  @Get(':professionalId/bookings/calendar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL', 'ADMIN')
+  async getBookingsCalendar(
+    @Param('professionalId') professionalId: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    if (!from || !to) {
+      throw new BadRequestException('Les paramètres from et to sont requis');
+    }
+    return this.queryBus.execute<GetProfessionalBookingsCalendarQuery, unknown>(
+      new GetProfessionalBookingsCalendarQuery(professionalId, from, to),
+    );
+  }
+
+  /**
+   * Update professional operational settings (travel buffer, etc.)
+   * PUT /professionals/:id/settings
+   */
+  @Put(':professionalId/settings')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('PROFESSIONAL')
+  async updateSettings(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateProfessionalSettingsDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<UpdateProfessionalSettingsCommand, unknown>(
+      new UpdateProfessionalSettingsCommand(
+        professionalId,
+        body.travelBufferMin,
       ),
     );
   }
