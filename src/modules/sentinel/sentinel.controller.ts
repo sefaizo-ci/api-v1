@@ -65,8 +65,8 @@ import { UpdateUserProfileDto } from './interface/dtos/update-user-profile.dto';
 import { VerifyOtpDto } from './interface/dtos/verify-otp.dto';
 
 import { CurrentUser } from '../../libs/decorators/current-user.decorator';
+import { Public } from '../../libs/decorators/public.decorator';
 import { ChallengeGuard } from './infrastructure/guards/challenge.guard';
-import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 
 const REFRESH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -107,6 +107,7 @@ export class SentinelController {
   ) {}
 
   @Post(AUTH.FLOW.INIT)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @ApiOperation({
@@ -129,6 +130,7 @@ export class SentinelController {
   }
 
   @Post(AUTH.OTP.SEND)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({
@@ -156,6 +158,7 @@ export class SentinelController {
   }
 
   @Post(AUTH.OTP.VERIFY)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({
@@ -183,6 +186,7 @@ export class SentinelController {
   // ─── Registration ─────────────────────────────────────────────────────────
 
   @Post(AUTH.PIN.CREATE)
+  @Public()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ChallengeGuard)
   @ApiBearerAuth()
@@ -218,6 +222,7 @@ export class SentinelController {
   // ─── Login ────────────────────────────────────────────────────────────────
 
   @Post(AUTH.LOGIN.START)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({
@@ -239,6 +244,7 @@ export class SentinelController {
   }
 
   @Post(AUTH.LOGIN.COMPLETE)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @UseGuards(ChallengeGuard)
   @ApiBearerAuth()
@@ -278,6 +284,7 @@ export class SentinelController {
   // ─── PIN management ───────────────────────────────────────────────────────
 
   @Post(AUTH.PIN.RESET)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @UseGuards(ChallengeGuard)
   @ApiBearerAuth()
@@ -304,7 +311,6 @@ export class SentinelController {
 
   @Post(AUTH.PIN.CHANGE)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @ApiOperation({
@@ -330,7 +336,6 @@ export class SentinelController {
 
   @Post('terms/accept')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Accept terms & conditions',
@@ -350,6 +355,7 @@ export class SentinelController {
   // ─── Token management ─────────────────────────────────────────────────────
 
   @Post(AUTH.TOKEN_REFRESH)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh tokens',
@@ -375,7 +381,6 @@ export class SentinelController {
 
   @Post(AUTH.LOGOUT)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Logout',
@@ -404,7 +409,6 @@ export class SentinelController {
   // ─── Me / Sessions / Push token ───────────────────────────────────────────
 
   @Get(AUTH.ME)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
@@ -414,7 +418,6 @@ export class SentinelController {
 
   @Patch(AUTH.ME_UPDATE)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update user profile',
@@ -449,7 +452,6 @@ export class SentinelController {
 
   @Post(AUTH.ONBOARDING_COMPLETE)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Finalise onboarding',
@@ -472,7 +474,6 @@ export class SentinelController {
 
   @Get(AUTH.ONBOARDING)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get onboarding progress',
@@ -487,7 +488,6 @@ export class SentinelController {
 
   @Post(AUTH.ONBOARDING_STEP_SKIP)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Skip a non-blocking onboarding step',
@@ -504,7 +504,6 @@ export class SentinelController {
   }
 
   @Get(AUTH.SESSIONS)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List active sessions' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
@@ -514,7 +513,6 @@ export class SentinelController {
 
   @Delete(`${AUTH.SESSIONS}/:id`)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a session' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
@@ -529,7 +527,6 @@ export class SentinelController {
 
   @Post(AUTH.PUSH_TOKEN)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register push notification token' })
   @ApiBody({ type: RegisterPushTokenDto })
