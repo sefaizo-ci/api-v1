@@ -171,7 +171,8 @@ export class ProfessionalEntity {
     if (props.latitude !== undefined) this.latitude = props.latitude;
     if (props.longitude !== undefined) this.longitude = props.longitude;
     if (props.amenities !== undefined) this.amenities = props.amenities;
-    if (props.mainCategories !== undefined) this.mainCategories = props.mainCategories;
+    if (props.mainCategories !== undefined)
+      this.mainCategories = props.mainCategories;
 
     this.updatedAt = new Date();
   }
@@ -527,12 +528,12 @@ export class ProfessionalEntity {
     const totalFields = 7;
 
     if (this.agencyName && this.avatarUrl && this.bio) completion += 1; // établissement
-    if (this.mainCategories.length > 0) completion += 1;                // catégorie
-    if (this.getActiveServices().length > 0) completion += 1;           // service (blocking)
-    if (this.address) completion += 1;                                  // localisation
-    if (this.getActiveAvailabilities().length > 0) completion += 1;    // disponibilités
-    if (this.getPublicGallery().length > 0) completion += 1;           // galerie
-    if (this.amenities.length > 0) completion += 1;                    // commodités
+    if (this.mainCategories.length > 0) completion += 1; // catégorie
+    if (this.getActiveServices().length > 0) completion += 1; // service (blocking)
+    if (this.address) completion += 1; // localisation
+    if (this.getActiveAvailabilities().length > 0) completion += 1; // disponibilités
+    if (this.getPublicGallery().length > 0) completion += 1; // galerie
+    if (this.amenities.length > 0) completion += 1; // commodités
 
     return Math.round((completion / totalFields) * 100);
   }

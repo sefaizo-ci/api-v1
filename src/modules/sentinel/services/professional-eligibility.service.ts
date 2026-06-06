@@ -37,11 +37,11 @@ export class ProfessionalEligibilityService {
     const localisationRequired = pro.location === 'SALON';
 
     const eligible =
-      !!(data?.firstName?.trim()) &&
-      !!(pro.mainCategories?.length) &&
+      !!data?.firstName?.trim() &&
+      !!pro.mainCategories?.length &&
       !!(pro.agencyName?.trim() && pro.avatarUrl && pro.bio?.trim()) &&
-      !!(pro.services?.length) &&
-      (!localisationRequired || !!(pro.address));
+      !!pro.services?.length &&
+      (!localisationRequired || !!pro.address);
 
     // Respect a manual booking pause — only restore isAcceptingBookings if the pro
     // hasn't explicitly paused (bookingsPausedUntil null or already expired)

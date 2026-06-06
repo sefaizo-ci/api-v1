@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+} from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { IUserRepository } from '../../core/services/user.service.interface';
 import { SkipOnboardingStepCommand } from '../commands/skip-onboarding-step.command';
@@ -13,7 +17,9 @@ export class SkipOnboardingStepHandler implements ICommandHandler<SkipOnboarding
 
   async execute(cmd: SkipOnboardingStepCommand): Promise<{ skipped: string }> {
     if (cmd.role !== 'PROFESSIONAL') {
-      throw new ForbiddenException("L'onboarding professionnel ne s'applique pas à ce compte.");
+      throw new ForbiddenException(
+        "L'onboarding professionnel ne s'applique pas à ce compte.",
+      );
     }
 
     if (!DEFERRABLE_STEPS.includes(cmd.step)) {

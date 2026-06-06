@@ -1,6 +1,9 @@
 import { BadRequestException, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import type { IUserRepository, OnboardingMeta } from '../../core/services/user.service.interface';
+import type {
+  IUserRepository,
+  OnboardingMeta,
+} from '../../core/services/user.service.interface';
 import { ProfessionalEligibilityService } from '../../services/professional-eligibility.service';
 import { UpdateUserProfileCommand } from '../commands/update-user-profile.command';
 
@@ -34,7 +37,10 @@ export class UpdateUserProfileHandler implements ICommandHandler<UpdateUserProfi
       await this.eligibility.refresh(cmd.userId);
     }
 
-    const onboarding = await this.userRepo.getOnboardingMeta(cmd.userId, cmd.role);
+    const onboarding = await this.userRepo.getOnboardingMeta(
+      cmd.userId,
+      cmd.role,
+    );
 
     return {
       id: user.id,

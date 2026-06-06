@@ -57,7 +57,10 @@ export class CreateProfessionalProfileDto {
   @Max(180)
   longitude?: number;
 
-  @ApiPropertyOptional({ example: ['WiFi', 'Parking', 'Climatisation'], maxItems: 3 })
+  @ApiPropertyOptional({
+    example: ['WiFi', 'Parking', 'Climatisation'],
+    maxItems: 3,
+  })
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(3)

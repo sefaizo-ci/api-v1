@@ -438,7 +438,12 @@ export class SentinelController {
     @Body() dto: UpdateUserProfileDto,
   ) {
     return this.commandBus.execute(
-      new UpdateUserProfileCommand(user.id, user.role, dto.firstName, dto.lastName),
+      new UpdateUserProfileCommand(
+        user.id,
+        user.role,
+        dto.firstName,
+        dto.lastName,
+      ),
     );
   }
 
@@ -460,7 +465,9 @@ export class SentinelController {
     },
   })
   completeOnboarding(@CurrentUser() user: { id: string; role: string }) {
-    return this.commandBus.execute(new CompleteOnboardingCommand(user.id, user.role));
+    return this.commandBus.execute(
+      new CompleteOnboardingCommand(user.id, user.role),
+    );
   }
 
   @Get(AUTH.ONBOARDING)
@@ -473,7 +480,9 @@ export class SentinelController {
       'Returns the current onboarding step, completed steps, remaining steps, and publication status.',
   })
   getOnboardingMeta(@CurrentUser() user: { id: string; role: string }) {
-    return this.queryBus.execute(new GetOnboardingMetaQuery(user.id, user.role));
+    return this.queryBus.execute(
+      new GetOnboardingMetaQuery(user.id, user.role),
+    );
   }
 
   @Post(AUTH.ONBOARDING_STEP_SKIP)

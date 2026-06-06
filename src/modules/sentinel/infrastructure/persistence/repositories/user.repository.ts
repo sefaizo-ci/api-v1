@@ -21,10 +21,6 @@ const PROFESSIONAL_ONBOARDING_STEPS = [
   { index: 6, label: 'galerie', blocking: false, skippable: true },
 ] as const;
 
-const CLIENT_ONBOARDING_STEPS = [
-  { index: 1, label: 'identite', blocking: true },
-] as const;
-
 @Injectable()
 export class UserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -309,7 +305,10 @@ export class UserRepository implements IUserRepository {
     return profile?.id ?? null;
   }
 
-  async getOnboardingMeta(userId: string, role = 'PROFESSIONAL'): Promise<OnboardingMeta> {
+  async getOnboardingMeta(
+    userId: string,
+    role = 'PROFESSIONAL',
+  ): Promise<OnboardingMeta> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId },
       select: {
@@ -324,22 +323,46 @@ export class UserRepository implements IUserRepository {
             address: true,
             location: true,
             mainCategories: true,
-            services: { where: { isActive: true, deletedAt: null }, select: { id: true }, take: 1 },
-            gallery: { where: { deletedAt: null }, select: { id: true }, take: 1 },
+            services: {
+              where: { isActive: true, deletedAt: null },
+              select: { id: true },
+              take: 1,
+            },
+            gallery: {
+              where: { deletedAt: null },
+              select: { id: true },
+              take: 1,
+            },
           },
         },
       },
     });
 
     if (role === 'CLIENT') {
-      const identiteDone = !!(user?.firstName?.trim());
+      const identiteDone = !!user?.firstName?.trim();
       const step = { index: 1, label: 'identite' };
       const completedSteps: OnboardingStepRecord[] = identiteDone
-        ? [{ index: 1, label: 'identite', status: 'done' as OnboardingStepStatus, blocking: true, skippable: false }]
+        ? [
+            {
+              index: 1,
+              label: 'identite',
+              status: 'done' as OnboardingStepStatus,
+              blocking: true,
+              skippable: false,
+            },
+          ]
         : [];
       const remainingSteps: OnboardingStepRecord[] = identiteDone
         ? []
-        : [{ index: 1, label: 'identite', status: 'pending' as OnboardingStepStatus, blocking: true, skippable: false }];
+        : [
+            {
+              index: 1,
+              label: 'identite',
+              status: 'pending' as OnboardingStepStatus,
+              blocking: true,
+              skippable: false,
+            },
+          ];
       return {
         currentStep: step,
         completedSteps,
@@ -361,19 +384,25 @@ export class UserRepository implements IUserRepository {
     const isLocalisationBlocking = proLocation === 'SALON';
 
     const isDone: Record<string, boolean> = {
-      identite: !!(user?.firstName?.trim()),
-      categorie: !!(pro?.mainCategories?.length),
-      etablissement: !!(pro?.agencyName?.trim() && pro?.avatarUrl && pro?.bio?.trim()),
-      localisation: !!(pro?.address),
-      service: !!(pro?.services?.length),
-      galerie: !!(pro?.gallery?.length),
+      identite: !!user?.firstName?.trim(),
+      categorie: !!pro?.mainCategories?.length,
+      etablissement: !!(
+        pro?.agencyName?.trim() &&
+        pro?.avatarUrl &&
+        pro?.bio?.trim()
+      ),
+      localisation: !!pro?.address,
+      service: !!pro?.services?.length,
+      galerie: !!pro?.gallery?.length,
     };
 
     const completedSteps: OnboardingStepRecord[] = [];
     const remainingSteps: OnboardingStepRecord[] = [];
 
     for (const step of PROFESSIONAL_ONBOARDING_STEPS) {
-      const effectivelyBlocking = step.blocking && !(step.label === 'localisation' && !isLocalisationBlocking);
+      const effectivelyBlocking =
+        step.blocking &&
+        !(step.label === 'localisation' && !isLocalisationBlocking);
 
       const status: OnboardingStepStatus = isDone[step.label]
         ? 'done'
@@ -397,14 +426,16 @@ export class UserRepository implements IUserRepository {
     }
 
     // isPublished: all effectively-blocking steps completed (actual data, not skip status)
-    const isPublished = PROFESSIONAL_ONBOARDING_STEPS
-      .filter((s) => s.blocking && !(s.label === 'localisation' && !isLocalisationBlocking))
-      .every((s) => isDone[s.label]);
+    const isPublished = PROFESSIONAL_ONBOARDING_STEPS.filter(
+      (s) =>
+        s.blocking && !(s.label === 'localisation' && !isLocalisationBlocking),
+    ).every((s) => isDone[s.label]);
 
     // allDone: same as isPublished — optional steps (galerie) never block completion
     const allDone = isPublished;
 
-    const firstRemaining = remainingSteps[0] ?? completedSteps[completedSteps.length - 1];
+    const firstRemaining =
+      remainingSteps[0] ?? completedSteps[completedSteps.length - 1];
     const currentStep = firstRemaining
       ? { index: firstRemaining.index, label: firstRemaining.label }
       : { index: 6, label: 'galerie' };

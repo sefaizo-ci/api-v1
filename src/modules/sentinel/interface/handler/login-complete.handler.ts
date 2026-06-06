@@ -9,7 +9,10 @@ import * as crypto from 'crypto';
 import { OtpPurpose } from '../../core/enums/auth.enums';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
-import type { IUserRepository, OnboardingMeta } from '../../core/services/user.service.interface';
+import type {
+  IUserRepository,
+  OnboardingMeta,
+} from '../../core/services/user.service.interface';
 import { TokenService } from '../../services/token.service';
 import { LoginCompleteCommand } from '../commands/login-complete.command';
 

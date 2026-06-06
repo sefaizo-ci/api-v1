@@ -2,7 +2,10 @@ import { BadRequestException, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
-import type { IUserRepository, OnboardingMeta } from '../../core/services/user.service.interface';
+import type {
+  IUserRepository,
+  OnboardingMeta,
+} from '../../core/services/user.service.interface';
 import { TokenService } from '../../services/token.service';
 import { CreatePinCommand } from '../commands/create-pin.command';
 

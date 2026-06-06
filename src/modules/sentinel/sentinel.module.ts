@@ -60,7 +60,12 @@ const CommandHandlers = [
   RegisterPushTokenHandler,
 ];
 
-const QueryHandlers = [GetMeHandler, GetOnboardingMetaHandler, GetSessionsHandler, InitAuthFlowHandler];
+const QueryHandlers = [
+  GetMeHandler,
+  GetOnboardingMetaHandler,
+  GetSessionsHandler,
+  InitAuthFlowHandler,
+];
 
 @Module({
   imports: [
@@ -94,6 +99,11 @@ const QueryHandlers = [GetMeHandler, GetOnboardingMetaHandler, GetSessionsHandle
     { provide: 'IRefreshTokenRepository', useClass: RefreshTokenRepository },
     { provide: 'INotificationService', useClass: NotificationService },
   ],
-  exports: ['IUserRepository', JwtAuthGuard, RolesGuard, ProfessionalEligibilityService],
+  exports: [
+    'IUserRepository',
+    JwtAuthGuard,
+    RolesGuard,
+    ProfessionalEligibilityService,
+  ],
 })
 export class SentinelModule {}
