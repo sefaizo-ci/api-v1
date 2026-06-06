@@ -23,10 +23,10 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
+import { Public } from '../../libs/decorators/public.decorator';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import type { MediaStoragePort } from '../media/media-storage.port';
 import { MEDIA_STORAGE_SERVICE } from '../media/media-storage.port';
-import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
 import {
@@ -147,7 +147,7 @@ export class ProfessionalController {
    * Constraint: one user can only create one profile
    */
   @Post('profile')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('CLIENT', 'PROFESSIONAL')
   async createProfile(
     @Req() req: AuthenticatedRequest,
@@ -172,7 +172,7 @@ export class ProfessionalController {
    * Toggle public listing visibility (pro-controlled)
    */
   @Put('profile/:professionalId/listing')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async toggleListing(
     @Param('professionalId') professionalId: string,
@@ -189,7 +189,7 @@ export class ProfessionalController {
    * Pause new bookings — body: { resumeAt?: string (ISO date) }
    */
   @Put('profile/:professionalId/bookings/pause')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async pauseBookings(
     @Param('professionalId') professionalId: string,
@@ -209,7 +209,7 @@ export class ProfessionalController {
    * Resume bookings immediately
    */
   @Put('profile/:professionalId/bookings/resume')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async resumeBookings(
     @Param('professionalId') professionalId: string,
@@ -225,7 +225,7 @@ export class ProfessionalController {
    * Re-submit after rejection — resets status to PENDING for re-review
    */
   @Put('profile/:professionalId/resubmit')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async resubmitProfile(
     @Param('professionalId') professionalId: string,
@@ -241,7 +241,7 @@ export class ProfessionalController {
    * Update my profile
    */
   @Put('profile/:professionalId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async updateProfile(
     @Param('professionalId') professionalId: string,
@@ -267,7 +267,7 @@ export class ProfessionalController {
    * Get my professional profile
    */
   @Get('profile/me')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async getMyProfile(@Req() req: AuthenticatedRequest) {
     return this.queryBus.execute<GetMyProfessionalProfileQuery, unknown>(
@@ -279,7 +279,7 @@ export class ProfessionalController {
    * Get my revenue summary for the mobile widget
    */
   @Get('revenue/summary')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async getMyRevenueSummary(@Req() req: AuthenticatedRequest) {
     return this.queryBus.execute<GetProfessionalRevenueSummaryQuery, unknown>(
@@ -291,7 +291,7 @@ export class ProfessionalController {
    * Get profile completion
    */
   @Get('profile/:professionalId/completion')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL', 'ADMIN')
   async getProfileCompletion(@Param('professionalId') professionalId: string) {
     return this.queryBus.execute<GetProfileCompletionQuery, unknown>(
@@ -303,6 +303,7 @@ export class ProfessionalController {
    * Get professional public profile
    */
   @Get(':professionalId')
+  @Public()
   async getProfessionalProfile(
     @Param('professionalId') professionalId: string,
   ) {
@@ -315,6 +316,7 @@ export class ProfessionalController {
    * List professionals
    */
   @Get()
+  @Public()
   async listProfessionals(
     @Query('status') status?: string,
     @Query('isVerified') isVerified?: string,
@@ -342,6 +344,7 @@ export class ProfessionalController {
    * Search professionals
    */
   @Get('search/query')
+  @Public()
   async searchProfessionals(
     @Query('q') q: string,
     @Query('location') location?: string,
@@ -359,6 +362,7 @@ export class ProfessionalController {
    * ?lat=5.37&lng=-3.97&radius=10&commune=Cocody&limit=10
    */
   @Get('discover/recommended')
+  @Public()
   async getRecommended(
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
@@ -383,6 +387,7 @@ export class ProfessionalController {
    * New professionals — joined in the last 30 days, optionally near user
    */
   @Get('discover/new')
+  @Public()
   async getNew(
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
@@ -407,6 +412,7 @@ export class ProfessionalController {
    * Trending professionals — most booked, optionally near user
    */
   @Get('discover/trending')
+  @Public()
   async getTrending(
     @Query('lat') lat?: string,
     @Query('lng') lng?: string,
@@ -428,6 +434,7 @@ export class ProfessionalController {
   }
 
   @Get('services/categories')
+  @Public()
   async listServiceCategories(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
@@ -438,7 +445,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/services/category-requests')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async createServiceCategoryRequest(
     @Param('professionalId') professionalId: string,
@@ -459,7 +466,7 @@ export class ProfessionalController {
   }
 
   @Get(':professionalId/services/category-requests')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async listProfessionalServiceCategoryRequests(
     @Param('professionalId') professionalId: string,
@@ -483,6 +490,7 @@ export class ProfessionalController {
    * Get professional services
    */
   @Get(':professionalId/services')
+  @Public()
   async getProfessionalServices(
     @Param('professionalId') professionalId: string,
     @Query('includeInactive') includeInactive?: string,
@@ -496,7 +504,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/services')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async addService(
     @Param('professionalId') professionalId: string,
@@ -516,7 +524,7 @@ export class ProfessionalController {
   }
 
   @Put('services/:serviceId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async updateService(
     @Param('serviceId') serviceId: string,
@@ -536,7 +544,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/services/:serviceId/image/upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_UPLOAD_BYTES } }),
@@ -576,7 +584,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/services/:serviceId/deactivate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async deactivateService(
     @Param('professionalId') professionalId: string,
@@ -588,7 +596,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/services/:serviceId/activate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async activateService(
     @Param('professionalId') professionalId: string,
@@ -600,7 +608,7 @@ export class ProfessionalController {
   }
 
   @Delete(':professionalId/services/:serviceId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async deleteService(
     @Param('professionalId') professionalId: string,
@@ -612,7 +620,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/services/:serviceId/communes')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async setCommuneFee(
     @Param('professionalId') professionalId: string,
@@ -633,6 +641,7 @@ export class ProfessionalController {
    * Get professional availability
    */
   @Get(':professionalId/availability')
+  @Public()
   async getProfessionalAvailability(
     @Param('professionalId') professionalId: string,
     @Query('dayOfWeek') dayOfWeek?: number,
@@ -643,7 +652,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/availability')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async setAvailability(
     @Param('professionalId') professionalId: string,
@@ -662,7 +671,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/availability/bulk')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async setAvailabilityBulk(
     @Param('professionalId') professionalId: string,
@@ -674,7 +683,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/availability/:dayOfWeek')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async updateAvailability(
     @Param('professionalId') professionalId: string,
@@ -694,7 +703,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/availability/:dayOfWeek/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async setAvailabilityStatus(
     @Param('professionalId') professionalId: string,
@@ -707,7 +716,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/availability')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async setAvailabilityForWeek(
     @Param('professionalId') professionalId: string,
@@ -726,7 +735,7 @@ export class ProfessionalController {
   }
 
   @Delete(':professionalId/availability/:dayOfWeek')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async removeAvailability(
     @Param('professionalId') professionalId: string,
@@ -741,6 +750,7 @@ export class ProfessionalController {
    * Get professional gallery
    */
   @Get(':professionalId/gallery')
+  @Public()
   async getProfessionalGallery(
     @Param('professionalId') professionalId: string,
     @Query('page') page?: number,
@@ -752,7 +762,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/gallery')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async uploadGalleryItem(
     @Param('professionalId') professionalId: string,
@@ -769,7 +779,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/gallery/upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -817,7 +827,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/gallery/upload-bulk')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   @UseInterceptors(
     FilesInterceptor('files', MAX_GALLERY_IMAGES, {
@@ -880,7 +890,7 @@ export class ProfessionalController {
   }
 
   @Post(':professionalId/avatar/upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -922,7 +932,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/gallery/reorder')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async reorderGallery(
     @Param('professionalId') professionalId: string,
@@ -934,7 +944,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/gallery/:itemId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async updateGalleryItem(
     @Param('professionalId') professionalId: string,
@@ -952,7 +962,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/gallery/:itemId/publish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async publishGalleryItem(
     @Param('professionalId') professionalId: string,
@@ -964,7 +974,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/gallery/:itemId/unpublish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async unpublishGalleryItem(
     @Param('professionalId') professionalId: string,
@@ -976,7 +986,7 @@ export class ProfessionalController {
   }
 
   @Delete(':professionalId/gallery/:itemId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async deleteGalleryItem(
     @Param('professionalId') professionalId: string,
@@ -991,7 +1001,7 @@ export class ProfessionalController {
    * Get bookings for professional management
    */
   @Get(':professionalId/bookings')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL', 'ADMIN')
   async getProfessionalBookings(
     @Param('professionalId') professionalId: string,
@@ -1005,7 +1015,7 @@ export class ProfessionalController {
   }
 
   @Get(':professionalId/bookings/cancellation-requests')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL', 'ADMIN')
   async listCancellationRequests(
     @Param('professionalId') professionalId: string,
@@ -1018,7 +1028,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/confirm')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async confirmBooking(
     @Param('professionalId') professionalId: string,
@@ -1030,7 +1040,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async rejectBooking(
     @Param('professionalId') professionalId: string,
@@ -1043,7 +1053,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/complete')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async completeBooking(
     @Param('professionalId') professionalId: string,
@@ -1055,7 +1065,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/no-show')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async markNoShow(
     @Param('professionalId') professionalId: string,
@@ -1067,7 +1077,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/cancel')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL', 'ADMIN')
   async cancelBooking(
     @Param('professionalId') professionalId: string,
@@ -1080,7 +1090,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/cancellation-request/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async approveCancellationRequest(
     @Param('professionalId') professionalId: string,
@@ -1093,7 +1103,7 @@ export class ProfessionalController {
   }
 
   @Put(':professionalId/bookings/:bookingId/cancellation-request/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async rejectCancellationRequest(
     @Param('professionalId') professionalId: string,
@@ -1117,6 +1127,7 @@ export class ProfessionalController {
    * GET /professionals/:id/slots?date=YYYY-MM-DD&serviceIds=id1,id2
    */
   @Get(':professionalId/slots')
+  @Public()
   async getAvailableSlots(
     @Param('professionalId') professionalId: string,
     @Query('date') date: string,
@@ -1138,7 +1149,7 @@ export class ProfessionalController {
    * GET /professionals/:id/bookings/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD
    */
   @Get(':professionalId/bookings/calendar')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL', 'ADMIN')
   async getBookingsCalendar(
     @Param('professionalId') professionalId: string,
@@ -1158,7 +1169,7 @@ export class ProfessionalController {
    * PUT /professionals/:id/settings
    */
   @Put(':professionalId/settings')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async updateSettings(
     @Param('professionalId') professionalId: string,
