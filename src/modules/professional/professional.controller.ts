@@ -160,6 +160,8 @@ export class ProfessionalController {
         body.address,
         body.latitude,
         body.longitude,
+        body.amenities,
+        body.mainCategories,
       ),
     );
   }
@@ -253,6 +255,8 @@ export class ProfessionalController {
         body.address,
         body.latitude,
         body.longitude,
+        body.amenities,
+        body.mainCategories,
       ),
     );
   }

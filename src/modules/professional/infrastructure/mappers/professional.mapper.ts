@@ -78,6 +78,8 @@ type RawProfessional = {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  amenities: string[];
+  mainCategories: string[];
   status: string;
   isVerified: boolean;
   rejectionReason: string | null;
@@ -113,6 +115,8 @@ export class ProfessionalMapper {
       address: raw.address ?? undefined,
       latitude: raw.latitude ?? undefined,
       longitude: raw.longitude ?? undefined,
+      amenities: raw.amenities ?? [],
+      mainCategories: raw.mainCategories ?? [],
       status: (raw.status as ProfessionalStatus) || ProfessionalStatus.PENDING,
       isVerified: raw.isVerified,
       rejectionReason: raw.rejectionReason ?? undefined,
@@ -146,6 +150,8 @@ export class ProfessionalMapper {
       address: entity.address,
       latitude: entity.latitude,
       longitude: entity.longitude,
+      amenities: entity.amenities,
+      mainCategories: entity.mainCategories,
       status: entity.status,
       isVerified: entity.isVerified,
       rejectionReason: entity.rejectionReason ?? null,

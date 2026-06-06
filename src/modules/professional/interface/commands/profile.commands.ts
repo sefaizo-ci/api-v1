@@ -15,6 +15,8 @@ export class CreateProfessionalProfileCommand implements ICommand {
     public readonly address?: string,
     public readonly latitude?: number,
     public readonly longitude?: number,
+    public readonly amenities?: string[],
+    public readonly mainCategories?: string[],
   ) {}
 }
 
@@ -32,6 +34,8 @@ export class UpdateProfessionalProfileCommand implements ICommand {
     public readonly address?: string,
     public readonly latitude?: number,
     public readonly longitude?: number,
+    public readonly amenities?: string[],
+    public readonly mainCategories?: string[],
   ) {}
 }
 

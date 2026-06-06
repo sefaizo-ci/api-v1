@@ -20,6 +20,8 @@ export class ProfessionalEntity {
   address?: string;
   latitude?: number;
   longitude?: number;
+  amenities: string[];
+  mainCategories: string[];
 
   // Status
   status: ProfessionalStatus;
@@ -53,6 +55,8 @@ export class ProfessionalEntity {
     address?: string;
     latitude?: number;
     longitude?: number;
+    amenities?: string[];
+    mainCategories?: string[];
     status?: ProfessionalStatus;
     isVerified?: boolean;
     rejectionReason?: string;
@@ -77,6 +81,8 @@ export class ProfessionalEntity {
     this.address = props.address;
     this.latitude = props.latitude;
     this.longitude = props.longitude;
+    this.amenities = props.amenities ?? [];
+    this.mainCategories = props.mainCategories ?? [];
     this.status = props.status ?? ProfessionalStatus.PENDING;
     this.isVerified = props.isVerified ?? false;
     this.rejectionReason = props.rejectionReason;
@@ -107,9 +113,17 @@ export class ProfessionalEntity {
     address?: string;
     latitude?: number;
     longitude?: number;
+    amenities?: string[];
+    mainCategories?: string[];
   }): ProfessionalEntity {
     if (!props.agencyName || props.agencyName.trim().length === 0) {
       throw new Error('Agency name is required');
+    }
+    if (props.mainCategories && props.mainCategories.length > 3) {
+      throw new Error('Maximum 3 catégories principales autorisées');
+    }
+    if (props.amenities && props.amenities.length > 3) {
+      throw new Error('Maximum 3 commodités autorisées');
     }
 
     return new ProfessionalEntity({
@@ -133,12 +147,20 @@ export class ProfessionalEntity {
     address?: string;
     latitude?: number;
     longitude?: number;
+    amenities?: string[];
+    mainCategories?: string[];
   }): void {
     if (
       props.agencyName !== undefined &&
       props.agencyName.trim().length === 0
     ) {
       throw new Error('Agency name cannot be empty');
+    }
+    if (props.mainCategories && props.mainCategories.length > 3) {
+      throw new Error('Maximum 3 catégories principales autorisées');
+    }
+    if (props.amenities && props.amenities.length > 3) {
+      throw new Error('Maximum 3 commodités autorisées');
     }
 
     if (props.agencyName) this.agencyName = props.agencyName;
@@ -148,6 +170,8 @@ export class ProfessionalEntity {
     if (props.address !== undefined) this.address = props.address;
     if (props.latitude !== undefined) this.latitude = props.latitude;
     if (props.longitude !== undefined) this.longitude = props.longitude;
+    if (props.amenities !== undefined) this.amenities = props.amenities;
+    if (props.mainCategories !== undefined) this.mainCategories = props.mainCategories;
 
     this.updatedAt = new Date();
   }
@@ -241,18 +265,37 @@ export class ProfessionalEntity {
   }
 
   /**
-   * Whether the professional appears in public discovery lists.
-   * Admin gate: ACTIVE + verified.
-   * Pro gate: isListingActive + at least 1 service.
+   * Blocking steps completed = identité + catégorie + établissement + 1 service.
+   * Account is published only when these are all done.
    */
-  isPubliclyVisible(): boolean {
+  hasBlockingStepsCompleted(): boolean {
     return (
-      this.isVerified &&
-      this.status === ProfessionalStatus.ACTIVE &&
-      !this.deletedAt &&
-      this.isListingActive &&
+      !!this.agencyName &&
+      !!this.avatarUrl &&
+      !!this.bio &&
+      this.mainCategories.length > 0 &&
       this.hasServices()
     );
+  }
+
+  /**
+   * Whether the professional appears in public discovery lists.
+   * Admin gate: ACTIVE + verified (auto-verified when blocking steps done).
+   * Pro gate: isListingActive + blocking steps completed.
+   * Location rule: SALON pros without address are excluded.
+   */
+  isPubliclyVisible(): boolean {
+    if (
+      !this.isVerified ||
+      this.status !== ProfessionalStatus.ACTIVE ||
+      !!this.deletedAt ||
+      !this.isListingActive
+    ) {
+      return false;
+    }
+    if (!this.hasBlockingStepsCompleted()) return false;
+    if (this.location === ServiceLocation.SALON && !this.address) return false;
+    return true;
   }
 
   /**
@@ -481,16 +524,15 @@ export class ProfessionalEntity {
    */
   getProfileCompletion(): number {
     let completion = 0;
-    const totalFields = 8;
+    const totalFields = 7;
 
-    if (this.agencyName) completion += 1;
-    if (this.bio) completion += 1;
-    if (this.avatarUrl) completion += 1;
-    if (this.address) completion += 1;
-    if (this.latitude && this.longitude) completion += 1;
-    if (this.getActiveServices().length > 0) completion += 1;
-    if (this.getActiveAvailabilities().length > 0) completion += 1;
-    if (this.getPublicGallery().length > 0) completion += 1;
+    if (this.agencyName && this.avatarUrl && this.bio) completion += 1; // établissement
+    if (this.mainCategories.length > 0) completion += 1;                // catégorie
+    if (this.getActiveServices().length > 0) completion += 1;           // service (blocking)
+    if (this.address) completion += 1;                                  // localisation
+    if (this.getActiveAvailabilities().length > 0) completion += 1;    // disponibilités
+    if (this.getPublicGallery().length > 0) completion += 1;           // galerie
+    if (this.amenities.length > 0) completion += 1;                    // commodités
 
     return Math.round((completion / totalFields) * 100);
   }
