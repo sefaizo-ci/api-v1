@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { RequestContextService } from '../context/request-context.service';
+import { DomainException } from '../exceptions/exception.base';
 
 function extractMessages(exception: HttpException): string[] {
   const response = exception.getResponse();
@@ -41,39 +42,59 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const correlationId = RequestContextService.getRequestId();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    // Domain exceptions — thrown from handlers/services
+    if (exception instanceof DomainException) {
+      this.logger.warn(
+        `[${correlationId}] ${request.method} ${request.url} -> ${exception.statusCode} | ${exception.code}: ${exception.message}`,
+      );
+      return response.status(exception.statusCode).json({
+        success: false,
+        statusCode: exception.statusCode,
+        error: exception.code,
+        message: [exception.message],
+        correlationId: exception.correlationId,
+        path: request.url,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    const messages =
-      exception instanceof HttpException
-        ? extractMessages(exception)
-        : ['Erreur interne du serveur.'];
+    // NestJS HTTP exceptions — from guards, pipes, decorators
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      this.logger.warn(
+        `[${correlationId}] ${request.method} ${request.url} -> ${status} | ${exception.message}`,
+      );
+      return response.status(status).json({
+        success: false,
+        statusCode: status,
+        error: extractError(exception),
+        message: extractMessages(exception),
+        correlationId,
+        path: request.url,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    const error =
-      exception instanceof HttpException
-        ? extractError(exception)
-        : 'Internal Server Error';
-
-    const logContext = `[${correlationId}] ${request.method} ${request.url} -> ${status}`;
-
+    // Unhandled errors — bugs, infra failures
+    const status = HttpStatus.INTERNAL_SERVER_ERROR;
     if (exception instanceof Error) {
       this.logger.error(
-        `${logContext} | ${exception.name}: ${exception.message}`,
+        `[${correlationId}] ${request.method} ${request.url} -> ${status} | ${exception.name}: ${exception.message}`,
       );
       if (exception.stack) {
         this.logger.debug(exception.stack);
       }
     } else {
-      this.logger.error(`${logContext} | ${String(exception)}`);
+      this.logger.error(
+        `[${correlationId}] ${request.method} ${request.url} -> ${status} | ${String(exception)}`,
+      );
     }
 
     response.status(status).json({
       success: false,
       statusCode: status,
-      error,
-      message: messages,
+      error: 'Internal Server Error',
+      message: ['Erreur interne du serveur.'],
       correlationId,
       path: request.url,
       timestamp: new Date().toISOString(),
