@@ -14,14 +14,17 @@ import { ProfessionalMapper } from '../mappers/professional.mapper';
 export class ProfessionalRepository implements IProfessionalRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private buildWhere(filters?: {
-    status?: string;
-    isVerified?: boolean;
-    isListingActive?: boolean;
-    location?: string;
-    search?: string;
-    rating?: number;
-  }): Prisma.ProfessionalWhereInput {
+  private buildWhere(
+    filters?: {
+      status?: string;
+      isVerified?: boolean;
+      isListingActive?: boolean;
+      location?: string;
+      search?: string;
+      rating?: number;
+    },
+    clientFacing = false,
+  ): Prisma.ProfessionalWhereInput {
     const where: Prisma.ProfessionalWhereInput = { deletedAt: null };
 
     if (filters?.status) where.status = filters.status;
@@ -37,6 +40,14 @@ export class ProfessionalRepository implements IProfessionalRepository {
     }
     if (filters?.rating !== undefined) {
       where.rating = { gte: filters.rating };
+    }
+
+    // SALON pros without address are not shown to clients (no location = not findable)
+    // HOME and BOTH pros remain visible even without address (they go to the client)
+    if (clientFacing) {
+      where.NOT = {
+        AND: [{ location: 'SALON' }, { address: null }],
+      };
     }
 
     const search = filters?.search?.trim();
@@ -352,6 +363,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
       page?: number;
       limit?: number;
     },
+    clientFacing = false,
   ): Promise<{
     data: ProfessionalEntity[];
     total: number;
@@ -359,7 +371,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
     const page = pagination?.page || 1;
     const limit = pagination?.limit || 20;
     const skip = (page - 1) * limit;
-    const where = this.buildWhere(filters);
+    const where = this.buildWhere(filters, clientFacing);
 
     const [data, total] = await Promise.all([
       this.fetchProfessionals(where, { skip, take: limit }),
@@ -375,9 +387,10 @@ export class ProfessionalRepository implements IProfessionalRepository {
         deletedAt: null,
         status: 'PENDING',
         isVerified: false,
+        agencyName: { not: '' },
         avatarUrl: { not: null },
+        bio: { not: null },
         services: { some: { deletedAt: null, isActive: true } },
-        availabilities: { some: { deletedAt: null, isActive: true } },
       },
       include: {
         services: {
@@ -391,24 +404,24 @@ export class ProfessionalRepository implements IProfessionalRepository {
         gallery: { where: { deletedAt: null } },
       },
     });
-    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+    // Filter in-memory for mainCategories (array field not filterable via Prisma)
+    return raws
+      .filter((raw) => (raw.mainCategories?.length ?? 0) > 0)
+      .map((raw) => ProfessionalMapper.toDomain(raw));
   }
 
   async findIncompleteAfterGracePeriod(
     gracePeriodHours: number,
   ): Promise<ProfessionalEntity[]> {
     const cutoff = new Date(Date.now() - gracePeriodHours * 3600 * 1000);
+    // Fetch all pending professionals past grace period and filter in-memory
+    // because Prisma cannot filter on empty arrays (mainCategories = [])
     const raws = await this.prisma.professional.findMany({
       where: {
         deletedAt: null,
         status: 'PENDING',
         isVerified: false,
         createdAt: { lte: cutoff },
-        OR: [
-          { avatarUrl: null },
-          { services: { none: { deletedAt: null, isActive: true } } },
-          { availabilities: { none: { deletedAt: null, isActive: true } } },
-        ],
       },
       include: {
         services: {
@@ -422,7 +435,18 @@ export class ProfessionalRepository implements IProfessionalRepository {
         gallery: { where: { deletedAt: null } },
       },
     });
-    return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+
+    return raws
+      .filter((raw) => {
+        const hasBlockingSteps =
+          !!raw.agencyName?.trim() &&
+          !!raw.avatarUrl &&
+          !!raw.bio?.trim() &&
+          (raw.mainCategories?.length ?? 0) > 0 &&
+          raw.services.some((s) => s.isActive && !s.deletedAt);
+        return !hasBlockingSteps;
+      })
+      .map((raw) => ProfessionalMapper.toDomain(raw));
   }
 
   async findWithExpiredBookingPause(): Promise<ProfessionalEntity[]> {

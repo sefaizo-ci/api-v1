@@ -12,10 +12,12 @@ const AUTO_REJECTION_GRACE_HOURS = 72;
 
 function buildAutoRejectionReason(pro: ProfessionalEntity): string {
   const missing: string[] = [];
+  if (!pro.agencyName?.trim()) missing.push('nom du salon');
   if (!pro.avatarUrl) missing.push('photo de profil');
+  if (!pro.bio?.trim()) missing.push('description');
+  if (!pro.mainCategories?.length) missing.push('catégorie principale');
   if (!pro.hasServices()) missing.push('service actif');
-  if (!pro.hasAvailability()) missing.push('disponibilite active');
-  return `Profil incomplet apres ${AUTO_REJECTION_GRACE_HOURS}h. Elements manquants : ${missing.join(', ')}.`;
+  return `Profil incomplet après ${AUTO_REJECTION_GRACE_HOURS}h. Éléments manquants : ${missing.join(', ')}.`;
 }
 
 @Injectable()

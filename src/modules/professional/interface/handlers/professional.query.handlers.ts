@@ -109,6 +109,7 @@ async function runGeoDiscovery(
         WHERE p."deletedAt" IS NULL
           AND p.status = 'ACTIVE'
           AND p."isVerified" = true
+          AND NOT (p.location = 'SALON' AND p.address IS NULL)
           ${Prisma.raw(geoWhere)}
           ${Prisma.raw(comWhere)}
           ${Prisma.raw(extraWhere)}
@@ -124,6 +125,7 @@ async function runGeoDiscovery(
         WHERE p."deletedAt" IS NULL
           AND p.status = 'ACTIVE'
           AND p."isVerified" = true
+          AND NOT (p.location = 'SALON' AND p.address IS NULL)
           ${Prisma.raw(geoWhere)}
           ${Prisma.raw(comWhere)}
           ${Prisma.raw(extraWhere)}
@@ -893,6 +895,7 @@ export class SearchProfessionalsHandler implements IQueryHandler<SearchProfessio
         page,
         limit,
       },
+      true,
     );
 
     return {
