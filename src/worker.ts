@@ -10,6 +10,16 @@ async function bootstrap() {
 
   const logger = app.get(Logger);
   logger.log('SEFAIZO Worker started', 'Worker');
+
+  const shutdown = async (signal: string) => {
+    logger.log(`${signal} received — draining active jobs...`, 'Worker');
+    await app.close();
+    logger.log('Worker stopped gracefully', 'Worker');
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
 }
 
 void bootstrap();
