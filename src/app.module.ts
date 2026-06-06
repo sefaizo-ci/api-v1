@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validateEnv } from './libs/config/env.validation';
@@ -19,6 +20,31 @@ import { SentinelModule } from './modules/sentinel/sentinel.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        autoLogging: false,
+        transport:
+          process.env['NODE_ENV'] !== 'production'
+            ? {
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  singleLine: true,
+                  translateTime: 'SYS:standard',
+                },
+              }
+            : undefined,
+        redact: {
+          paths: [
+            'req.headers.authorization',
+            'req.headers["x-api-key"]',
+            'req.headers.cookie',
+          ],
+          censor: '[REDACTED]',
+        },
+        level: process.env['NODE_ENV'] === 'production' ? 'info' : 'debug',
+      },
+    }),
     ThrottlerModule.forRoot([
       {
         name: 'default',

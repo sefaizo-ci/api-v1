@@ -1,5 +1,4 @@
 import {
-  Logger,
   RequestMethod,
   ValidationPipe,
   type INestApplication,
@@ -10,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import { randomUUID } from 'crypto';
 import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { APP } from './common/constants/routes';
 import { GlobalExceptionFilter } from './libs/filters/http-exception.filter';
@@ -43,25 +43,15 @@ function resolveAllowedOrigins() {
 }
 
 export async function createNestApp(): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule);
-  const logger = new Logger('HttpTrace');
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   app.use(helmet());
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     const incoming = req.header('x-request-id');
     const requestId = incoming && incoming.trim() ? incoming : randomUUID();
-    const start = Date.now();
-
     res.setHeader('x-request-id', requestId);
-
-    res.on('finish', () => {
-      const durationMs = Date.now() - start;
-      logger.log(
-        `[requestId=${requestId}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`,
-      );
-    });
-
     next();
   });
 
@@ -115,9 +105,9 @@ export async function createNestApp(): Promise<INestApplication> {
 
 async function bootstrap() {
   const app = await createNestApp();
-  const logger = new Logger('HttpTrace');
+  const logger = app.get(Logger);
 
-  const port = process.env.PORT ?? 3000;
+  const port = process.env['PORT'] ?? 3000;
   await app.listen(port);
   logger.log(
     `SEFAIZO API running on http://localhost:${port}/${APP.API.PREFIX}`,
