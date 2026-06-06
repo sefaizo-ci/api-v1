@@ -9,11 +9,19 @@ services:
       - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sefaizo-network
 
   redis:
     image: redis:7-alpine
     ports:
       - '6379:6379'
+    networks:
+      - sefaizo-network
 
 volumes:
   postgres_data:
+
+networks:
+  sefaizo-network:
+    driver: bridge
