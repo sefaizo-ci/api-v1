@@ -1,0 +1,10 @@
+{
+  "GHSA-92pp-h63x-v22m": {
+    "active": true,
+    "notes": "Via @prisma/dev (prisma dev tooling only, not runtime). Fix requires downgrading prisma from v7 to v6.19.3 — major breaking change. https://github.com/advisories/GHSA-92pp-h63x-v22m"
+  },
+  "GHSA-w5hq-g745-h8pq": {
+    "active": true,
+    "notes": "uuid via firebase-admin internal deps (gaxios, google-gax, teeny-request). Fix requires downgrading firebase-admin to v10.3.0 — major breaking change. https://github.com/advisories/GHSA-w5hq-g745-h8pq"
+  }
+}
