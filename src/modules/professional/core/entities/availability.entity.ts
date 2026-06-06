@@ -1,3 +1,4 @@
+import { BadRequestException } from '../../../../libs/exceptions/domain.exceptions';
 import { AvailabilityStatus } from '../enums';
 
 /**
@@ -15,7 +16,7 @@ export class TimeRangeVO {
   private validate(): void {
     const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(this.startTime) || !timeRegex.test(this.endTime)) {
-      throw new Error('Invalid time format. Use HH:mm');
+      throw new BadRequestException('Invalid time format. Use HH:mm');
     }
 
     const [startHour, startMin] = this.startTime.split(':').map(Number);
@@ -24,7 +25,7 @@ export class TimeRangeVO {
     const endTotalMin = endHour * 60 + endMin;
 
     if (startTotalMin >= endTotalMin) {
-      throw new Error('Start time must be before end time');
+      throw new BadRequestException('Start time must be before end time');
     }
   }
 
@@ -94,7 +95,7 @@ export class AvailabilityEntity {
     breakEndTime?: string;
   }): AvailabilityEntity {
     if (props.dayOfWeek < 0 || props.dayOfWeek > 6) {
-      throw new Error('Day of week must be between 0 and 6');
+      throw new BadRequestException('Day of week must be between 0 and 6');
     }
 
     const workingHours = TimeRangeVO.create(props.startTime, props.endTime);
@@ -107,7 +108,9 @@ export class AvailabilityEntity {
         !workingHours.includes(props.breakStartTime) ||
         !workingHours.includes(props.breakEndTime)
       ) {
-        throw new Error('Break time must be within working hours');
+        throw new BadRequestException(
+          'Break time must be within working hours',
+        );
       }
     }
 

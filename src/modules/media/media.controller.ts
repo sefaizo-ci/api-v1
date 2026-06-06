@@ -1,8 +1,6 @@
 import {
-  BadRequestException,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Inject,
   Param,
@@ -11,6 +9,10 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+} from '../../libs/exceptions/domain.exceptions';
 import type { Request } from 'express';
 import { PrismaService } from '../../libs/database/prisma.service';
 import { Roles } from '../../libs/decorators/roles.decorator';

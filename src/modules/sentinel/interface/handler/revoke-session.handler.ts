@@ -1,4 +1,8 @@
-import { ForbiddenException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+} from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
 import { RevokeSessionCommand } from '../commands/revoke-session.command';

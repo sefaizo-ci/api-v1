@@ -1,3 +1,9 @@
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  UnprocessableException,
+} from '../../../../libs/exceptions/domain.exceptions';
 import { ProfessionalStatus, ServiceLocation } from '../enums';
 import { AvailabilityEntity } from './availability.entity';
 import { GalleryItemEntity } from './gallery-item.entity';
@@ -117,13 +123,15 @@ export class ProfessionalEntity {
     mainCategories?: string[];
   }): ProfessionalEntity {
     if (!props.agencyName || props.agencyName.trim().length === 0) {
-      throw new Error('Agency name is required');
+      throw new BadRequestException('Agency name is required');
     }
     if (props.mainCategories && props.mainCategories.length > 3) {
-      throw new Error('Maximum 3 catégories principales autorisées');
+      throw new BadRequestException(
+        'Maximum 3 catégories principales autorisées',
+      );
     }
     if (props.amenities && props.amenities.length > 3) {
-      throw new Error('Maximum 3 commodités autorisées');
+      throw new BadRequestException('Maximum 3 commodités autorisées');
     }
 
     return new ProfessionalEntity({
@@ -154,13 +162,15 @@ export class ProfessionalEntity {
       props.agencyName !== undefined &&
       props.agencyName.trim().length === 0
     ) {
-      throw new Error('Agency name cannot be empty');
+      throw new BadRequestException('Agency name cannot be empty');
     }
     if (props.mainCategories && props.mainCategories.length > 3) {
-      throw new Error('Maximum 3 catégories principales autorisées');
+      throw new BadRequestException(
+        'Maximum 3 catégories principales autorisées',
+      );
     }
     if (props.amenities && props.amenities.length > 3) {
-      throw new Error('Maximum 3 commodités autorisées');
+      throw new BadRequestException('Maximum 3 commodités autorisées');
     }
 
     if (props.agencyName) this.agencyName = props.agencyName;
@@ -195,7 +205,9 @@ export class ProfessionalEntity {
    */
   reject(reason: string): void {
     if (this.isVerified) {
-      throw new Error('Cannot reject an already verified professional');
+      throw new UnprocessableException(
+        'Cannot reject an already verified professional',
+      );
     }
     this.status = ProfessionalStatus.REJECTED;
     this.rejectionReason = reason;
@@ -204,7 +216,9 @@ export class ProfessionalEntity {
 
   resubmit(): void {
     if (this.status !== ProfessionalStatus.REJECTED) {
-      throw new Error('Only rejected professionals can resubmit');
+      throw new UnprocessableException(
+        'Only rejected professionals can resubmit',
+      );
     }
     this.status = ProfessionalStatus.PENDING;
     this.rejectionReason = undefined;
@@ -224,7 +238,9 @@ export class ProfessionalEntity {
    */
   reactivate(): void {
     if (!this.isVerified) {
-      throw new Error('Cannot reactivate unverified professional');
+      throw new UnprocessableException(
+        'Cannot reactivate unverified professional',
+      );
     }
     this.status = ProfessionalStatus.ACTIVE;
     this.updatedAt = new Date();
@@ -323,7 +339,7 @@ export class ProfessionalEntity {
    */
   addService(service: ServiceOfferingEntity): void {
     if (this.services.some((s) => s.name === service.name && !s.deletedAt)) {
-      throw new Error(`Service "${service.name}" already exists`);
+      throw new ConflictException(`Service "${service.name}" already exists`);
     }
     service.professionalId = this.id;
     this.services.push(service);
@@ -336,7 +352,7 @@ export class ProfessionalEntity {
   removeService(serviceId: string): void {
     const service = this.services.find((s) => s.id === serviceId);
     if (!service) {
-      throw new Error('Service not found');
+      throw new NotFoundException('Service not found');
     }
     service.deletedAt = new Date();
     this.updatedAt = new Date();
@@ -371,7 +387,7 @@ export class ProfessionalEntity {
       (a) => a.dayOfWeek === availability.dayOfWeek && !a.deletedAt,
     );
     if (dayOfWeekExists) {
-      throw new Error(
+      throw new ConflictException(
         `Availability for day ${availability.dayOfWeek} already exists`,
       );
     }
@@ -391,7 +407,7 @@ export class ProfessionalEntity {
       (a) => a.dayOfWeek === dayOfWeek && !a.deletedAt,
     );
     if (!existing) {
-      throw new Error(`No availability found for day ${dayOfWeek}`);
+      throw new NotFoundException(`No availability found for day ${dayOfWeek}`);
     }
     Object.assign(existing, availability);
     this.updatedAt = new Date();
@@ -405,7 +421,7 @@ export class ProfessionalEntity {
       (a) => a.dayOfWeek === dayOfWeek && !a.deletedAt,
     );
     if (!availability) {
-      throw new Error(`No availability found for day ${dayOfWeek}`);
+      throw new NotFoundException(`No availability found for day ${dayOfWeek}`);
     }
     availability.deletedAt = new Date();
     this.updatedAt = new Date();
@@ -449,7 +465,7 @@ export class ProfessionalEntity {
   removeGalleryItem(itemId: string): void {
     const item = this.gallery.find((g) => g.id === itemId);
     if (!item) {
-      throw new Error('Gallery item not found');
+      throw new NotFoundException('Gallery item not found');
     }
     item.delete();
     this.updatedAt = new Date();
@@ -498,7 +514,7 @@ export class ProfessionalEntity {
    */
   updateRating(newRating: number, reviewCount: number): void {
     if (newRating < 1 || newRating > 5) {
-      throw new Error('Rating must be between 1 and 5');
+      throw new BadRequestException('Rating must be between 1 and 5');
     }
     this.rating = newRating;
     this.reviewCount = reviewCount;

@@ -10,9 +10,9 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { UnauthorizedException } from '../../libs/exceptions/domain.exceptions';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,

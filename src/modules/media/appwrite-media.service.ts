@@ -1,3 +1,4 @@
+import { BadRequestException } from '../../libs/exceptions/domain.exceptions';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -220,7 +221,9 @@ export class AppwriteMediaService implements MediaStoragePort {
       case 'image/webp':
         return 'webp';
       default:
-        throw new Error(`Unsupported image mime type: ${mimeType}`);
+        throw new BadRequestException(
+          `Unsupported image mime type: ${mimeType}`,
+        );
     }
   }
 

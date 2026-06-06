@@ -1,3 +1,4 @@
+import { BadRequestException } from '../../../libs/exceptions/domain.exceptions';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NotificationChannel, NotificationStatus } from '@prisma/client';
@@ -103,7 +104,9 @@ export class NotificationDeliveryService {
     const tokens = devices.map((item) => item.pushToken).filter(Boolean);
 
     if (tokens.length === 0) {
-      throw new Error('No active push device token found for this user');
+      throw new BadRequestException(
+        'No active push device token found for this user',
+      );
     }
 
     const dryRun = this.isDryRunEnabled();
@@ -163,7 +166,9 @@ export class NotificationDeliveryService {
 
     const recipient = this.toE164(user?.phone?.number);
     if (!recipient) {
-      throw new Error('User phone number is missing for WhatsApp delivery');
+      throw new BadRequestException(
+        'User phone number is missing for WhatsApp delivery',
+      );
     }
 
     const apiVersion =
@@ -205,7 +210,7 @@ export class NotificationDeliveryService {
 
     const raw = await response.text();
     if (!response.ok) {
-      throw new Error(
+      throw new BadRequestException(
         `Meta WhatsApp failed with status=${response.status} body=${raw}`,
       );
     }
@@ -232,7 +237,9 @@ export class NotificationDeliveryService {
 
     const recipient = this.toE164(user?.phone?.number);
     if (!recipient) {
-      throw new Error('User phone number is missing for SMS delivery');
+      throw new BadRequestException(
+        'User phone number is missing for SMS delivery',
+      );
     }
 
     const baseUrl =
@@ -269,7 +276,7 @@ export class NotificationDeliveryService {
 
     const raw = await response.text();
     if (!response.ok) {
-      throw new Error(
+      throw new BadRequestException(
         `MTarget SMS failed with status=${response.status} body=${raw}`,
       );
     }

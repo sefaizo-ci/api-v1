@@ -1,8 +1,8 @@
+import { Injectable } from '@nestjs/common';
 import {
   BadRequestException,
-  Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import {
   CommandHandler,
   EventBus,

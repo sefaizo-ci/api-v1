@@ -1,12 +1,9 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Inject,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -18,6 +15,11 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '../../libs/exceptions/domain.exceptions';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';

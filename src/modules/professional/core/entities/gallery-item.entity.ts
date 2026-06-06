@@ -1,3 +1,4 @@
+import { BadRequestException } from '../../../../libs/exceptions/domain.exceptions';
 /**
  * GalleryItem Entity
  * Represents a portfolio item (image) for a professional
@@ -47,7 +48,7 @@ export class GalleryItemEntity {
     order?: number;
   }): GalleryItemEntity {
     if (!props.imageUrl || props.imageUrl.trim().length === 0) {
-      throw new Error('Image URL is required');
+      throw new BadRequestException('Image URL is required');
     }
 
     return new GalleryItemEntity({

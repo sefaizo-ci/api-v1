@@ -1,8 +1,8 @@
+import { Injectable } from '@nestjs/common';
 import {
   ForbiddenException,
-  Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ReviewerType } from '@prisma/client';
 import { PrismaService } from '../../../../libs/database/prisma.service';

@@ -1,4 +1,5 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ConflictException } from '../../../../../libs/exceptions/domain.exceptions';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../../libs/database/prisma.service';
 import { UserEntity } from '../../../core/entities/user.entity';

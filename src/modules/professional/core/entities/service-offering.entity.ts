@@ -1,3 +1,4 @@
+import { BadRequestException } from '../../../../libs/exceptions/domain.exceptions';
 export class CommuneFeeVO {
   constructor(
     public readonly commune: string,
@@ -11,10 +12,10 @@ export class CommuneFeeVO {
     isAvailable?: boolean,
   ): CommuneFeeVO {
     if (!commune || commune.trim().length === 0) {
-      throw new Error('Commune name is required');
+      throw new BadRequestException('Commune name is required');
     }
     if (travelFee < 0) {
-      throw new Error('Travel fee cannot be negative');
+      throw new BadRequestException('Travel fee cannot be negative');
     }
     return new CommuneFeeVO(commune, travelFee, isAvailable ?? true);
   }
@@ -79,13 +80,13 @@ export class ServiceOfferingEntity {
     category: string;
   }): ServiceOfferingEntity {
     if (!props.name || props.name.trim().length === 0) {
-      throw new Error('Service name is required');
+      throw new BadRequestException('Service name is required');
     }
     if (props.durationMin <= 0) {
-      throw new Error('Duration must be greater than 0');
+      throw new BadRequestException('Duration must be greater than 0');
     }
     if (props.basePrice < 0) {
-      throw new Error('Price cannot be negative');
+      throw new BadRequestException('Price cannot be negative');
     }
 
     return new ServiceOfferingEntity({

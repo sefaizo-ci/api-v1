@@ -1,8 +1,8 @@
+import { Inject } from '@nestjs/common';
 import {
   BadRequestException,
   ForbiddenException,
-  Inject,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { IUserRepository } from '../../core/services/user.service.interface';
 import { SkipOnboardingStepCommand } from '../commands/skip-onboarding-step.command';

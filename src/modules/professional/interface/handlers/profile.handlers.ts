@@ -1,8 +1,8 @@
+import { Injectable } from '@nestjs/common';
 import {
   BadRequestException,
-  Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../libs/database/prisma.service';

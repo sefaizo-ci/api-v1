@@ -1,10 +1,10 @@
+import { Injectable } from '@nestjs/common';
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { BookingStatus, ServiceCategoryRequestStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';

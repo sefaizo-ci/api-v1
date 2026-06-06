@@ -1,8 +1,8 @@
+import { Inject } from '@nestjs/common';
 import {
   BadRequestException,
-  Inject,
   UnauthorizedException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
 import { OtpPurpose } from '../../core/enums/auth.enums';

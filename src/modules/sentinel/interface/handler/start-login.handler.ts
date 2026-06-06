@@ -1,9 +1,8 @@
+import { Inject, Logger } from '@nestjs/common';
 import {
   BadRequestException,
-  Inject,
-  Logger,
   UnauthorizedException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
