@@ -2,15 +2,24 @@ import type { Prisma } from '@prisma/client';
 import { UserEntity } from '../entities/user.entity';
 import type { LoginApp, UserRole } from '../enums/auth.enums';
 
-export type OnboardingStep =
-  | 'PROFILE_PENDING' // PIN créé, nom manquant
-  | 'ESTABLISHMENT_PENDING' // Nom OK, profil pro manquant (type + infos)
-  | 'LOCATION_PENDING' // Profil pro créé, localisation manquante
-  | 'AVAILABILITY_PENDING' // Localisation OK, horaires manquants
-  | 'SERVICES_PENDING' // Horaires OK, services manquants
-  | 'GALLERY_PENDING' // Services OK, galerie manquante
-  | 'TERMS_PENDING' // Galerie OK, CGU non acceptées
-  | 'COMPLETED'; // Tout complété
+export type OnboardingStepStatus = 'done' | 'pending' | 'skipped';
+
+export type OnboardingStepRecord = {
+  index: number;
+  label: string;
+  status: OnboardingStepStatus;
+  blocking: boolean;
+  skippable: boolean;
+  completedAt?: string;
+};
+
+export type OnboardingMeta = {
+  currentStep: { index: number; label: string };
+  completedSteps: OnboardingStepRecord[];
+  remainingSteps: OnboardingStepRecord[];
+  isPublished: boolean;
+  allDone: boolean;
+};
 
 export type PhoneRecord = {
   id: string;
@@ -82,9 +91,10 @@ export interface IUserRepository {
 
   hasProfessionalProfile(userId: string): Promise<boolean>;
   getProfessionalId(userId: string): Promise<string | null>;
-  getOnboardingStep(userId: string): Promise<OnboardingStep>;
+  getOnboardingMeta(userId: string, role?: string): Promise<OnboardingMeta>;
+  skipOnboardingStep(userId: string, stepLabel: string): Promise<void>;
   acceptTerms(userId: string): Promise<void>;
-  completeOnboarding(userId: string): Promise<void>;
+  completeOnboarding(userId: string): Promise<Date>;
 
   // Legacy — kept for JWT strategy validate()
   findUserById(

@@ -9,7 +9,7 @@ import * as crypto from 'crypto';
 import { OtpPurpose } from '../../core/enums/auth.enums';
 import type { IOtpRepository } from '../../core/services/otp.service.interface';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
-import type { IUserRepository } from '../../core/services/user.service.interface';
+import type { IUserRepository, OnboardingMeta } from '../../core/services/user.service.interface';
 import { TokenService } from '../../services/token.service';
 import { LoginCompleteCommand } from '../commands/login-complete.command';
 
@@ -35,7 +35,7 @@ type LoginCompleteResult = {
     app: string;
     hasAcceptedTerms: boolean;
     acceptedTermsAt: string | null;
-    onboardingStep: string;
+    onboarding: OnboardingMeta | null;
   };
 };
 
@@ -134,9 +134,10 @@ export class LoginCompleteHandler implements ICommandHandler<LoginCompleteComman
       metadata: { app: cmd.app },
     });
 
-    const onboardingStep: string = await this.userRepo.getOnboardingStep(
-      user.id,
-    );
+    const onboarding =
+      cmd.app === 'PROFESSIONAL'
+        ? await this.userRepo.getOnboardingMeta(user.id)
+        : null;
     const termsDate: Date | null = user.acceptedTermsAt;
     const acceptedTermsAt: string | null =
       termsDate instanceof Date ? termsDate.toISOString() : null;
@@ -159,7 +160,7 @@ export class LoginCompleteHandler implements ICommandHandler<LoginCompleteComman
         app: cmd.app,
         hasAcceptedTerms: acceptedTermsAt !== null,
         acceptedTermsAt,
-        onboardingStep,
+        onboarding,
       },
     };
   }

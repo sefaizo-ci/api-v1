@@ -34,7 +34,9 @@ export const AUTH = {
   LOGOUT: 'logout',
   ME: 'me',
   ME_UPDATE: 'me',
+  ONBOARDING: 'me/onboarding',
   ONBOARDING_COMPLETE: 'me/onboarding/complete',
+  ONBOARDING_STEP_SKIP: 'me/onboarding/step/:step/skip',
   SESSIONS: 'me/sessions',
   PUSH_TOKEN: 'me/push-token',
   COOKIE: {

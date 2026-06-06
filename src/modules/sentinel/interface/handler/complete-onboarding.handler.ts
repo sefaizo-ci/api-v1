@@ -24,14 +24,19 @@ export class CompleteOnboardingHandler implements ICommandHandler<CompleteOnboar
       };
     }
 
-    const step: string = await this.userRepo.getOnboardingStep(cmd.userId);
-    if (step !== 'COMPLETED') {
+    const meta = await this.userRepo.getOnboardingMeta(cmd.userId, cmd.role);
+
+    if (!meta.allDone) {
+      const missing = meta.remainingSteps
+        .filter((s) => s.blocking)
+        .map((s) => s.label)
+        .join(', ');
       throw new BadRequestException(
-        `Onboarding incomplet — étape manquante : ${step}.`,
+        `Onboarding incomplet — étapes manquantes : ${missing}.`,
       );
     }
 
-    await this.userRepo.completeOnboarding(cmd.userId);
-    return { onboardingCompletedAt: new Date().toISOString() };
+    const completedAt = await this.userRepo.completeOnboarding(cmd.userId);
+    return { onboardingCompletedAt: completedAt.toISOString() };
   }
 }

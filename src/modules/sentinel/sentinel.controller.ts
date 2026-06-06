@@ -34,6 +34,8 @@ type TokenResponse = { refreshToken: string };
 import { AcceptTermsCommand } from './interface/commands/accept-terms.command';
 import { ChangePinCommand } from './interface/commands/change-pin.command';
 import { CompleteOnboardingCommand } from './interface/commands/complete-onboarding.command';
+import { SkipOnboardingStepCommand } from './interface/commands/skip-onboarding-step.command';
+import { GetOnboardingMetaQuery } from './interface/queries/get-onboarding-meta.query';
 import { CreatePinCommand } from './interface/commands/create-pin.command';
 import { LoginCompleteCommand } from './interface/commands/login-complete.command';
 import { LogoutCommand } from './interface/commands/logout.command';
@@ -432,11 +434,11 @@ export class SentinelController {
     },
   })
   updateMe(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { id: string; role: string },
     @Body() dto: UpdateUserProfileDto,
   ) {
     return this.commandBus.execute(
-      new UpdateUserProfileCommand(user.id, dto.firstName, dto.lastName),
+      new UpdateUserProfileCommand(user.id, user.role, dto.firstName, dto.lastName),
     );
   }
 
@@ -457,8 +459,39 @@ export class SentinelController {
       },
     },
   })
-  completeOnboarding(@CurrentUser() user: { id: string }) {
-    return this.commandBus.execute(new CompleteOnboardingCommand(user.id));
+  completeOnboarding(@CurrentUser() user: { id: string; role: string }) {
+    return this.commandBus.execute(new CompleteOnboardingCommand(user.id, user.role));
+  }
+
+  @Get(AUTH.ONBOARDING)
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get onboarding progress',
+    description:
+      'Returns the current onboarding step, completed steps, remaining steps, and publication status.',
+  })
+  getOnboardingMeta(@CurrentUser() user: { id: string; role: string }) {
+    return this.queryBus.execute(new GetOnboardingMetaQuery(user.id, user.role));
+  }
+
+  @Post(AUTH.ONBOARDING_STEP_SKIP)
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Skip a non-blocking onboarding step',
+    description:
+      'Marks a step as skipped. Only non-blocking steps (localisation, disponibilites, galerie) can be skipped.',
+  })
+  skipOnboardingStep(
+    @CurrentUser() user: { id: string; role: string },
+    @Param('step') step: string,
+  ) {
+    return this.commandBus.execute(
+      new SkipOnboardingStepCommand(user.id, step, user.role),
+    );
   }
 
   @Get(AUTH.SESSIONS)

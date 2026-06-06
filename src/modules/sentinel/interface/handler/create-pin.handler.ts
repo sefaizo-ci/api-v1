@@ -2,7 +2,7 @@ import { BadRequestException, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as bcrypt from 'bcrypt';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';
-import type { IUserRepository } from '../../core/services/user.service.interface';
+import type { IUserRepository, OnboardingMeta } from '../../core/services/user.service.interface';
 import { TokenService } from '../../services/token.service';
 import { CreatePinCommand } from '../commands/create-pin.command';
 
@@ -35,7 +35,7 @@ type CreatePinResult = {
     app: string;
     hasAcceptedTerms: boolean;
     acceptedTermsAt: string | null;
-    onboardingStep: string;
+    onboarding: OnboardingMeta | null;
   };
 };
 
@@ -102,7 +102,7 @@ export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 
-    const onboardingStep = 'PROFILE_PENDING';
+    const onboarding = await this.userRepo.getOnboardingMeta(user.id, cmd.app);
 
     return {
       accessToken,
@@ -116,7 +116,7 @@ export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
         app: cmd.app,
         hasAcceptedTerms: false,
         acceptedTermsAt: null,
-        onboardingStep,
+        onboarding,
       },
     };
   }
