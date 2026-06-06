@@ -333,6 +333,8 @@ model Professional {
   reviewCount Int             @default(0)
   bookingCount    Int             @default(0)
   travelBufferMin Int             @default(0)
+  amenities       String[]        @default([])
+  mainCategories  String[]        @default([])
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   deletedAt  DateTime?
