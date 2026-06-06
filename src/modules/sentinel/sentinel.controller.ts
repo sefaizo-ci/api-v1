@@ -28,8 +28,22 @@ import type { Request, Response } from 'express';
 import { AUTH } from '../../common/constants/routes';
 import { extractIp } from '../../common/utils/request.util';
 import { LOGIN_APPS, type LoginApp } from './core/enums/auth.enums';
-
-type TokenResponse = { refreshToken: string };
+import type {
+  AcceptTermsResult,
+  AuthTokensResult,
+  CompleteOnboardingResult,
+  GetMeResult,
+  GetOnboardingMetaResult,
+  InitAuthFlowResult,
+  MessageResult,
+  RefreshTokenResult,
+  SendOtpResult,
+  SessionResult,
+  SkipOnboardingStepResult,
+  StartLoginResult,
+  UpdateUserProfileResult,
+  VerifyOtpResult,
+} from './interface/types/sentinel-results';
 
 import { AcceptTermsCommand } from './interface/commands/accept-terms.command';
 import { ChangePinCommand } from './interface/commands/change-pin.command';
@@ -126,7 +140,9 @@ export class SentinelController {
     },
   })
   initFlow(@Body() dto: InitAuthFlowDto) {
-    return this.queryBus.execute(new InitAuthFlowQuery(dto.phone, dto.app));
+    return this.queryBus.execute<InitAuthFlowQuery, InitAuthFlowResult>(
+      new InitAuthFlowQuery(dto.phone, dto.app),
+    );
   }
 
   @Post(AUTH.OTP.SEND)
@@ -146,7 +162,7 @@ export class SentinelController {
     },
   })
   sendOtp(@Body() dto: SendOtpDto, @Req() req: Request) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<SendOtpCommand, SendOtpResult>(
       new SendOtpCommand(
         dto.phone,
         dto.purpose,
@@ -178,7 +194,7 @@ export class SentinelController {
     },
   })
   verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<VerifyOtpCommand, VerifyOtpResult>(
       new VerifyOtpCommand(dto.phone, dto.code, dto.purpose, dto.app),
     );
   }
@@ -205,7 +221,7 @@ export class SentinelController {
   ) {
     const result = await this.commandBus.execute<
       CreatePinCommand,
-      TokenResponse
+      AuthTokensResult
     >(
       new CreatePinCommand(
         challenge.id,
@@ -232,7 +248,7 @@ export class SentinelController {
   })
   @ApiBody({ type: StartLoginDto })
   startLogin(@Body() dto: StartLoginDto, @Req() req: Request) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<StartLoginCommand, StartLoginResult>(
       new StartLoginCommand(
         dto.phone,
         dto.pin,
@@ -264,7 +280,7 @@ export class SentinelController {
   ) {
     const result = await this.commandBus.execute<
       LoginCompleteCommand,
-      TokenResponse
+      AuthTokensResult
     >(
       new LoginCompleteCommand(
         challenge.userId,
@@ -299,7 +315,7 @@ export class SentinelController {
     @Body() dto: ResetPinDto,
     @Req() req: Request,
   ) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<ResetPinCommand, MessageResult>(
       new ResetPinCommand(
         challenge.userId,
         dto.pin,
@@ -322,7 +338,7 @@ export class SentinelController {
     description: 'Invalid current PIN or bearer token',
   })
   changePin(@CurrentUser() user: { id: string }, @Body() dto: ChangePinDto) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<ChangePinCommand, MessageResult>(
       new ChangePinCommand(
         user.id,
         dto.currentPin,
@@ -349,7 +365,9 @@ export class SentinelController {
     },
   })
   acceptTerms(@CurrentUser() user: { id: string }) {
-    return this.commandBus.execute(new AcceptTermsCommand(user.id));
+    return this.commandBus.execute<AcceptTermsCommand, AcceptTermsResult>(
+      new AcceptTermsCommand(user.id),
+    );
   }
 
   // ─── Token management ─────────────────────────────────────────────────────
@@ -373,7 +391,7 @@ export class SentinelController {
 
     const result = await this.commandBus.execute<
       RefreshTokenCommand,
-      TokenResponse
+      RefreshTokenResult
     >(new RefreshTokenCommand(refreshToken));
     setRefreshCookie(res, result.refreshToken);
     return result;
@@ -401,7 +419,7 @@ export class SentinelController {
       sameSite: 'lax',
       path: AUTH.COOKIE.REFRESH.PATH,
     });
-    return this.commandBus.execute(
+    return this.commandBus.execute<LogoutCommand, MessageResult>(
       new LogoutCommand(user.id, refreshToken, dto.allDevices),
     );
   }
@@ -413,7 +431,9 @@ export class SentinelController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
   getMe(@CurrentUser() user: { id: string }) {
-    return this.queryBus.execute(new GetMeQuery(user.id));
+    return this.queryBus.execute<GetMeQuery, GetMeResult>(
+      new GetMeQuery(user.id),
+    );
   }
 
   @Patch(AUTH.ME_UPDATE)
@@ -440,7 +460,10 @@ export class SentinelController {
     @CurrentUser() user: { id: string; role: string },
     @Body() dto: UpdateUserProfileDto,
   ) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<
+      UpdateUserProfileCommand,
+      UpdateUserProfileResult
+    >(
       new UpdateUserProfileCommand(
         user.id,
         user.role,
@@ -467,9 +490,10 @@ export class SentinelController {
     },
   })
   completeOnboarding(@CurrentUser() user: { id: string; role: string }) {
-    return this.commandBus.execute(
-      new CompleteOnboardingCommand(user.id, user.role),
-    );
+    return this.commandBus.execute<
+      CompleteOnboardingCommand,
+      CompleteOnboardingResult
+    >(new CompleteOnboardingCommand(user.id, user.role));
   }
 
   @Get(AUTH.ONBOARDING)
@@ -481,9 +505,10 @@ export class SentinelController {
       'Returns the current onboarding step, completed steps, remaining steps, and publication status.',
   })
   getOnboardingMeta(@CurrentUser() user: { id: string; role: string }) {
-    return this.queryBus.execute(
-      new GetOnboardingMetaQuery(user.id, user.role),
-    );
+    return this.queryBus.execute<
+      GetOnboardingMetaQuery,
+      GetOnboardingMetaResult
+    >(new GetOnboardingMetaQuery(user.id, user.role));
   }
 
   @Post(AUTH.ONBOARDING_STEP_SKIP)
@@ -498,9 +523,10 @@ export class SentinelController {
     @CurrentUser() user: { id: string; role: string },
     @Param('step') step: string,
   ) {
-    return this.commandBus.execute(
-      new SkipOnboardingStepCommand(user.id, step, user.role),
-    );
+    return this.commandBus.execute<
+      SkipOnboardingStepCommand,
+      SkipOnboardingStepResult
+    >(new SkipOnboardingStepCommand(user.id, step, user.role));
   }
 
   @Get(AUTH.SESSIONS)
@@ -508,7 +534,9 @@ export class SentinelController {
   @ApiOperation({ summary: 'List active sessions' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
   getSessions(@CurrentUser() user: { id: string }) {
-    return this.queryBus.execute(new GetSessionsQuery(user.id));
+    return this.queryBus.execute<GetSessionsQuery, SessionResult[]>(
+      new GetSessionsQuery(user.id),
+    );
   }
 
   @Delete(`${AUTH.SESSIONS}/:id`)
@@ -520,7 +548,7 @@ export class SentinelController {
     @CurrentUser() user: { id: string },
     @Param('id') sessionId: string,
   ) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<RevokeSessionCommand, MessageResult>(
       new RevokeSessionCommand(user.id, sessionId),
     );
   }
@@ -535,7 +563,7 @@ export class SentinelController {
     @CurrentUser() user: { id: string },
     @Body() dto: RegisterPushTokenDto,
   ) {
-    return this.commandBus.execute(
+    return this.commandBus.execute<RegisterPushTokenCommand, MessageResult>(
       new RegisterPushTokenCommand(
         user.id,
         dto.platform,
