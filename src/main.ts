@@ -3,8 +3,9 @@ import {
   ValidationPipe,
   type INestApplication,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { EnvironmentVariables } from './libs/config/env.validation';
 import cookieParser from 'cookie-parser';
 import { randomUUID } from 'crypto';
 import type { NextFunction, Request, Response } from 'express';
@@ -12,30 +13,35 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { APP } from './common/constants/routes';
+import { mountBullBoard } from './libs/bull-board/bull-board.setup';
 import { GlobalExceptionFilter } from './libs/filters/http-exception.filter';
+import { setupSwagger } from './libs/swagger/swagger.setup';
 
-function resolveAllowedOrigins() {
-  const configuredOrigins = process.env.ALLOWED_ORIGINS?.split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  if (configuredOrigins?.length) {
-    return configuredOrigins;
+function resolveAllowedOrigins(
+  config: ConfigService<EnvironmentVariables>,
+): string[] | true {
+  const configured = config.get<string>('ALLOWED_ORIGINS');
+  if (configured) {
+    const origins = configured
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+    if (origins.length) return origins;
   }
 
   const vercelOrigins = [
-    process.env.VERCEL_PROJECT_PRODUCTION_URL,
-    process.env.VERCEL_BRANCH_URL,
-    process.env.VERCEL_URL,
+    config.get<string>('VERCEL_PROJECT_PRODUCTION_URL'),
+    config.get<string>('VERCEL_BRANCH_URL'),
+    config.get<string>('VERCEL_URL'),
   ]
-    .filter((origin): origin is string => Boolean(origin))
-    .map((origin) => `https://${origin}`);
+    .filter((o): o is string => Boolean(o))
+    .map((o) => `https://${o}`);
 
   if (vercelOrigins.length > 0) {
     return vercelOrigins;
   }
 
-  if (process.env.NODE_ENV === 'production') {
+  if (config.get<string>('NODE_ENV') === 'production') {
     throw new Error('ALLOWED_ORIGINS must be set in production');
   }
 
@@ -45,6 +51,8 @@ function resolveAllowedOrigins() {
 export async function createNestApp(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+
+  const config = app.get<ConfigService<EnvironmentVariables>>(ConfigService);
 
   app.use(helmet());
 
@@ -73,41 +81,24 @@ export async function createNestApp(): Promise<INestApplication> {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.use(cookieParser());
 
+  mountBullBoard(app);
+  setupSwagger(app);
+
   app.enableCors({
-    origin: resolveAllowedOrigins(),
+    origin: resolveAllowedOrigins(config),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
-
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Sefaizo API')
-    .setDescription(
-      'API documentation for Sefaizo backend services. All /auth routes require the x-api-key header. Protected routes also require Bearer JWT.',
-    )
-    .setVersion('1.0')
-    .addServer(`/`)
-    .addApiKey(
-      {
-        type: 'apiKey',
-        in: 'header',
-        name: 'x-api-key',
-        description: 'API key required to access the API',
-      },
-      'x-api-key',
-    )
-    .addBearerAuth()
-    .build();
-  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup(APP.DOCS.BASE, app, swaggerDocument);
 
   return app;
 }
 
 async function bootstrap() {
   const app = await createNestApp();
+  const config = app.get<ConfigService<EnvironmentVariables>>(ConfigService);
   const logger = app.get(Logger);
 
-  const port = process.env['PORT'] ?? 3000;
+  const port = config.get<string>('PORT') ?? 3000;
   await app.listen(port);
   logger.log(
     `SEFAIZO API running on http://localhost:${port}/${APP.API.PREFIX}`,

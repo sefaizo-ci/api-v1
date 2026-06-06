@@ -14,26 +14,26 @@ enum AppEnvironment {
   Test = 'test',
 }
 
-class EnvironmentVariables {
+export class EnvironmentVariables {
   @IsOptional()
   @IsEnum(AppEnvironment)
   NODE_ENV?: AppEnvironment;
 
   @IsString()
   @IsNotEmpty()
-  DATABASE_URL: string;
+  DATABASE_URL!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_SECRET: string;
+  JWT_SECRET!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_EXPIRES_IN: string;
+  JWT_EXPIRES_IN!: string;
 
   @IsString()
   @IsNotEmpty()
-  REDIS_URL: string;
+  REDIS_URL!: string;
 
   // Optional — services handle missing values with dry-run/fallback modes
   @IsOptional()
@@ -111,6 +111,26 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   APPWRITE_STORAGE_BUCKET_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  ALLOWED_ORIGINS?: string;
+
+  @IsOptional()
+  @IsString()
+  BULL_BOARD_PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
+  VERCEL_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  VERCEL_BRANCH_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  VERCEL_PROJECT_PRODUCTION_URL?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

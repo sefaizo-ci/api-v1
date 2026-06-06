@@ -57,6 +57,10 @@ export class NotificationQueueService implements OnModuleDestroy {
     return this.connection;
   }
 
+  getQueue(): Queue {
+    return this.queue;
+  }
+
   async onModuleDestroy(): Promise<void> {
     await this.queue.close();
   }
