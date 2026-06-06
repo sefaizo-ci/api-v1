@@ -1,9 +1,9 @@
+import { Injectable } from '@nestjs/common';
 import {
   BadRequestException,
   ForbiddenException,
-  Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from '../../../../libs/exceptions/domain.exceptions';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import {
   BookingStatus,

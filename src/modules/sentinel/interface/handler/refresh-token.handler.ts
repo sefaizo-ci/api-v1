@@ -1,4 +1,5 @@
-import { Inject, UnauthorizedException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import { UnauthorizedException } from '../../../../libs/exceptions/domain.exceptions';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import * as crypto from 'crypto';
 import type { IRefreshTokenRepository } from '../../core/services/refresh-token.service.interface';

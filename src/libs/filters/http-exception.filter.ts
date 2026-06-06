@@ -7,6 +7,33 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+  UnprocessableException,
+} from '../exceptions/domain.exceptions';
+
+type DomainException =
+  | NotFoundException
+  | ConflictException
+  | BadRequestException
+  | UnauthorizedException
+  | ForbiddenException
+  | UnprocessableException;
+
+function isDomainException(err: unknown): err is DomainException {
+  return (
+    err instanceof NotFoundException ||
+    err instanceof ConflictException ||
+    err instanceof BadRequestException ||
+    err instanceof UnauthorizedException ||
+    err instanceof ForbiddenException ||
+    err instanceof UnprocessableException
+  );
+}
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -34,15 +61,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const requestId = this.toRequestId(response.getHeader('x-request-id'));
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status: number;
+    let message: unknown;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Erreur interne du serveur.';
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      message = exception.getResponse();
+    } else if (isDomainException(exception)) {
+      status = exception.statusCode;
+      message = exception.message;
+    } else {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = 'Erreur interne du serveur.';
+    }
 
     const context = `[requestId=${requestId}] ${request.method} ${request.url} -> ${status}`;
 

@@ -1,4 +1,5 @@
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import { NotFoundException } from '../../../../libs/exceptions/domain.exceptions';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { IUserRepository } from '../../core/services/user.service.interface';
 import { GetMeQuery } from './get-me.query';
