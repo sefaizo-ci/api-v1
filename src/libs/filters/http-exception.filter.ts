@@ -7,62 +7,76 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { RequestContextService } from '../context/request-context.service';
+
+function extractMessages(exception: HttpException): string[] {
+  const response = exception.getResponse();
+  if (typeof response === 'string') {
+    return [response];
+  }
+  if (typeof response === 'object' && response !== null) {
+    const msg = (response as Record<string, unknown>)['message'];
+    if (Array.isArray(msg)) return msg.map(String);
+    if (typeof msg === 'string') return [msg];
+  }
+  return [exception.message];
+}
+
+function extractError(exception: HttpException): string {
+  const response = exception.getResponse();
+  if (typeof response === 'object' && response !== null) {
+    const err = (response as Record<string, unknown>)['error'];
+    if (typeof err === 'string') return err;
+  }
+  return exception.message;
+}
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
-  private toRequestId(value: string | number | string[] | undefined): string {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    if (typeof value === 'number') {
-      return value.toString();
-    }
-
-    if (Array.isArray(value) && value.length > 0) {
-      return value.join(',');
-    }
-
-    return 'n/a';
-  }
-
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const requestId = this.toRequestId(response.getHeader('x-request-id'));
+    const correlationId = RequestContextService.getRequestId();
 
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
+    const messages =
       exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Erreur interne du serveur.';
+        ? extractMessages(exception)
+        : ['Erreur interne du serveur.'];
 
-    const context = `[requestId=${requestId}] ${request.method} ${request.url} -> ${status}`;
+    const error =
+      exception instanceof HttpException
+        ? extractError(exception)
+        : 'Internal Server Error';
+
+    const logContext = `[${correlationId}] ${request.method} ${request.url} -> ${status}`;
 
     if (exception instanceof Error) {
-      this.logger.error(`${context} | ${exception.name}: ${exception.message}`);
+      this.logger.error(
+        `${logContext} | ${exception.name}: ${exception.message}`,
+      );
       if (exception.stack) {
-        this.logger.error(exception.stack);
+        this.logger.debug(exception.stack);
       }
     } else {
-      this.logger.error(
-        `${context} | non-Error exception: ${String(exception)}`,
-      );
+      this.logger.error(`${logContext} | ${String(exception)}`);
     }
 
     response.status(status).json({
       success: false,
       statusCode: status,
-      message,
-      timestamp: new Date().toISOString(),
+      error,
+      message: messages,
+      correlationId,
       path: request.url,
+      timestamp: new Date().toISOString(),
     });
   }
 }

@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { validateEnv } from './libs/config/env.validation';
 import { DatabaseModule } from './libs/database/database.module';
+import { ContextInterceptor } from './libs/interceptors/context.interceptor';
 import { RedisModule } from './libs/redis/redis.module';
 import { ClientModule } from './modules/client/client.module';
 import { MediaModule } from './modules/media/media.module';
@@ -16,7 +18,7 @@ import { SentinelModule } from './modules/sentinel/sentinel.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -36,6 +38,7 @@ import { SentinelModule } from './modules/sentinel/sentinel.module';
   controllers: [AppController],
   providers: [
     AppService,
+    { provide: APP_INTERCEPTOR, useClass: ContextInterceptor },
     { provide: APP_GUARD, useClass: ApiKeyGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
