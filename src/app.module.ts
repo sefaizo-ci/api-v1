@@ -8,6 +8,9 @@ import { AppService } from './app.service';
 import { validateEnv } from './libs/config/env.validation';
 import { DatabaseModule } from './libs/database/database.module';
 import { ContextInterceptor } from './libs/interceptors/context.interceptor';
+import { LoggingInterceptor } from './libs/interceptors/logging.interceptor';
+import { TimeoutInterceptor } from './libs/interceptors/timeout.interceptor';
+import { TransformInterceptor } from './libs/interceptors/transform.interceptor';
 import { RedisModule } from './libs/redis/redis.module';
 import { ClientModule } from './modules/client/client.module';
 import { MediaModule } from './modules/media/media.module';
@@ -66,6 +69,9 @@ import { SentinelModule } from './modules/sentinel/sentinel.module';
   providers: [
     AppService,
     { provide: APP_INTERCEPTOR, useClass: ContextInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: TimeoutInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
     { provide: APP_GUARD, useClass: ApiKeyGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
