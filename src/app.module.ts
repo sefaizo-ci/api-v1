@@ -15,6 +15,7 @@ import { ProfessionalModule } from './modules/professional/professional.module';
 import { PulseModule } from './modules/pulse/pulse.module';
 import { ReviewModule } from './modules/review/review.module';
 import { ApiKeyGuard } from './modules/sentinel/infrastructure/guards/api-key.guard';
+import { JwtAuthGuard } from './modules/sentinel/infrastructure/guards/jwt-auth.guard';
 import { SentinelModule } from './modules/sentinel/sentinel.module';
 
 @Module({
@@ -66,6 +67,7 @@ import { SentinelModule } from './modules/sentinel/sentinel.module';
     AppService,
     { provide: APP_INTERCEPTOR, useClass: ContextInterceptor },
     { provide: APP_GUARD, useClass: ApiKeyGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

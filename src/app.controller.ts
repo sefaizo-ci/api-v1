@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { APP } from './common/constants/routes';
+import { Public } from './libs/decorators/public.decorator';
 
 @Controller()
 @ApiTags('System')
@@ -9,6 +10,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get(APP.HEALTH)
+  @Public()
   @ApiOperation({ summary: 'Health check' })
   @ApiOkResponse({
     description: 'Service health status',
@@ -41,6 +43,7 @@ export class AppController {
   }
 
   @Get(APP.ROOT)
+  @Public()
   @ApiOperation({ summary: 'Root endpoint' })
   @ApiOkResponse({
     description: 'API root status',
