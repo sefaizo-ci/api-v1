@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
-import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import { NotificationsService } from './application/notifications.service';
 import { ListNotificationsDto } from './interface/dtos/list-notifications.dto';
@@ -27,7 +26,7 @@ type AuthenticatedRequest = Request & {
 };
 
 @Controller('pulse')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles('CLIENT', 'PROFESSIONAL', 'ADMIN')
 export class PulseController {
   constructor(private readonly notificationsService: NotificationsService) {}

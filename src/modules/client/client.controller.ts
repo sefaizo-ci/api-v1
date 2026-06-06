@@ -13,7 +13,6 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import { CancelBookingCommand } from '../professional/interface/commands/booking.commands';
-import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import {
   CreateClientBookingCommand,
@@ -32,7 +31,7 @@ type AuthenticatedRequest = Request & {
 };
 
 @Controller('clients')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles('CLIENT')
 export class ClientController {
   constructor(

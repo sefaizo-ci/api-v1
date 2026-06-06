@@ -13,7 +13,6 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
-import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import {
   ApproveServiceCategoryRequestCommand,
@@ -45,7 +44,7 @@ type AuthenticatedRequest = Request & {
 };
 
 @Controller('professional')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles('ADMIN')
 export class ProfessionalAdminController {
   constructor(

@@ -5,12 +5,10 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../../libs/decorators/current-user.decorator';
 import { Public } from '../../libs/decorators/public.decorator';
-import { JwtAuthGuard } from '../sentinel/infrastructure/guards/jwt-auth.guard';
 import { EditReviewCommand, SubmitReviewCommand } from './interface/commands';
 import { EditReviewDto, SubmitReviewDto } from './interface/dtos';
 import {
@@ -20,7 +18,6 @@ import {
 } from './interface/queries';
 
 @Controller('reviews')
-@UseGuards(JwtAuthGuard)
 export class ReviewController {
   constructor(
     private readonly commandBus: CommandBus,
