@@ -11,6 +11,7 @@ import { AcceptTermsHandler } from './interface/handler/accept-terms.handler';
 import { ChangePinHandler } from './interface/handler/change-pin.handler';
 import { CompleteOnboardingHandler } from './interface/handler/complete-onboarding.handler';
 import { CreatePinHandler } from './interface/handler/create-pin.handler';
+import { SkipOnboardingStepHandler } from './interface/handler/skip-onboarding-step.handler';
 import { UpdateUserProfileHandler } from './interface/handler/update-user-profile.handler';
 import { LoginCompleteHandler } from './interface/handler/login-complete.handler';
 import { LogoutHandler } from './interface/handler/logout.handler';
@@ -23,6 +24,7 @@ import { StartLoginHandler } from './interface/handler/start-login.handler';
 import { VerifyOtpHandler } from './interface/handler/verify-otp.handler';
 
 import { GetMeHandler } from './interface/queries/get-me.handler';
+import { GetOnboardingMetaHandler } from './interface/queries/get-onboarding-meta.handler';
 import { GetSessionsHandler } from './interface/queries/get-sessions.handler';
 import { InitAuthFlowHandler } from './interface/queries/init-auth-flow.handler';
 
@@ -36,12 +38,14 @@ import { UserRepository } from './infrastructure/persistence/repositories/user.r
 
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { NotificationService } from './services/notification.service';
+import { ProfessionalEligibilityService } from './services/professional-eligibility.service';
 import { TokenService } from './services/token.service';
 import { PrismaService } from '../../libs/database/prisma.service';
 
 const CommandHandlers = [
   AcceptTermsHandler,
   CompleteOnboardingHandler,
+  SkipOnboardingStepHandler,
   UpdateUserProfileHandler,
   SendOtpHandler,
   StartLoginHandler,
@@ -56,7 +60,7 @@ const CommandHandlers = [
   RegisterPushTokenHandler,
 ];
 
-const QueryHandlers = [GetMeHandler, GetSessionsHandler, InitAuthFlowHandler];
+const QueryHandlers = [GetMeHandler, GetOnboardingMetaHandler, GetSessionsHandler, InitAuthFlowHandler];
 
 @Module({
   imports: [
@@ -83,12 +87,13 @@ const QueryHandlers = [GetMeHandler, GetSessionsHandler, InitAuthFlowHandler];
     JwtAuthGuard,
     RolesGuard,
     TokenService,
+    ProfessionalEligibilityService,
     PrismaService,
     { provide: 'IUserRepository', useClass: UserRepository },
     { provide: 'IOtpRepository', useClass: OtpRepository },
     { provide: 'IRefreshTokenRepository', useClass: RefreshTokenRepository },
     { provide: 'INotificationService', useClass: NotificationService },
   ],
-  exports: ['IUserRepository', JwtAuthGuard, RolesGuard],
+  exports: ['IUserRepository', JwtAuthGuard, RolesGuard, ProfessionalEligibilityService],
 })
 export class SentinelModule {}

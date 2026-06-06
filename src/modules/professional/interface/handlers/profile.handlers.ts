@@ -3,9 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../../libs/database/prisma.service';
 import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { randomUUID } from 'node:crypto';
+import { PrismaService } from '../../../../libs/database/prisma.service';
+import { ProfessionalEligibilityService } from '../../../sentinel/services/professional-eligibility.service';
 import { ProfessionalEntity } from '../../core/entities/professional.entity';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
@@ -63,6 +64,7 @@ export class CreateProfessionalProfileHandler implements ICommandHandler<CreateP
   constructor(
     private readonly repository: ProfessionalRepository,
     private readonly eventBus: EventBus,
+    private readonly eligibility: ProfessionalEligibilityService,
   ) {}
 
   async execute(
@@ -84,12 +86,16 @@ export class CreateProfessionalProfileHandler implements ICommandHandler<CreateP
       address: command.address,
       latitude: command.latitude,
       longitude: command.longitude,
+      amenities: command.amenities,
+      mainCategories: command.mainCategories,
     });
 
     await this.repository.save(professional);
     this.eventBus.publish(
       new ProfessionalCreatedEvent(professional.id, professional.agencyName),
     );
+
+    await this.eligibility.refresh(command.userId);
 
     return professional;
   }
@@ -102,18 +108,19 @@ export class CreateProfessionalProfileHandler implements ICommandHandler<CreateP
 @CommandHandler(UpdateProfessionalProfileCommand)
 @Injectable()
 export class UpdateProfessionalProfileHandler implements ICommandHandler<UpdateProfessionalProfileCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eligibility: ProfessionalEligibilityService,
+  ) {}
 
   async execute(
     command: UpdateProfessionalProfileCommand,
   ): Promise<ProfessionalEntity> {
-    // Fetch existing professional
     const professional = await findProfessionalOrFail(
       this.repository,
       command.professionalId,
     );
 
-    // Update profile
     professional.updateProfile({
       agencyName: command.agencyName,
       bio: command.bio,
@@ -122,9 +129,12 @@ export class UpdateProfessionalProfileHandler implements ICommandHandler<UpdateP
       address: command.address,
       latitude: command.latitude,
       longitude: command.longitude,
+      amenities: command.amenities,
+      mainCategories: command.mainCategories,
     });
 
     await this.repository.save(professional);
+    await this.eligibility.refresh(professional.userId);
 
     return professional;
   }

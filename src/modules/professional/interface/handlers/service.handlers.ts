@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ServiceOfferingEntity } from '../../core/entities/service-offering.entity';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
+import { ProfessionalEligibilityService } from '../../../sentinel/services/professional-eligibility.service';
 import {
   ActivateServiceCommand,
   AddServiceCommand,
@@ -340,6 +341,7 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
   constructor(
     private readonly repository: ProfessionalRepository,
     private readonly prisma: PrismaService,
+    private readonly eligibility: ProfessionalEligibilityService,
   ) {}
 
   async execute(command: AddServiceCommand): Promise<ServiceOfferingEntity> {
@@ -386,6 +388,7 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
 
     professional.addService(service);
     await this.repository.save(professional);
+    await this.eligibility.refresh(professional.userId);
 
     return service;
   }
@@ -488,7 +491,10 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
 @CommandHandler(DeleteServiceCommand)
 @Injectable()
 export class DeleteServiceHandler implements ICommandHandler<DeleteServiceCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eligibility: ProfessionalEligibilityService,
+  ) {}
 
   async execute(command: DeleteServiceCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
@@ -498,6 +504,7 @@ export class DeleteServiceHandler implements ICommandHandler<DeleteServiceComman
 
     professional.removeService(command.serviceId);
     await this.repository.save(professional);
+    await this.eligibility.refresh(professional.userId);
   }
 }
 
@@ -537,7 +544,10 @@ export class SetServiceCommuneFeeHandler implements ICommandHandler<SetServiceCo
 @CommandHandler(ActivateServiceCommand)
 @Injectable()
 export class ActivateServiceHandler implements ICommandHandler<ActivateServiceCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly eligibility: ProfessionalEligibilityService,
+  ) {}
 
   async execute(command: ActivateServiceCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
@@ -552,6 +562,7 @@ export class ActivateServiceHandler implements ICommandHandler<ActivateServiceCo
 
     service.activate();
     await this.repository.save(professional);
+    await this.eligibility.refresh(professional.userId);
   }
 }
 
@@ -565,6 +576,7 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
   constructor(
     private readonly repository: ProfessionalRepository,
     private readonly prisma: PrismaService,
+    private readonly eligibility: ProfessionalEligibilityService,
   ) {}
 
   async execute(command: DeactivateServiceCommand): Promise<void> {
@@ -593,6 +605,8 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
         cancellationNote: 'Service désactivé par le professionnel.',
       },
     });
+
+    await this.eligibility.refresh(professional.userId);
   }
 }
 

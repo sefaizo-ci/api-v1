@@ -1,19 +1,21 @@
 import { BadRequestException, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import type { IUserRepository } from '../../core/services/user.service.interface';
+import type { IUserRepository, OnboardingMeta } from '../../core/services/user.service.interface';
+import { ProfessionalEligibilityService } from '../../services/professional-eligibility.service';
 import { UpdateUserProfileCommand } from '../commands/update-user-profile.command';
 
 type UpdateUserProfileResult = {
   id: string;
   firstName: string;
   lastName: string;
-  onboardingStep: string;
+  onboarding: OnboardingMeta;
 };
 
 @CommandHandler(UpdateUserProfileCommand)
 export class UpdateUserProfileHandler implements ICommandHandler<UpdateUserProfileCommand> {
   constructor(
     @Inject('IUserRepository') private readonly userRepo: IUserRepository,
+    private readonly eligibility: ProfessionalEligibilityService,
   ) {}
 
   async execute(
@@ -28,15 +30,17 @@ export class UpdateUserProfileHandler implements ICommandHandler<UpdateUserProfi
       lastName: cmd.lastName,
     });
 
-    const onboardingStep: string = await this.userRepo.getOnboardingStep(
-      cmd.userId,
-    );
+    if (cmd.role === 'PROFESSIONAL') {
+      await this.eligibility.refresh(cmd.userId);
+    }
+
+    const onboarding = await this.userRepo.getOnboardingMeta(cmd.userId, cmd.role);
 
     return {
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
-      onboardingStep,
+      onboarding,
     };
   }
 }
