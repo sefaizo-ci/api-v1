@@ -13,7 +13,7 @@ module.exports = {
   apps: [
     {
       name: 'sefaizo-api',
-      script: './dist/main.js',
+      script: './dist/src/main.js',
       instances: 'max',
       exec_mode: 'cluster',
       max_memory_restart: '512M',
@@ -23,7 +23,7 @@ module.exports = {
     },
     {
       name: 'sefaizo-worker',
-      script: './dist/worker.js',
+      script: './dist/src/worker.js',
       instances: 1,
       exec_mode: 'fork',
       max_memory_restart: '256M',
