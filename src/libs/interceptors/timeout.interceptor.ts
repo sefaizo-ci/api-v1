@@ -26,7 +26,7 @@ export class TimeoutInterceptor implements NestInterceptor {
             () => new RequestTimeoutException('La requête a expiré.'),
           );
         }
-        return throwError(() => err);
+        return throwError(() => err as Error);
       }),
     );
   }

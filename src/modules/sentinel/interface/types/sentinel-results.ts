@@ -1,7 +1,5 @@
 import type { OtpChannel } from '../../core/enums/auth.enums';
-import type {
-  OnboardingMeta,
-} from '../../core/services/user.service.interface';
+import type { OnboardingMeta } from '../../core/services/user.service.interface';
 
 export type InitAuthFlowResult = {
   nextStep: 'PIN_THEN_OTP' | 'OTP';
