@@ -84,6 +84,8 @@ export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
     const user = created.user;
     const professionalId = created.professionalId;
 
+    await this.userRepo.acceptTerms(user.id);
+
     await this.userRepo.logAuthEvent({
       event: 'REGISTRATION_COMPLETED',
       userId: user.id,
@@ -118,8 +120,8 @@ export class CreatePinHandler implements ICommandHandler<CreatePinCommand> {
         phone: user.phone,
         firstName: user.firstName,
         app: cmd.app,
-        hasAcceptedTerms: false,
-        acceptedTermsAt: null,
+        hasAcceptedTerms: true,
+        acceptedTermsAt: new Date().toISOString(),
         onboarding,
       },
     };

@@ -15,11 +15,12 @@ import { UserMapper } from '../../mappers/user.mapper';
 
 const PROFESSIONAL_ONBOARDING_STEPS = [
   { index: 1, label: 'identite', blocking: true, skippable: false },
-  { index: 2, label: 'categorie', blocking: true, skippable: true },
-  { index: 3, label: 'etablissement', blocking: true, skippable: false },
+  { index: 2, label: 'etablissement', blocking: false, skippable: true },
+  { index: 3, label: 'etablissement-info', blocking: false, skippable: true },
   { index: 4, label: 'localisation', blocking: true, skippable: true },
-  { index: 5, label: 'service', blocking: true, skippable: true },
-  { index: 6, label: 'galerie', blocking: false, skippable: true },
+  { index: 5, label: 'disponibilite', blocking: true, skippable: true },
+  { index: 6, label: 'service', blocking: true, skippable: true },
+  { index: 7, label: 'galerie', blocking: false, skippable: true },
 ] as const;
 
 @Injectable()
@@ -314,16 +315,22 @@ export class UserRepository implements IUserRepository {
       where: { id: userId },
       select: {
         firstName: true,
+        lastName: true,
+        acceptedTermsAt: true,
         metadata: true,
         professional: {
           where: { deletedAt: null },
           select: {
             agencyName: true,
-            avatarUrl: true,
             bio: true,
+            mainCategories: true,
             address: true,
             location: true,
-            mainCategories: true,
+            availabilities: {
+              where: { isActive: true, deletedAt: null },
+              select: { id: true },
+              take: 1,
+            },
             services: {
               where: { isActive: true, deletedAt: null },
               select: { id: true },
@@ -339,7 +346,7 @@ export class UserRepository implements IUserRepository {
       },
     });
 
-    if (role === 'CLIENT') {
+    if (role !== 'PROFESSIONAL') {
       const identiteDone = !!user?.firstName?.trim();
       const step = { index: 1, label: 'identite' };
       const completedSteps: OnboardingStepRecord[] = identiteDone
@@ -380,19 +387,16 @@ export class UserRepository implements IUserRepository {
 
     const pro = user?.professional;
 
-    // BOTH and HOME professionals remain visible without an address — localisation not blocking for isPublished
+    // HOME/BOTH professionals don't need a fixed address — localisation only blocks SALON accounts
     const proLocation = pro?.location ?? 'BOTH';
     const isLocalisationBlocking = proLocation === 'SALON';
 
     const isDone: Record<string, boolean> = {
-      identite: !!user?.firstName?.trim(),
-      categorie: !!pro?.mainCategories?.length,
-      etablissement: !!(
-        pro?.agencyName?.trim() &&
-        pro?.avatarUrl &&
-        pro?.bio?.trim()
-      ),
+      identite: !!(user?.firstName?.trim() && user?.lastName?.trim()),
+      etablissement: !!pro?.mainCategories?.length,
+      'etablissement-info': !!pro?.bio?.trim(),
       localisation: !!pro?.address,
+      disponibilite: !!pro?.availabilities?.length,
       service: !!pro?.services?.length,
       galerie: !!pro?.gallery?.length,
     };
@@ -403,7 +407,10 @@ export class UserRepository implements IUserRepository {
     for (const step of PROFESSIONAL_ONBOARDING_STEPS) {
       const effectivelyBlocking =
         step.blocking &&
-        !(step.label === 'localisation' && !isLocalisationBlocking);
+        !(
+          (step.label === 'localisation' || step.label === 'disponibilite') &&
+          !isLocalisationBlocking
+        );
 
       const status: OnboardingStepStatus = isDone[step.label]
         ? 'done'
@@ -429,7 +436,11 @@ export class UserRepository implements IUserRepository {
     // isPublished: all effectively-blocking steps completed (actual data, not skip status)
     const isPublished = PROFESSIONAL_ONBOARDING_STEPS.filter(
       (s) =>
-        s.blocking && !(s.label === 'localisation' && !isLocalisationBlocking),
+        s.blocking &&
+        !(
+          (s.label === 'localisation' || s.label === 'disponibilite') &&
+          !isLocalisationBlocking
+        ),
     ).every((s) => isDone[s.label]);
 
     // allDone: same as isPublished — optional steps (galerie) never block completion
@@ -439,7 +450,7 @@ export class UserRepository implements IUserRepository {
       remainingSteps[0] ?? completedSteps[completedSteps.length - 1];
     const currentStep = firstRemaining
       ? { index: firstRemaining.index, label: firstRemaining.label }
-      : { index: 6, label: 'galerie' };
+      : { index: 8, label: 'done' };
 
     return {
       currentStep,
