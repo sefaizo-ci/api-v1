@@ -88,7 +88,9 @@ export class UpdateServiceDto {
 }
 
 export class UpsertServiceItemDto {
-  @ApiPropertyOptional({ description: 'ID existant — absent pour un nouveau service' })
+  @ApiPropertyOptional({
+    description: 'ID existant — absent pour un nouveau service',
+  })
   @IsOptional()
   @IsUUID()
   id?: string;
@@ -124,7 +126,7 @@ export class UpsertServiceItemDto {
   @ApiPropertyOptional({
     example: 'https://example.com/service.jpg',
     nullable: true,
-    description: 'null pour supprimer l\'image existante',
+    description: "null pour supprimer l'image existante",
   })
   @IsOptional()
   @ValidateIf((o: UpsertServiceItemDto) => o.imageUrl !== null)

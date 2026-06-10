@@ -659,7 +659,9 @@ export class UpsertServicesBulkHandler implements ICommandHandler<UpsertServices
     if (!professional) throw new NotFoundException('Professionnel non trouve');
 
     // Validate all categories up front (batch lookup).
-    const categoryNames = [...new Set(command.services.map((s) => s.category.trim()))];
+    const categoryNames = [
+      ...new Set(command.services.map((s) => s.category.trim())),
+    ];
     const foundCategories = await this.prisma.serviceCategory.findMany({
       where: {
         name: { in: categoryNames, mode: 'insensitive' },
@@ -668,7 +670,9 @@ export class UpsertServicesBulkHandler implements ICommandHandler<UpsertServices
       },
       select: { name: true },
     });
-    const validNames = new Set(foundCategories.map((c) => c.name.toLowerCase()));
+    const validNames = new Set(
+      foundCategories.map((c) => c.name.toLowerCase()),
+    );
     for (const name of categoryNames) {
       if (!validNames.has(name.toLowerCase())) {
         throw new NotFoundException(
@@ -699,7 +703,8 @@ export class UpsertServicesBulkHandler implements ICommandHandler<UpsertServices
         if (existing) {
           // Update in place.
           existing.name = item.name;
-          if (item.description !== undefined) existing.description = item.description;
+          if (item.description !== undefined)
+            existing.description = item.description;
           existing.durationMin = item.durationMin;
           existing.basePrice = item.basePrice;
           existing.category = resolvedCategory;
