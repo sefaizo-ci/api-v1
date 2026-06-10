@@ -2105,6 +2105,96 @@
               ]
             },
             {
+              "name": "Get Onboarding Progress",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me/onboarding",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "me",
+                    "onboarding"
+                  ]
+                },
+                "description": "Retourne l'étape d'onboarding actuelle, les étapes complétées, les étapes restantes et le statut de publication. Rôle requis : authentifié."
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{accessToken}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/sentinel/me/onboarding",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "sentinel",
+                        "me",
+                        "onboarding"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"currentStep\": \"SERVICES\",\n  \"completedSteps\": [\"PROFILE\", \"TERMS\"],\n  \"remainingSteps\": [\"SERVICES\", \"AVAILABILITY\"],\n  \"isPublished\": false\n}"
+                }
+              ]
+            },
+            {
+              "name": "Skip Onboarding Step",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/sentinel/me/onboarding/step/{{step}}/skip",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sentinel",
+                    "me",
+                    "onboarding",
+                    "step",
+                    "{{step}}",
+                    "skip"
+                  ],
+                  "variable": [
+                    {
+                      "key": "step",
+                      "value": "localisation",
+                      "description": "Étape à passer (ex: localisation, disponibilites, galerie)"
+                    }
+                  ]
+                },
+                "description": "Marque une étape d'onboarding comme passée. Seules les étapes non bloquantes peuvent être sautées (localisation, disponibilites, galerie). Rôle requis : authentifié."
+              },
+              "response": []
+            },
+            {
               "name": "Logout",
               "event": [
                 {
@@ -2980,6 +3070,33 @@
               }
             },
             {
+              "name": "Get My Onboarding State",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/profile/me/onboarding-state",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "profile",
+                    "me",
+                    "onboarding-state"
+                  ]
+                },
+                "description": "Retourne un snapshot complet de l'état d'onboarding (profil + services + disponibilités + galerie). À appeler une fois après login si l'onboarding est incomplet. Rôle requis : PROFESSIONAL."
+              },
+              "response": []
+            },
+            {
               "name": "Get Profile Completion",
               "event": [
                 {
@@ -3518,6 +3635,32 @@
                   "body": "{\n  \"avatarUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"fileId\": \"FILE_ID\",\n  \"path\": \"professionals/PROF_ID/avatar/uuid.jpg\",\n  \"maxSizeBytes\": 10485760,\n  \"acceptedFormats\": [\"image/jpg\", \"image/jpeg\", \"image/png\", \"image/webp\"]\n}"
                 }
               ]
+            },
+            {
+              "name": "Remove Avatar",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/avatar",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "avatar"
+                  ]
+                },
+                "description": "Supprime la photo de profil (avatar) du professionnel. Rôle requis : PROFESSIONAL (propriétaire)."
+              },
+              "response": []
             },
             {
               "name": "Update Professional Settings",
@@ -4070,6 +4213,42 @@
               }
             },
             {
+              "name": "Upsert Services Bulk",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"services\": [\n    {\n      \"id\": \"existing-service-id\",\n      \"name\": \"Coupe homme\",\n      \"description\": \"Coupe classique\",\n      \"durationMin\": 30,\n      \"basePrice\": 2000,\n      \"category\": \"category-id\",\n      \"imageUrl\": null\n    },\n    {\n      \"name\": \"Soin visage\",\n      \"durationMin\": 60,\n      \"basePrice\": 5000,\n      \"category\": \"category-id\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/bulk",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "services",
+                    "bulk"
+                  ]
+                },
+                "description": "Upsert-replace de tous les services en un seul appel. Items avec id → mise à jour. Items sans id → création. Items en BDD absents de la liste → soft-delete. Passer imageUrl: null pour supprimer l'image d'un service. Rôle requis : PROFESSIONAL (propriétaire)."
+              },
+              "response": []
+            },
+            {
               "name": "Update Service",
               "event": [
                 {
@@ -4372,6 +4551,34 @@
                   "body": "{\n  \"imageUrl\": \"https://cloud.appwrite.io/v1/storage/buckets/BUCKET/files/FILE_ID/view?project=PROJECT\",\n  \"fileId\": \"FILE_ID\",\n  \"path\": \"professionals/PROF_ID/service/uuid.jpg\"\n}"
                 }
               ]
+            },
+            {
+              "name": "Remove Service Image",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}/image",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}",
+                    "image"
+                  ]
+                },
+                "description": "Supprime l'image d'un service. Rôle requis : PROFESSIONAL (propriétaire)."
+              },
+              "response": []
             }
           ]
         },
@@ -5061,6 +5268,42 @@
                 },
                 "description": "Hide a gallery item from the public feed."
               }
+            },
+            {
+              "name": "Replace Gallery",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"keepIds\": [\"gallery-item-id-1\", \"gallery-item-id-2\"]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/gallery/replace",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "gallery",
+                    "replace"
+                  ]
+                },
+                "description": "Remplace l'intégralité de la galerie : conserve uniquement les items dont les ids sont dans keepIds, soft-delete les autres. À appeler avant d'uploader de nouvelles images pour définir l'état désiré. Rôle requis : PROFESSIONAL (propriétaire)."
+              },
+              "response": []
             },
             {
               "name": "Reorder Gallery",
@@ -6333,52 +6576,6 @@
               }
             },
             {
-              "name": "Update Pending Booking",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status is 200', function () {",
-                      "  pm.response.to.have.status(200);",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"scheduledAt\": \"{{clientUpdatedScheduledAt}}\",\n  \"commune\": \"{{commune}}\",\n  \"address\": \"{{clientAddress}}\",\n  \"clientNotes\": \"{{clientNotes}}\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "clients",
-                    "me",
-                    "bookings",
-                    "{{bookingId}}"
-                  ]
-                },
-                "description": "Update booking details while the booking status is PENDING."
-              }
-            },
-            {
               "name": "Request Booking Cancellation",
               "event": [
                 {
@@ -6424,6 +6621,42 @@
                 },
                 "description": "Client asks the professional to cancel a CONFIRMED booking."
               }
+            },
+            {
+              "name": "Cancel Booking (Client)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Je ne peux plus me déplacer\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/clients/me/bookings/{{bookingId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "clients",
+                    "me",
+                    "bookings",
+                    "{{bookingId}}"
+                  ]
+                },
+                "description": "Annule directement une réservation (CLIENT). Body: { reason: string }. Rôle requis : CLIENT."
+              },
+              "response": []
             }
           ]
         }
