@@ -125,3 +125,11 @@ export class UpdateProfessionalSettingsCommand implements ICommand {
     public readonly travelBufferMin: number,
   ) {}
 }
+
+/**
+ * RemoveAvatarCommand
+ * Clears the professional's avatar URL.
+ */
+export class RemoveAvatarCommand implements ICommand {
+  constructor(public readonly professionalId: string) {}
+}

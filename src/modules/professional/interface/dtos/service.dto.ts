@@ -1,12 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   IsUrl,
   MaxLength,
   Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 
 export class AddServiceDto {
@@ -81,6 +85,59 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsUrl({ require_protocol: true })
   imageUrl?: string;
+}
+
+export class UpsertServiceItemDto {
+  @ApiPropertyOptional({ description: 'ID existant — absent pour un nouveau service' })
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @ApiProperty({ example: 'Brushing' })
+  @IsString()
+  @MaxLength(120)
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Brushing rapide 30 minutes' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiProperty({ example: 30 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  durationMin!: number;
+
+  @ApiProperty({ example: 8000 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  basePrice!: number;
+
+  @ApiProperty({ example: 'Coiffage' })
+  @IsString()
+  @MaxLength(80)
+  category!: string;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/service.jpg',
+    nullable: true,
+    description: 'null pour supprimer l\'image existante',
+  })
+  @IsOptional()
+  @ValidateIf((o: UpsertServiceItemDto) => o.imageUrl !== null)
+  @IsUrl({ require_protocol: true })
+  imageUrl?: string | null;
+}
+
+export class UpsertServicesBulkDto {
+  @ApiProperty({ type: [UpsertServiceItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpsertServiceItemDto)
+  services!: UpsertServiceItemDto[];
 }
 
 export class SetCommuneFeeDto {

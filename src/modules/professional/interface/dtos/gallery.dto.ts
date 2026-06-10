@@ -71,3 +71,13 @@ export class PublishStateDto {
   @IsBoolean()
   isPublic!: boolean;
 }
+
+export class ReplaceGalleryDto {
+  @ApiProperty({
+    type: [String],
+    description: 'IDs des items à conserver — les autres sont supprimés.',
+  })
+  @IsArray()
+  @IsUUID('all', { each: true })
+  keepIds!: string[];
+}

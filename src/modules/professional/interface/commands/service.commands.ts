@@ -119,3 +119,18 @@ export class DeactivateServiceCommand implements ICommand {
     public readonly professionalId: string,
   ) {}
 }
+
+export class UpsertServicesBulkCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly services: Array<{
+      id?: string;
+      name: string;
+      durationMin: number;
+      basePrice: number;
+      category: string;
+      description?: string;
+      imageUrl?: string | null;
+    }>,
+  ) {}
+}

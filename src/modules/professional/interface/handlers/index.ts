@@ -18,6 +18,7 @@ import {
 import {
   DeleteGalleryItemHandler,
   PublishGalleryItemHandler,
+  ReplaceGalleryHandler,
   ReorderGalleryHandler,
   UnpublishGalleryItemHandler,
   UpdateGalleryItemHandler,
@@ -25,6 +26,7 @@ import {
 } from './gallery.handlers';
 import {
   GetAvailableSlotsHandler,
+  GetMyOnboardingStateHandler,
   GetMyProfessionalProfileHandler,
   GetNewProfessionalsHandler,
   GetProfessionalAvailabilityHandler,
@@ -48,6 +50,7 @@ import {
   PauseBookingsHandler,
   ReactivateProfessionalHandler,
   RejectProfessionalHandler,
+  RemoveAvatarHandler,
   ResubmitProfessionalHandler,
   ResumeBookingsHandler,
   SuspendProfessionalHandler,
@@ -71,6 +74,7 @@ import {
   SetServiceCommuneFeeHandler,
   UpdateServiceCategoryHandler,
   UpdateServiceHandler,
+  UpsertServicesBulkHandler,
 } from './service.handlers';
 
 export const ProfessionalCommandHandlers = [
@@ -85,6 +89,7 @@ export const ProfessionalCommandHandlers = [
   ResumeBookingsHandler,
   ResubmitProfessionalHandler,
   UpdateProfessionalSettingsHandler,
+  RemoveAvatarHandler,
   CreateServiceCategoryHandler,
   UpdateServiceCategoryHandler,
   DeleteServiceCategoryHandler,
@@ -99,6 +104,7 @@ export const ProfessionalCommandHandlers = [
   SetServiceCommuneFeeHandler,
   ActivateServiceHandler,
   DeactivateServiceHandler,
+  UpsertServicesBulkHandler,
   SetAvailabilityHandler,
   SetAvailabilityBulkHandler,
   UpdateAvailabilityHandler,
@@ -111,6 +117,7 @@ export const ProfessionalCommandHandlers = [
   PublishGalleryItemHandler,
   UnpublishGalleryItemHandler,
   ReorderGalleryHandler,
+  ReplaceGalleryHandler,
   ConfirmBookingHandler,
   RejectBookingHandler,
   CompleteBookingHandler,
@@ -122,6 +129,7 @@ export const ProfessionalCommandHandlers = [
 
 export const ProfessionalQueryHandlers = [
   GetMyProfessionalProfileHandler,
+  GetMyOnboardingStateHandler,
   GetProfessionalProfileHandler,
   ListProfessionalsHandler,
   GetProfessionalServicesHandler,

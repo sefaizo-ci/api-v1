@@ -14,6 +14,7 @@ import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import {
   GetAvailableSlotsQuery,
+  GetMyOnboardingStateQuery,
   GetMyProfessionalProfileQuery,
   GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
@@ -467,6 +468,70 @@ export class GetMyProfessionalProfileHandler implements IQueryHandler<GetMyProfe
     }
 
     return professional.getSummary();
+  }
+}
+
+@QueryHandler(GetMyOnboardingStateQuery)
+@Injectable()
+export class GetMyOnboardingStateHandler implements IQueryHandler<GetMyOnboardingStateQuery> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(query: GetMyOnboardingStateQuery) {
+    const professional = await this.repository.findByUserId(query.userId);
+    if (!professional) {
+      throw new NotFoundException('Profil professionnel non trouvé');
+    }
+
+    const services = professional.getActiveServices();
+    const availabilities = professional.getActiveAvailabilities();
+    const gallery = professional.getAllGalleryItems();
+
+    return {
+      professionalId: professional.id,
+      profile: {
+        agencyName: professional.agencyName,
+        bio: professional.bio ?? null,
+        avatarUrl: professional.avatarUrl ?? null,
+        location: professional.location,
+        address: professional.address ?? null,
+        latitude: professional.latitude ?? null,
+        longitude: professional.longitude ?? null,
+        mainCategories: professional.mainCategories,
+        amenities: professional.amenities,
+      },
+      services: services.map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description ?? null,
+        durationMin: s.durationMin,
+        basePrice: s.basePrice,
+        category: s.category,
+        imageUrl: s.imageUrl ?? null,
+        isActive: s.isActive,
+      })),
+      availabilities: availabilities.map((a) => ({
+        dayOfWeek: a.dayOfWeek,
+        startTime: a.workingHours.startTime,
+        endTime: a.workingHours.endTime,
+        breakStartTime: a.breakTime?.startTime ?? null,
+        breakEndTime: a.breakTime?.endTime ?? null,
+        isActive: a.isActive,
+        status: a.status,
+      })),
+      gallery: gallery.map((g) => ({
+        id: g.id,
+        imageUrl: g.imageUrl,
+        caption: g.caption ?? null,
+        category: g.category ?? null,
+        order: g.order,
+        isPublic: g.isPublic,
+      })),
+      stats: {
+        serviceCount: services.length,
+        availabilityCount: availabilities.length,
+        galleryCount: gallery.length,
+      },
+    };
   }
 }
 

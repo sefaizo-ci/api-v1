@@ -69,3 +69,14 @@ export class ReorderGalleryCommand implements ICommand {
     public readonly itemOrders: { id: string; order: number }[],
   ) {}
 }
+
+/**
+ * ReplaceGalleryCommand
+ * Keeps only items in keepIds, soft-deletes the rest.
+ */
+export class ReplaceGalleryCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly keepIds: string[],
+  ) {}
+}

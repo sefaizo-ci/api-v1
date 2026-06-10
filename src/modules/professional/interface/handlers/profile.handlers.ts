@@ -17,6 +17,7 @@ import {
   ResubmitProfessionalCommand,
   ResumeBookingsCommand,
   SuspendProfessionalCommand,
+  RemoveAvatarCommand,
   ToggleListingCommand,
   UpdateProfessionalProfileCommand,
   UpdateProfessionalSettingsCommand,
@@ -352,6 +353,28 @@ export class UpdateProfessionalSettingsHandler implements ICommandHandler<Update
     await this.prisma.professional.update({
       where: { id: command.professionalId },
       data: { travelBufferMin: command.travelBufferMin },
+    });
+  }
+}
+
+@CommandHandler(RemoveAvatarCommand)
+@Injectable()
+export class RemoveAvatarHandler implements ICommandHandler<RemoveAvatarCommand> {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async execute(command: RemoveAvatarCommand): Promise<void> {
+    const professional = await this.prisma.professional.findFirst({
+      where: { id: command.professionalId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouvé');
+    }
+
+    await this.prisma.professional.update({
+      where: { id: command.professionalId },
+      data: { avatarUrl: null },
     });
   }
 }

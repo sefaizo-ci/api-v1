@@ -7,6 +7,7 @@ import { ProfessionalRepository } from '../../infrastructure/persistence/profess
 import {
   DeleteGalleryItemCommand,
   PublishGalleryItemCommand,
+  ReplaceGalleryCommand,
   ReorderGalleryCommand,
   UnpublishGalleryItemCommand,
   UpdateGalleryItemCommand,
@@ -142,6 +143,28 @@ export class ReorderGalleryHandler implements ICommandHandler<ReorderGalleryComm
     }
 
     professional.reorderGallery(command.itemOrders);
+    await this.repository.save(professional);
+  }
+}
+
+@CommandHandler(ReplaceGalleryCommand)
+@Injectable()
+export class ReplaceGalleryHandler implements ICommandHandler<ReplaceGalleryCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: ReplaceGalleryCommand): Promise<void> {
+    const professional = await this.repository.findById(command.professionalId);
+    if (!professional) {
+      throw new NotFoundException('Professionnel non trouve');
+    }
+
+    const keepSet = new Set(command.keepIds);
+    for (const item of professional.gallery.filter((g) => !g.deletedAt)) {
+      if (!keepSet.has(item.id)) {
+        professional.removeGalleryItem(item.id);
+      }
+    }
+
     await this.repository.save(professional);
   }
 }

@@ -27,6 +27,7 @@ import {
   SetServiceCommuneFeeCommand,
   UpdateServiceCategoryCommand,
   UpdateServiceCommand,
+  UpsertServicesBulkCommand,
 } from '../../interface/commands';
 
 function toCategorySlug(value: string): string {
@@ -641,5 +642,105 @@ export class RemoveServiceImageHandler implements ICommandHandler<RemoveServiceI
 
     service.clearImage();
     await this.repository.save(professional);
+  }
+}
+
+@CommandHandler(UpsertServicesBulkCommand)
+@Injectable()
+export class UpsertServicesBulkHandler implements ICommandHandler<UpsertServicesBulkCommand> {
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly prisma: PrismaService,
+    private readonly eligibility: ProfessionalEligibilityService,
+  ) {}
+
+  async execute(command: UpsertServicesBulkCommand): Promise<void> {
+    const professional = await this.repository.findById(command.professionalId);
+    if (!professional) throw new NotFoundException('Professionnel non trouve');
+
+    // Validate all categories up front (batch lookup).
+    const categoryNames = [...new Set(command.services.map((s) => s.category.trim()))];
+    const foundCategories = await this.prisma.serviceCategory.findMany({
+      where: {
+        name: { in: categoryNames, mode: 'insensitive' },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { name: true },
+    });
+    const validNames = new Set(foundCategories.map((c) => c.name.toLowerCase()));
+    for (const name of categoryNames) {
+      if (!validNames.has(name.toLowerCase())) {
+        throw new NotFoundException(
+          `Categorie introuvable : "${name}". Choisissez une categorie valide du catalogue global.`,
+        );
+      }
+    }
+
+    // Soft-delete services absent from the submitted list.
+    const submittedIds = new Set(
+      command.services.filter((s) => s.id).map((s) => s.id!),
+    );
+    for (const existing of professional.services.filter((s) => !s.deletedAt)) {
+      if (!submittedIds.has(existing.id)) {
+        professional.removeService(existing.id);
+      }
+    }
+
+    // Upsert each submitted service.
+    for (const item of command.services) {
+      const resolvedCategory =
+        foundCategories.find(
+          (c) => c.name.toLowerCase() === item.category.trim().toLowerCase(),
+        )?.name ?? item.category.trim();
+
+      if (item.id) {
+        const existing = professional.getService(item.id);
+        if (existing) {
+          // Update in place.
+          existing.name = item.name;
+          if (item.description !== undefined) existing.description = item.description;
+          existing.durationMin = item.durationMin;
+          existing.basePrice = item.basePrice;
+          existing.category = resolvedCategory;
+          if (item.imageUrl === null) {
+            existing.clearImage();
+          } else if (item.imageUrl !== undefined) {
+            existing.setImage(item.imageUrl);
+          }
+          existing.updatedAt = new Date();
+        }
+        // If id was given but not found (deleted), fall through to create.
+        else {
+          const service = ServiceOfferingEntity.create({
+            id: item.id,
+            professionalId: professional.id,
+            name: item.name,
+            description: item.description,
+            durationMin: item.durationMin,
+            basePrice: item.basePrice,
+            category: resolvedCategory,
+          });
+          if (item.imageUrl) service.setImage(item.imageUrl);
+          professional.addService(service);
+        }
+      } else {
+        // New service — generate a fresh ID.
+        const service = ServiceOfferingEntity.create({
+          id: randomUUID(),
+          professionalId: professional.id,
+          name: item.name,
+          description: item.description,
+          durationMin: item.durationMin,
+          basePrice: item.basePrice,
+          category: resolvedCategory,
+        });
+        if (item.imageUrl) service.setImage(item.imageUrl);
+        professional.addService(service);
+      }
+    }
+
+    await this.repository.save(professional);
+    await this.eligibility.refresh(professional.userId);
   }
 }

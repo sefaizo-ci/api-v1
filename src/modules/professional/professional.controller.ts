@@ -46,6 +46,9 @@ import {
   PublishGalleryItemCommand,
   RejectBookingCommand,
   RemoveAvailabilityCommand,
+  RemoveAvatarCommand,
+  RemoveServiceImageCommand,
+  ReplaceGalleryCommand,
   ReorderGalleryCommand,
   SetAvailabilityBulkCommand,
   SetAvailabilityCommand,
@@ -58,6 +61,7 @@ import {
   UpdateProfessionalProfileCommand,
   UpdateServiceCommand,
   UploadGalleryItemCommand,
+  UpsertServicesBulkCommand,
 } from './interface/commands';
 import {
   ApproveBookingCancellationRequestCommand,
@@ -71,6 +75,7 @@ import {
   CreateProfessionalProfileDto,
   CreateServiceCategoryRequestDto,
   RejectBookingDto,
+  ReplaceGalleryDto,
   ReviewCancellationRequestDto,
   SetAvailabilityBulkDto,
   SetAvailabilityDto,
@@ -82,6 +87,7 @@ import {
   UpdateProfessionalProfileDto,
   UpdateServiceDto,
   UploadGalleryItemDto,
+  UpsertServicesBulkDto,
 } from './interface/dtos';
 import {
   SuspendProfessionalDto,
@@ -90,6 +96,7 @@ import {
 import { ReorderGalleryDto } from './interface/dtos/gallery.dto';
 import {
   GetAvailableSlotsQuery,
+  GetMyOnboardingStateQuery,
   GetMyProfessionalProfileQuery,
   GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
@@ -272,6 +279,19 @@ export class ProfessionalController {
   async getMyProfile(@Req() req: AuthenticatedRequest) {
     return this.queryBus.execute<GetMyProfessionalProfileQuery, unknown>(
       new GetMyProfessionalProfileQuery(req.user.id),
+    );
+  }
+
+  /**
+   * Get full onboarding state snapshot (profile + services + availabilities + gallery).
+   * Called once after login when onboarding is incomplete, to restore all section data.
+   */
+  @Get('profile/me/onboarding-state')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async getMyOnboardingState(@Req() req: AuthenticatedRequest) {
+    return this.queryBus.execute<GetMyOnboardingStateQuery, unknown>(
+      new GetMyOnboardingStateQuery(req.user.id),
     );
   }
 
@@ -523,6 +543,26 @@ export class ProfessionalController {
     );
   }
 
+  /**
+   * Upsert-replace all services in one call.
+   * Items with id → update. Items without id → create.
+   * Items in DB absent from the list → soft-delete.
+   * Pass imageUrl: null on an item to remove its image.
+   */
+  @Put(':professionalId/services/bulk')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async upsertServicesBulk(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpsertServicesBulkDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<UpsertServicesBulkCommand, unknown>(
+      new UpsertServicesBulkCommand(professionalId, body.services),
+    );
+  }
+
   @Put('services/:serviceId')
   @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
@@ -581,6 +621,20 @@ export class ProfessionalController {
       fileId: uploaded.fileId,
       path: uploaded.filePath,
     };
+  }
+
+  @Delete(':professionalId/services/:serviceId/image')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async removeServiceImage(
+    @Param('professionalId') professionalId: string,
+    @Param('serviceId') serviceId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<RemoveServiceImageCommand, unknown>(
+      new RemoveServiceImageCommand(serviceId, professionalId, ''),
+    );
   }
 
   @Put(':professionalId/services/:serviceId/deactivate')
@@ -889,6 +943,19 @@ export class ProfessionalController {
     };
   }
 
+  @Delete(':professionalId/avatar')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async removeAvatar(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<RemoveAvatarCommand, unknown>(
+      new RemoveAvatarCommand(professionalId),
+    );
+  }
+
   @Post(':professionalId/avatar/upload')
   @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
@@ -929,6 +996,24 @@ export class ProfessionalController {
       maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
       acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
     };
+  }
+
+  /**
+   * Replace-all gallery: keeps only items in keepIds, soft-deletes the rest.
+   * Call this before uploading new items to set the desired state.
+   */
+  @Put(':professionalId/gallery/replace')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async replaceGallery(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ReplaceGalleryDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<ReplaceGalleryCommand, unknown>(
+      new ReplaceGalleryCommand(professionalId, body.keepIds),
+    );
   }
 
   @Put(':professionalId/gallery/reorder')
