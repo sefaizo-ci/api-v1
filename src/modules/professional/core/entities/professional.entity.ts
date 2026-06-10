@@ -282,24 +282,27 @@ export class ProfessionalEntity {
   }
 
   /**
-   * Blocking steps completed = identité + catégorie + établissement + 1 service.
-   * Account is published only when these are all done.
+   * Store readiness for professional profile data.
+   * Category is now optional for listing visibility.
    */
   hasBlockingStepsCompleted(): boolean {
+    const needsAddress =
+      this.location === ServiceLocation.SALON ||
+      this.location === ServiceLocation.BOTH;
     return (
       !!this.agencyName &&
       !!this.avatarUrl &&
       !!this.bio &&
-      this.mainCategories.length > 0 &&
-      this.hasServices()
+      this.hasServices() &&
+      this.hasAvailability() &&
+      (!needsAddress || !!this.address)
     );
   }
 
   /**
    * Whether the professional appears in public discovery lists.
    * Admin gate: ACTIVE + verified (auto-verified when blocking steps done).
-   * Pro gate: isListingActive + blocking steps completed.
-   * Location rule: SALON pros without address are excluded.
+   * Pro gate: isListingActive + store readiness.
    */
   isPubliclyVisible(): boolean {
     if (
@@ -311,7 +314,6 @@ export class ProfessionalEntity {
       return false;
     }
     if (!this.hasBlockingStepsCompleted()) return false;
-    if (this.location === ServiceLocation.SALON && !this.address) return false;
     return true;
   }
 
@@ -585,6 +587,7 @@ export class ProfessionalEntity {
       galleryCount: this.getGalleryItemCount(),
       profileCompletion: this.getProfileCompletion(),
       canAcceptBookings: this.canAcceptBookings(),
+      mainCategories: this.mainCategories,
     };
   }
 }

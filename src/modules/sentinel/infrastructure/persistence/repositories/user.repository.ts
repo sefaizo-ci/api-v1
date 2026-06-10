@@ -16,7 +16,7 @@ import { UserMapper } from '../../mappers/user.mapper';
 const PROFESSIONAL_ONBOARDING_STEPS = [
   { index: 1, label: 'identite', blocking: true, skippable: false },
   { index: 2, label: 'etablissement', blocking: false, skippable: true },
-  { index: 3, label: 'etablissement-info', blocking: false, skippable: true },
+  { index: 3, label: 'etablissement-info', blocking: true, skippable: false },
   { index: 4, label: 'localisation', blocking: true, skippable: true },
   { index: 5, label: 'disponibilite', blocking: true, skippable: true },
   { index: 6, label: 'service', blocking: true, skippable: true },
@@ -323,6 +323,7 @@ export class UserRepository implements IUserRepository {
           select: {
             agencyName: true,
             bio: true,
+            avatarUrl: true,
             mainCategories: true,
             address: true,
             location: true,
@@ -387,17 +388,28 @@ export class UserRepository implements IUserRepository {
 
     const pro = user?.professional;
 
-    // HOME/BOTH professionals don't need a fixed address — localisation only blocks SALON accounts
+    // HOME professionals don't need a fixed address to be listed publicly.
     const proLocation = pro?.location ?? 'BOTH';
-    const isLocalisationBlocking = proLocation === 'SALON';
+    const requiresAddressForStore =
+      proLocation === 'SALON' || proLocation === 'BOTH';
+
+    const identityDone = !!(user?.firstName?.trim() && user?.lastName?.trim());
+    const establishmentInfoDone = !!pro?.agencyName?.trim();
+    const availabilityDone = !!pro?.availabilities?.length;
+    const servicesDone = !!pro?.services?.length;
+    const locationDone = !!pro?.address?.trim();
+    const establishmentInfoStoreReady =
+      !!pro?.agencyName?.trim() && !!pro?.bio?.trim() && !!pro?.avatarUrl;
+    const locationStoreReady = !requiresAddressForStore || locationDone;
 
     const isDone: Record<string, boolean> = {
-      identite: !!(user?.firstName?.trim() && user?.lastName?.trim()),
+      identite: identityDone,
       etablissement: !!pro?.mainCategories?.length,
-      'etablissement-info': !!pro?.bio?.trim(),
-      localisation: !!pro?.address,
-      disponibilite: !!pro?.availabilities?.length,
-      service: !!pro?.services?.length,
+      // Passage d'étape: seul le nom de l'établissement est requis.
+      'etablissement-info': establishmentInfoDone,
+      localisation: locationDone,
+      disponibilite: availabilityDone,
+      service: servicesDone,
       galerie: !!pro?.gallery?.length,
     };
 
@@ -407,10 +419,7 @@ export class UserRepository implements IUserRepository {
     for (const step of PROFESSIONAL_ONBOARDING_STEPS) {
       const effectivelyBlocking =
         step.blocking &&
-        !(
-          (step.label === 'localisation' || step.label === 'disponibilite') &&
-          !isLocalisationBlocking
-        );
+        !(step.label === 'localisation' && !requiresAddressForStore);
 
       const status: OnboardingStepStatus = isDone[step.label]
         ? 'done'
@@ -433,17 +442,16 @@ export class UserRepository implements IUserRepository {
       }
     }
 
-    // isPublished: all effectively-blocking steps completed (actual data, not skip status)
-    const isPublished = PROFESSIONAL_ONBOARDING_STEPS.filter(
-      (s) =>
-        s.blocking &&
-        !(
-          (s.label === 'localisation' || s.label === 'disponibilite') &&
-          !isLocalisationBlocking
-        ),
-    ).every((s) => isDone[s.label]);
+    // Visibilité store: identité + infos établissement complètes + horaires + services
+    // + localisation si salon physique.
+    const isPublished =
+      identityDone &&
+      establishmentInfoStoreReady &&
+      availabilityDone &&
+      servicesDone &&
+      locationStoreReady;
 
-    // allDone: same as isPublished — optional steps (galerie) never block completion
+    // Finalisation onboarding: mêmes exigences que la visibilité store.
     const allDone = isPublished;
 
     const firstRemaining =
