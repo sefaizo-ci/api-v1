@@ -41,17 +41,10 @@ export class ProfessionalSchedulerService implements OnApplicationBootstrap {
    */
   @Cron(CronExpression.EVERY_10_MINUTES)
   async autoVerifyEligibleProfessionals(): Promise<void> {
-    this.logger.log(
-      `Lancement de l'auto-vérification des professionnels éligibles`,
-    );
     const professionals =
       await this.repository.findEligibleForAutoVerification();
 
     if (professionals.length === 0) return;
-
-    this.logger.log(
-      `Auto-vérification de ${professionals.length} professionnel(s)`,
-    );
 
     await Promise.all(
       professionals.map(async (pro: ProfessionalEntity) => {
@@ -68,18 +61,11 @@ export class ProfessionalSchedulerService implements OnApplicationBootstrap {
    */
   @Cron(CronExpression.EVERY_HOUR)
   async autoRejectIncompleteProfessionals(): Promise<void> {
-    this.logger.log(
-      `Lancement de l'auto-rejet des professionnels incomplets après ${AUTO_REJECTION_GRACE_HOURS}h`,
-    );
     const professionals = await this.repository.findIncompleteAfterGracePeriod(
       AUTO_REJECTION_GRACE_HOURS,
     );
 
     if (professionals.length === 0) return;
-
-    this.logger.log(
-      `Auto-rejet de ${professionals.length} professionnel(s) incomplet(s)`,
-    );
 
     await Promise.all(
       professionals.map(async (pro: ProfessionalEntity) => {
@@ -96,15 +82,10 @@ export class ProfessionalSchedulerService implements OnApplicationBootstrap {
    */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async reactivateExpiredBookingPauses(): Promise<void> {
-    this.logger.log(`Lancement de la réactivation des pauses de réservation`);
     const professionals: ProfessionalEntity[] =
       await this.repository.findWithExpiredBookingPause();
 
     if (professionals.length === 0) return;
-
-    this.logger.log(
-      `Réactivation des réservations pour ${professionals.length} professionnel(s)`,
-    );
 
     await Promise.all(
       professionals.map((pro: ProfessionalEntity) => {
