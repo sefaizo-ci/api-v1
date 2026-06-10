@@ -35,6 +35,7 @@ type LoginCompleteResult = {
     id: string;
     phone: string;
     firstName: string;
+    lastName: string | null;
     app: string;
     hasAcceptedTerms: boolean;
     acceptedTermsAt: string | null;
@@ -160,6 +161,7 @@ export class LoginCompleteHandler implements ICommandHandler<LoginCompleteComman
         id: user.id,
         phone: user.phone,
         firstName: user.firstName,
+        lastName: user.lastName ?? null,
         app: cmd.app,
         hasAcceptedTerms: acceptedTermsAt !== null,
         acceptedTermsAt,

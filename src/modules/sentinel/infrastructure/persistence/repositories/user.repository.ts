@@ -451,8 +451,8 @@ export class UserRepository implements IUserRepository {
       servicesDone &&
       locationStoreReady;
 
-    // Finalisation onboarding: mêmes exigences que la visibilité store.
-    const allDone = isPublished;
+    // Finalisation onboarding: toutes les étapes blocking sont complétées.
+    const allDone = remainingSteps.filter((s) => s.blocking).length === 0;
 
     const firstRemaining =
       remainingSteps[0] ?? completedSteps[completedSteps.length - 1];
