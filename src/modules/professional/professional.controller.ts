@@ -28,6 +28,7 @@ import { Roles } from '../../libs/decorators/roles.decorator';
 import type { MediaStoragePort } from '../media/media-storage.port';
 import { MEDIA_STORAGE_SERVICE } from '../media/media-storage.port';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
+import { ProfessionalEntity } from './core/entities/professional.entity';
 import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
 import {
   ActivateServiceCommand,
@@ -107,6 +108,7 @@ import {
   GetProfessionalProfileQuery,
   GetProfessionalRevenueSummaryQuery,
   GetProfessionalServicesQuery,
+  GetServiceDetailsQuery,
   GetProfileCompletionQuery,
   GetRecommendedProfessionalsQuery,
   GetTrendingProfessionalsQuery,
@@ -536,13 +538,29 @@ export class ProfessionalController {
     );
   }
 
+  /**
+   * Get full details of a single service
+   */
+  @Get(':professionalId/services/:serviceId')
+  @Public()
+  async getServiceDetails(
+    @Param('professionalId') professionalId: string,
+    @Param('serviceId') serviceId: string,
+  ) {
+    return this.queryBus.execute<GetServiceDetailsQuery, unknown>(
+      new GetServiceDetailsQuery(professionalId, serviceId),
+    );
+  }
+
   @Post(':professionalId/services')
   @UseGuards(RolesGuard)
   @Roles('PROFESSIONAL')
   async addService(
     @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
     @Body() body: AddServiceDto,
   ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
     return this.commandBus.execute<AddServiceCommand, unknown>(
       new AddServiceCommand(
         professionalId,
@@ -581,6 +599,7 @@ export class ProfessionalController {
   @Roles('PROFESSIONAL')
   async updateService(
     @Param('serviceId') serviceId: string,
+    @Req() req: AuthenticatedRequest,
     @Body() body: UpdateServiceDto,
   ) {
     return this.commandBus.execute<UpdateServiceCommand, unknown>(
@@ -592,6 +611,7 @@ export class ProfessionalController {
         body.basePrice,
         body.category,
         body.imageUrl,
+        req.user.id,
       ),
     );
   }
@@ -608,8 +628,17 @@ export class ProfessionalController {
     @Req() req: AuthenticatedRequest,
     @UploadedFile() file?: UploadedImageFile,
   ) {
-    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    const owner = await this.assertProfessionalOwnership(
+      professionalId,
+      req.user.id,
+    );
     this.assertValidImageFile(file);
+
+    const service = owner.getService(serviceId);
+    if (!service) {
+      throw new NotFoundException('Service non trouve');
+    }
+    const previousImageUrl = service.imageUrl;
 
     const uploaded = await this.mediaStorageService.uploadServiceImage({
       professionalId,
@@ -617,20 +646,29 @@ export class ProfessionalController {
       mimeType: file.mimetype,
     });
 
-    await this.commandBus.execute<UpdateServiceCommand, unknown>(
-      new UpdateServiceCommand(
-        serviceId,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        uploaded.url,
-      ),
+    // Targeted single-row update — avoids re-saving the whole aggregate.
+    await this.professionalRepository.updateServiceImage(
+      serviceId,
+      uploaded.url,
     );
+
+    // Remove the previously stored file now that it has been replaced.
+    if (previousImageUrl && previousImageUrl !== uploaded.url) {
+      await this.mediaStorageService
+        .deleteFileByUrl(previousImageUrl)
+        .catch(() => {});
+    }
 
     return {
       imageUrl: uploaded.url,
+      imageThumbUrl: this.mediaStorageService.buildPreviewUrl(uploaded.url, {
+        width: 200,
+        quality: 70,
+      }),
+      imageCardUrl: this.mediaStorageService.buildPreviewUrl(uploaded.url, {
+        width: 600,
+        quality: 75,
+      }),
       fileId: uploaded.fileId,
       path: uploaded.filePath,
     };
@@ -680,7 +718,9 @@ export class ProfessionalController {
   async deleteService(
     @Param('professionalId') professionalId: string,
     @Param('serviceId') serviceId: string,
+    @Req() req: AuthenticatedRequest,
   ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
     return this.commandBus.execute<DeleteServiceCommand, unknown>(
       new DeleteServiceCommand(serviceId, professionalId),
     );
@@ -1308,7 +1348,7 @@ export class ProfessionalController {
   private async assertProfessionalOwnership(
     professionalId: string,
     requesterUserId: string,
-  ): Promise<void> {
+  ): Promise<ProfessionalEntity> {
     const professional =
       await this.professionalRepository.findById(professionalId);
     if (!professional) {
@@ -1320,5 +1360,7 @@ export class ProfessionalController {
         'Vous ne pouvez pas modifier ce profil professionnel',
       );
     }
+
+    return professional;
   }
 }

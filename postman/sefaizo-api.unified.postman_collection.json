@@ -2900,7 +2900,40 @@
                     }
                   ]
                 },
-                "description": "Get services for a professional. Set includeInactive=true to include soft-disabled services."
+                "description": "Get services for a professional. Set includeInactive=true to include soft-disabled services.\n\nChaque service expose `imageUrl` (original) + `imageThumbUrl` (~200px WebP) + `imageCardUrl` (~600px WebP). Utiliser `imageThumbUrl` dans les listes pour des chargements rapides."
+              }
+            },
+            {
+              "name": "Get Service Details (Public)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status is 200', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professionals/{{professionalId}}/services/{{serviceId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professionals",
+                    "{{professionalId}}",
+                    "services",
+                    "{{serviceId}}"
+                  ]
+                },
+                "description": "Get the full details of a single service: name, description, basePrice, durationMin, category, isActive, per-commune travel fees (communeFees), and image URLs.\n\n**Image fields :** `imageUrl` (original, plein écran), `imageThumbUrl` (~200px WebP, listes), `imageCardUrl` (~600px WebP, cartes/détail). Utiliser les variantes légères pour l'affichage et garder `imageUrl` pour le zoom. `null` si pas d'image.\n\nReturns 404 if the service does not exist or has been soft-deleted."
               }
             },
             {
@@ -4209,7 +4242,7 @@
                     "services"
                   ]
                 },
-                "description": "Create a service offering for the current professional."
+                "description": "Create a service offering. Rôle requis : PROFESSIONAL **propriétaire** du profil — un pro qui n'est pas le propriétaire reçoit `403`. `category` doit être un nom de catégorie valide du catalogue global."
               }
             },
             {
@@ -4290,7 +4323,7 @@
                     "{{serviceId}}"
                   ]
                 },
-                "description": "Update a service offering."
+                "description": "Update a service offering. Tous les champs sont optionnels (envoyer seulement ceux à modifier). Rôle requis : PROFESSIONAL **propriétaire** du service — sinon `403`. Le propriétaire est résolu côté serveur à partir du `serviceId` (la route ne contient pas de professionalId)."
               }
             },
             {
@@ -4406,7 +4439,7 @@
                     "{{serviceId}}"
                   ]
                 },
-                "description": "Soft delete one service."
+                "description": "Suppression douce d'un service : positionne `deletedAt = now`, le service n'est plus retourné par les lectures mais reste en base. Rôle requis : PROFESSIONAL **propriétaire** du profil — sinon `403`."
               }
             },
             {
@@ -4508,7 +4541,7 @@
                     "upload"
                   ]
                 },
-                "description": "Upload an image file for a specific service offering.\n\nThe uploaded URL is auto-saved to `serviceImageUrl` — use it in *Add Service* or *Update Service* as the `imageUrl` field.\n\nAlternatively, after upload you can call `POST /professionals/:id/services/:serviceId/image` with `{ \"imageUrl\": \"{{serviceImageUrl}}\" }` to update an existing service."
+                "description": "Upload (multipart, champ `file`) et **rattache** directement l'image au service : le fichier est stocké, puis l'`imageUrl` du service est mise à jour automatiquement. Réponse : `{ imageUrl, fileId, path }`.\n\nValidations : taille ≤ 10 MB, formats jpg/jpeg/png/webp. Rôle requis : PROFESSIONAL **propriétaire** (sinon `403`).\n\nSi le service avait déjà une image, l'ancien fichier est **supprimé du stockage** (remplacement). Pas besoin d'appel supplémentaire — contrairement à l'ancienne version, il n'existe pas de route `POST …/services/:serviceId/image`."
               },
               "response": [
                 {
@@ -4576,7 +4609,7 @@
                     "image"
                   ]
                 },
-                "description": "Supprime l'image d'un service. Rôle requis : PROFESSIONAL (propriétaire)."
+                "description": "Supprime l'image d'un service : vide `imageUrl` et **efface le fichier du stockage** (best-effort). Rôle requis : PROFESSIONAL **propriétaire** (sinon `403`)."
               },
               "response": []
             }

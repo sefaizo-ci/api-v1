@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   BadRequestException,
   ForbiddenException,
@@ -12,7 +12,15 @@ import {
   ServiceCategoryRequestStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../../../libs/database/prisma.service';
+import {
+  MEDIA_STORAGE_SERVICE,
+  type MediaStoragePort,
+} from '../../../media/media-storage.port';
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
+import {
+  presentService,
+  presentServices,
+} from '../presenters/service.presenter';
 import {
   GetAvailableSlotsQuery,
   GetMyOnboardingStateQuery,
@@ -26,6 +34,7 @@ import {
   GetProfessionalProfileQuery,
   GetProfessionalRevenueSummaryQuery,
   GetProfessionalServicesQuery,
+  GetServiceDetailsQuery,
   GetProfileCompletionQuery,
   GetRecommendedProfessionalsQuery,
   GetTrendingProfessionalsQuery,
@@ -597,22 +606,52 @@ export class ListProfessionalsHandler implements IQueryHandler<ListProfessionals
 @QueryHandler(GetProfessionalServicesQuery)
 @Injectable()
 export class GetProfessionalServicesHandler implements IQueryHandler<GetProfessionalServicesQuery> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly media: MediaStoragePort,
+  ) {}
 
   async execute(query: GetProfessionalServicesQuery) {
-    const professional = await this.repository.findById(query.professionalId);
-    if (!professional) {
+    const exists = await this.repository.professionalExists(
+      query.professionalId,
+    );
+    if (!exists) {
       throw new NotFoundException('Professionnel non trouvé');
     }
 
-    const services = query.includeInactive
-      ? professional.services.filter((s) => !s.deletedAt)
-      : professional.getActiveServices();
+    const services = await this.repository.findServicesByProfessional(
+      query.professionalId,
+      query.includeInactive,
+    );
+    const presented = presentServices(this.media, services);
 
     return {
-      professionalId: professional.id,
-      services,
-      count: services.length,
+      professionalId: query.professionalId,
+      services: presented,
+      count: presented.length,
+    };
+  }
+}
+
+@QueryHandler(GetServiceDetailsQuery)
+@Injectable()
+export class GetServiceDetailsHandler implements IQueryHandler<GetServiceDetailsQuery> {
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly media: MediaStoragePort,
+  ) {}
+
+  async execute(query: GetServiceDetailsQuery) {
+    const service = await this.repository.findServiceById(query.serviceId);
+    if (!service || service.professionalId !== query.professionalId) {
+      throw new NotFoundException('Service non trouvé');
+    }
+
+    return {
+      professionalId: query.professionalId,
+      service: presentService(this.media, service),
     };
   }
 }

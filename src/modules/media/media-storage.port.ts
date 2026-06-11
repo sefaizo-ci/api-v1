@@ -45,6 +45,30 @@ export interface MediaStoragePort {
     args: ListMediaFilesInput,
   ): Promise<ListMediaFilesResult>;
   deleteFile(fileId: string): Promise<void>;
+  /**
+   * Delete the underlying file given a stored view URL.
+   * No-op when the URL does not belong to this storage provider
+   * (e.g. an externally-hosted imageUrl provided directly by the client).
+   */
+  deleteFileByUrl(url: string | null | undefined): Promise<void>;
+  /**
+   * Build a resized/compressed preview URL from a stored view URL.
+   * Returns the original URL unchanged for externally-hosted images
+   * (cannot be transformed) and `null` for empty input.
+   */
+  buildPreviewUrl(
+    url: string | null | undefined,
+    options: PreviewOptions,
+  ): string | null;
 }
+
+export type PreviewOptions = {
+  width: number;
+  height?: number;
+  /** 0-100, defaults to 75 */
+  quality?: number;
+  /** defaults to 'webp' */
+  output?: 'webp' | 'jpg' | 'png';
+};
 
 export const MEDIA_STORAGE_SERVICE = 'MEDIA_STORAGE_SERVICE';

@@ -19,6 +19,7 @@ import {
   MediaStoragePort,
   MediaUploadInput,
   MediaUploadResult,
+  PreviewOptions,
 } from './media-storage.port';
 
 @Injectable()
@@ -130,11 +131,86 @@ export class AppwriteMediaService implements MediaStoragePort {
     };
   }
 
-  deleteFile(fileId: string): Promise<void> {
-    this.logger.log(
-      `[APPWRITE] deleteFile skipped — files are kept in bucket (fileId=${fileId})`,
+  async deleteFile(fileId: string): Promise<void> {
+    if (!fileId) {
+      return;
+    }
+
+    if (this.isDryRunEnabled() || this.isFakeValue(this.apiKey)) {
+      this.logger.log(`[APPWRITE][DRY_RUN] deleteFile fileId=${fileId}`);
+      return;
+    }
+
+    const storage = this.createStorageClient();
+    try {
+      await storage.deleteFile(this.bucketId, fileId);
+      this.logger.log(`[APPWRITE][LIVE] deleteFile fileId=${fileId}`);
+    } catch (error) {
+      // Treat an already-missing file as success; surface other failures.
+      const status = (error as { code?: number })?.code;
+      if (status === 404) {
+        this.logger.warn(
+          `[APPWRITE] deleteFile fileId=${fileId} already absent (404)`,
+        );
+        return;
+      }
+      throw error;
+    }
+  }
+
+  async deleteFileByUrl(url: string | null | undefined): Promise<void> {
+    const fileId = this.extractFileIdFromUrl(url);
+    if (!fileId) {
+      return;
+    }
+    await this.deleteFile(fileId);
+  }
+
+  buildPreviewUrl(
+    url: string | null | undefined,
+    options: PreviewOptions,
+  ): string | null {
+    if (!url) {
+      return null;
+    }
+    const fileId = this.extractFileIdFromUrl(url);
+    // Externally-hosted image (not in our bucket) — cannot transform.
+    if (!fileId) {
+      return url;
+    }
+    const endpoint = this.endpoint.replace(/\/$/, '');
+    const query = new URLSearchParams({
+      project: this.projectId,
+      width: String(options.width),
+      quality: String(options.quality ?? 75),
+      output: options.output ?? 'webp',
+    });
+    if (options.height) {
+      query.set('height', String(options.height));
+    }
+    return `${endpoint}/storage/buckets/${this.bucketId}/files/${fileId}/preview?${query.toString()}`;
+  }
+
+  /**
+   * Extracts the Appwrite fileId from a view/download URL of THIS bucket.
+   * Returns null for empty input or URLs that don't match our storage layout
+   * (externally-hosted images are left untouched).
+   */
+  private extractFileIdFromUrl(url: string | null | undefined): string | null {
+    if (!url) {
+      return null;
+    }
+    const match = url.match(
+      /\/storage\/buckets\/([^/]+)\/files\/([^/]+)\/(?:view|download)/,
     );
-    return Promise.resolve();
+    if (!match) {
+      return null;
+    }
+    const [, bucketId, fileId] = match;
+    if (bucketId !== this.bucketId) {
+      return null;
+    }
+    return fileId;
   }
 
   private async uploadImage(args: {

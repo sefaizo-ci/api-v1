@@ -3,8 +3,12 @@ import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../../libs/database/prisma.service';
 import { ProfessionalEntity } from '../../core/entities/professional.entity';
+import { ServiceOfferingEntity } from '../../core/entities/service-offering.entity';
 import { IProfessionalRepository } from '../../core/repositories/professional.repository';
-import { ProfessionalMapper } from '../mappers/professional.mapper';
+import {
+  ProfessionalMapper,
+  ServiceOfferingMapper,
+} from '../mappers/professional.mapper';
 
 /**
  * ProfessionalRepository
@@ -117,6 +121,81 @@ export class ProfessionalRepository implements IProfessionalRepository {
     });
 
     return raws.map((raw) => ProfessionalMapper.toDomain(raw));
+  }
+
+  async professionalExists(professionalId: string): Promise<boolean> {
+    const found = await this.prisma.professional.findFirst({
+      where: { id: professionalId, deletedAt: null },
+      select: { id: true },
+    });
+    return !!found;
+  }
+
+  /**
+   * Lean read of a professional's services without materializing the whole
+   * aggregate (availabilities, gallery, …). Same JSON shape as the aggregate
+   * services. `includeInactive` keeps deactivated (but not deleted) services.
+   */
+  async findServicesByProfessional(
+    professionalId: string,
+    includeInactive = false,
+  ): Promise<ServiceOfferingEntity[]> {
+    const rows = await this.prisma.serviceOffering.findMany({
+      where: {
+        professionalId,
+        deletedAt: null,
+        ...(includeInactive ? {} : { isActive: true }),
+      },
+      include: {
+        communeFees: { where: { deletedAt: null } },
+        category: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return rows.map((row) => ServiceOfferingMapper.toDomain(row));
+  }
+
+  /**
+   * Lean read of a single non-deleted service with its commune fees.
+   */
+  async findServiceById(
+    serviceId: string,
+  ): Promise<ServiceOfferingEntity | null> {
+    const row = await this.prisma.serviceOffering.findFirst({
+      where: { id: serviceId, deletedAt: null },
+      include: {
+        communeFees: { where: { deletedAt: null } },
+        category: { select: { id: true, name: true } },
+      },
+    });
+
+    return row ? ServiceOfferingMapper.toDomain(row) : null;
+  }
+
+  /**
+   * Targeted single-row update of a service image, avoiding a full-aggregate
+   * `save()`. Returns the previous imageUrl (for storage cleanup), or null if
+   * the service does not exist / is soft-deleted.
+   */
+  async updateServiceImage(
+    serviceId: string,
+    imageUrl: string | null,
+  ): Promise<string | null> {
+    const current = await this.prisma.serviceOffering.findFirst({
+      where: { id: serviceId, deletedAt: null },
+      select: { imageUrl: true },
+    });
+    if (!current) {
+      return null;
+    }
+
+    await this.prisma.serviceOffering.update({
+      where: { id: serviceId },
+      data: { imageUrl, updatedAt: new Date() },
+    });
+
+    return current.imageUrl;
   }
 
   async save(professional: ProfessionalEntity): Promise<void> {

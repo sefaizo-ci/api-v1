@@ -12,14 +12,6 @@ export class AddServiceCommand implements ICommand {
   ) {}
 }
 
-export class AddServiceImageCommand implements ICommand {
-  constructor(
-    public readonly serviceId: string,
-    public readonly professionalId: string,
-    public readonly imageUrl: string,
-  ) {}
-}
-
 export class RemoveServiceImageCommand implements ICommand {
   constructor(
     public readonly serviceId: string,
@@ -87,6 +79,7 @@ export class UpdateServiceCommand implements ICommand {
     public readonly basePrice?: number,
     public readonly category?: string,
     public readonly imageUrl?: string,
+    public readonly requesterUserId?: string,
   ) {}
 }
 

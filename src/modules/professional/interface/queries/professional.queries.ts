@@ -28,6 +28,13 @@ export class GetProfessionalServicesQuery implements IQuery {
   ) {}
 }
 
+export class GetServiceDetailsQuery implements IQuery {
+  constructor(
+    public readonly professionalId: string,
+    public readonly serviceId: string,
+  ) {}
+}
+
 export class GetProfessionalAvailabilityQuery implements IQuery {
   constructor(
     public readonly professionalId: string,

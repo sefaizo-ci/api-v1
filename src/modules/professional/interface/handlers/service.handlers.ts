@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   BadRequestException,
   ConflictException,
@@ -13,9 +13,16 @@ import { ServiceOfferingEntity } from '../../core/entities/service-offering.enti
 import { ProfessionalRepository } from '../../infrastructure/persistence/professional.repository';
 import { ProfessionalEligibilityService } from '../../../sentinel/services/professional-eligibility.service';
 import {
+  MEDIA_STORAGE_SERVICE,
+  type MediaStoragePort,
+} from '../../../media/media-storage.port';
+import {
+  presentService,
+  type ServiceResponse,
+} from '../presenters/service.presenter';
+import {
   ActivateServiceCommand,
   AddServiceCommand,
-  AddServiceImageCommand,
   ApproveServiceCategoryRequestCommand,
   CreateServiceCategoryCommand,
   CreateServiceCategoryRequestCommand,
@@ -343,9 +350,11 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
     private readonly repository: ProfessionalRepository,
     private readonly prisma: PrismaService,
     private readonly eligibility: ProfessionalEligibilityService,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly media: MediaStoragePort,
   ) {}
 
-  async execute(command: AddServiceCommand): Promise<ServiceOfferingEntity> {
+  async execute(command: AddServiceCommand): Promise<ServiceResponse> {
     const professional = await this.repository.findById(command.professionalId);
     if (!professional) {
       throw new NotFoundException('Professionnel non trouve');
@@ -391,7 +400,7 @@ export class AddServiceHandler implements ICommandHandler<AddServiceCommand> {
     await this.repository.save(professional);
     await this.eligibility.refresh(professional.userId);
 
-    return service;
+    return presentService(this.media, service);
   }
 }
 
@@ -405,9 +414,11 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
   constructor(
     private readonly repository: ProfessionalRepository,
     private readonly prisma: PrismaService,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly media: MediaStoragePort,
   ) {}
 
-  async execute(command: UpdateServiceCommand): Promise<ServiceOfferingEntity> {
+  async execute(command: UpdateServiceCommand): Promise<ServiceResponse> {
     const serviceRecord = await this.prisma.serviceOffering.findFirst({
       where: { id: command.serviceId, deletedAt: null },
       select: { professionalId: true },
@@ -420,6 +431,10 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
     const owner = await this.repository.findById(serviceRecord.professionalId);
     if (!owner) {
       throw new NotFoundException('Service non trouve');
+    }
+
+    if (command.requesterUserId && owner.userId !== command.requesterUserId) {
+      throw new ForbiddenException('Vous ne pouvez pas modifier ce service');
     }
 
     const service = owner.getService(command.serviceId);
@@ -481,7 +496,7 @@ export class UpdateServiceHandler implements ICommandHandler<UpdateServiceComman
     service.updatedAt = new Date();
     await this.repository.save(owner);
 
-    return service;
+    return presentService(this.media, service);
   }
 }
 
@@ -611,27 +626,14 @@ export class DeactivateServiceHandler implements ICommandHandler<DeactivateServi
   }
 }
 
-@CommandHandler(AddServiceImageCommand)
-@Injectable()
-export class AddServiceImageHandler implements ICommandHandler<AddServiceImageCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
-
-  async execute(command: AddServiceImageCommand): Promise<void> {
-    const professional = await this.repository.findById(command.professionalId);
-    if (!professional) throw new NotFoundException('Professionnel non trouve');
-
-    const service = professional.getService(command.serviceId);
-    if (!service) throw new NotFoundException('Service non trouve');
-
-    service.setImage(command.imageUrl);
-    await this.repository.save(professional);
-  }
-}
-
 @CommandHandler(RemoveServiceImageCommand)
 @Injectable()
 export class RemoveServiceImageHandler implements ICommandHandler<RemoveServiceImageCommand> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly mediaStorage: MediaStoragePort,
+  ) {}
 
   async execute(command: RemoveServiceImageCommand): Promise<void> {
     const professional = await this.repository.findById(command.professionalId);
@@ -640,8 +642,14 @@ export class RemoveServiceImageHandler implements ICommandHandler<RemoveServiceI
     const service = professional.getService(command.serviceId);
     if (!service) throw new NotFoundException('Service non trouve');
 
+    const previousImageUrl = service.imageUrl;
+
     service.clearImage();
     await this.repository.save(professional);
+
+    // Best-effort cleanup of the stored file; ignore failures so the
+    // image is always cleared from the service even if storage is down.
+    await this.mediaStorage.deleteFileByUrl(previousImageUrl).catch(() => {});
   }
 }
 
