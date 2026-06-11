@@ -64,10 +64,7 @@ export async function createNestApp(): Promise<INestApplication> {
   });
 
   app.setGlobalPrefix(APP.API.PREFIX, {
-    exclude: [
-      { path: APP.HEALTH, method: RequestMethod.GET },
-      { path: APP.ROOT, method: RequestMethod.GET },
-    ],
+    exclude: [{ path: APP.ROOT, method: RequestMethod.GET }],
   });
 
   app.useGlobalPipes(
