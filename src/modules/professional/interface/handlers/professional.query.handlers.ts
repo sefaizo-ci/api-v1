@@ -1276,7 +1276,11 @@ export class GetProfessionalDashboardHandler implements IQueryHandler<GetProfess
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     currentMonthStart.setHours(0, 0, 0, 0);
 
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
     previousMonthStart.setHours(0, 0, 0, 0);
 
     const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -1299,10 +1303,18 @@ export class GetProfessionalDashboardHandler implements IQueryHandler<GetProfess
       ratingAggregate,
     ] = await Promise.all([
       this.prisma.booking.count({
-        where: { professionalId, status: BookingStatus.PENDING, deletedAt: null },
+        where: {
+          professionalId,
+          status: BookingStatus.PENDING,
+          deletedAt: null,
+        },
       }),
       this.prisma.booking.findFirst({
-        where: { professionalId, status: BookingStatus.PENDING, deletedAt: null },
+        where: {
+          professionalId,
+          status: BookingStatus.PENDING,
+          deletedAt: null,
+        },
         orderBy: { createdAt: 'desc' },
         select: bookingSelect,
       }),
