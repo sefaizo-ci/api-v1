@@ -297,8 +297,6 @@ export class SentinelController {
     return result;
   }
 
-  // ─── PIN management ───────────────────────────────────────────────────────
-
   @Post(AUTH.PIN.RESET)
   @Public()
   @HttpCode(HttpStatus.OK)

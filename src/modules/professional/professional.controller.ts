@@ -99,6 +99,7 @@ import {
   GetMyOnboardingStateQuery,
   GetMyProfessionalProfileQuery,
   GetNewProfessionalsQuery,
+  GetProfessionalDashboardQuery,
   GetProfessionalAvailabilityQuery,
   GetProfessionalBookingsCalendarQuery,
   GetProfessionalBookingsQuery,
@@ -292,6 +293,18 @@ export class ProfessionalController {
   async getMyOnboardingState(@Req() req: AuthenticatedRequest) {
     return this.queryBus.execute<GetMyOnboardingStateQuery, unknown>(
       new GetMyOnboardingStateQuery(req.user.id),
+    );
+  }
+
+  /**
+   * Get dashboard aggregation for the pro home page
+   */
+  @Get('me/dashboard')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async getMyDashboard(@Req() req: AuthenticatedRequest) {
+    return this.queryBus.execute<GetProfessionalDashboardQuery, unknown>(
+      new GetProfessionalDashboardQuery(req.user.id),
     );
   }
 

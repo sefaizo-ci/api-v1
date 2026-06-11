@@ -147,3 +147,7 @@ export class GetProfessionalBookingsCalendarQuery implements IQuery {
 export class GetMyOnboardingStateQuery implements IQuery {
   constructor(public readonly userId: string) {}
 }
+
+export class GetProfessionalDashboardQuery implements IQuery {
+  constructor(public readonly userId: string) {}
+}

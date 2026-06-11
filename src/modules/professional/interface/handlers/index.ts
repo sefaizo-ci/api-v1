@@ -28,6 +28,7 @@ import {
   GetAvailableSlotsHandler,
   GetMyOnboardingStateHandler,
   GetMyProfessionalProfileHandler,
+  GetProfessionalDashboardHandler,
   GetNewProfessionalsHandler,
   GetProfessionalAvailabilityHandler,
   GetProfessionalBookingsCalendarHandler,
@@ -130,6 +131,7 @@ export const ProfessionalCommandHandlers = [
 export const ProfessionalQueryHandlers = [
   GetMyProfessionalProfileHandler,
   GetMyOnboardingStateHandler,
+  GetProfessionalDashboardHandler,
   GetProfessionalProfileHandler,
   ListProfessionalsHandler,
   GetProfessionalServicesHandler,

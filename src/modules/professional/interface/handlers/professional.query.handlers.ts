@@ -8,6 +8,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import {
   BookingStatus,
   Prisma,
+  ReviewerType,
   ServiceCategoryRequestStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../../../libs/database/prisma.service';
@@ -16,6 +17,7 @@ import {
   GetAvailableSlotsQuery,
   GetMyOnboardingStateQuery,
   GetMyProfessionalProfileQuery,
+  GetProfessionalDashboardQuery,
   GetNewProfessionalsQuery,
   GetProfessionalAvailabilityQuery,
   GetProfessionalBookingsCalendarQuery,
@@ -1248,5 +1250,148 @@ export class GetProfessionalBookingsCalendarHandler implements IQueryHandler<Get
       }));
 
     return { from: query.from, to: query.to, days };
+  }
+}
+
+@QueryHandler(GetProfessionalDashboardQuery)
+@Injectable()
+export class GetProfessionalDashboardHandler implements IQueryHandler<GetProfessionalDashboardQuery> {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly repository: ProfessionalRepository,
+  ) {}
+
+  async execute(query: GetProfessionalDashboardQuery) {
+    const professional = await this.repository.findByUserId(query.userId);
+    if (!professional) {
+      throw new NotFoundException('Profil professionnel non trouvé');
+    }
+
+    const professionalId = professional.id;
+    const now = new Date();
+
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    previousMonthStart.setHours(0, 0, 0, 0);
+
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    previousMonthEnd.setHours(23, 59, 59, 999);
+
+    const bookingSelect = {
+      id: true,
+      scheduledAt: true,
+      service: { select: { name: true } },
+      client: { select: { firstName: true, lastName: true } },
+    } as const;
+
+    const [
+      pendingCount,
+      latestPending,
+      nextConfirmed,
+      remainingTodayCount,
+      currentMonthAggregate,
+      previousMonthAggregate,
+      ratingAggregate,
+    ] = await Promise.all([
+      this.prisma.booking.count({
+        where: { professionalId, status: BookingStatus.PENDING, deletedAt: null },
+      }),
+      this.prisma.booking.findFirst({
+        where: { professionalId, status: BookingStatus.PENDING, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: bookingSelect,
+      }),
+      this.prisma.booking.findFirst({
+        where: {
+          professionalId,
+          status: BookingStatus.CONFIRMED,
+          deletedAt: null,
+          scheduledAt: { gte: now },
+        },
+        orderBy: { scheduledAt: 'asc' },
+        select: bookingSelect,
+      }),
+      this.prisma.booking.count({
+        where: {
+          professionalId,
+          status: BookingStatus.CONFIRMED,
+          deletedAt: null,
+          scheduledAt: { gte: now, lte: todayEnd },
+        },
+      }),
+      this.prisma.booking.aggregate({
+        where: {
+          professionalId,
+          status: BookingStatus.COMPLETED,
+          deletedAt: null,
+          updatedAt: { gte: currentMonthStart, lte: now },
+        },
+        _sum: { totalPrice: true },
+      }),
+      this.prisma.booking.aggregate({
+        where: {
+          professionalId,
+          status: BookingStatus.COMPLETED,
+          deletedAt: null,
+          updatedAt: { gte: previousMonthStart, lte: previousMonthEnd },
+        },
+        _sum: { totalPrice: true },
+      }),
+      this.prisma.review.aggregate({
+        where: {
+          professionalId,
+          reviewerType: ReviewerType.CLIENT,
+          isVisible: true,
+          deletedAt: null,
+        },
+        _avg: { rating: true },
+        _count: { id: true },
+      }),
+    ]);
+
+    const currentMonthFcfa = toMoney(currentMonthAggregate._sum.totalPrice);
+    const previousMonthFcfa = toMoney(previousMonthAggregate._sum.totalPrice);
+    const rawGrowth = toPercentageChange(currentMonthFcfa, previousMonthFcfa);
+    const growthPercent = rawGrowth ?? 0.0;
+
+    const mapBooking = (b: typeof latestPending) =>
+      b
+        ? {
+            id: b.id,
+            serviceName: b.service.name,
+            clientFirstName: b.client.firstName,
+            clientLastName: b.client.lastName,
+            clientAvatarUrl: null,
+            scheduledAt: b.scheduledAt.toISOString(),
+          }
+        : null;
+
+    return {
+      data: {
+        pendingRequests: {
+          count: pendingCount,
+          latest: mapBooking(latestPending),
+        },
+        agenda: {
+          nextAppointment: mapBooking(nextConfirmed),
+          remainingTodayCount,
+        },
+        revenue: {
+          currentMonthFcfa,
+          previousMonthFcfa,
+          growthPercent,
+        },
+        rating: {
+          average: Math.round((ratingAggregate._avg.rating ?? 0) * 10) / 10,
+          max: 5,
+          totalReviews: ratingAggregate._count.id,
+        },
+      },
+    };
   }
 }
