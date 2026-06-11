@@ -66,6 +66,10 @@ export type GetMeResult = {
   lastName: string;
   role: string;
   isVerified: boolean;
+  /** Professional aggregate id for PROFESSIONAL accounts, else null. */
+  professionalId: string | null;
+  /** Client id (== user id) for CLIENT accounts, else null. */
+  clientId: string | null;
 };
 
 export type SessionResult = {

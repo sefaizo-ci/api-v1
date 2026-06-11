@@ -13,6 +13,16 @@ export class GetMeHandler implements IQueryHandler<GetMeQuery> {
   async execute(query: GetMeQuery) {
     const user = await this.userRepo.findById(query.userId);
     if (!user) throw new NotFoundException('Utilisateur introuvable.');
+
+    // Mirror the auth-token payloads (login/complete, pin/create): expose the
+    // professional aggregate id so a client resuming a session doesn't mistake
+    // the user id for the professionalId.
+    const professionalId =
+      user.role === 'PROFESSIONAL'
+        ? await this.userRepo.getProfessionalId(user.id)
+        : null;
+    const clientId = user.role === 'CLIENT' ? user.id : null;
+
     return {
       id: user.id,
       phone: user.phone,
@@ -20,6 +30,8 @@ export class GetMeHandler implements IQueryHandler<GetMeQuery> {
       lastName: user.lastName,
       role: user.role,
       isVerified: user.isVerified,
+      professionalId,
+      clientId,
     };
   }
 }

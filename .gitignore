@@ -59,3 +59,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /src/generated
 
 .claude
+# Local DB dumps / category-migration backups
+backups/

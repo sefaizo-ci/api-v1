@@ -4,6 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Pool } from 'pg';
+import { DEFAULT_CATEGORIES, SEED_TAG, syncCategories } from './categories';
 
 // ─── DB Setup ────────────────────────────────────────────────────────────────
 
@@ -17,197 +18,12 @@ const prisma = new PrismaClient({ adapter });
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const TEST_PIN = '2025'; // PIN de test pour tous les comptes seed
-const SEED_TAG = 'prisma-seed';
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 
-type DefaultCategory = { name: string; description: string };
-
-const DEFAULT_CATEGORIES: DefaultCategory[] = [
-  {
-    name: 'Coiffure & soins capillaires',
-    description:
-      'Tout ce qui touche aux cheveux naturels, defrises ou en transition : coupes, mises en plis, lissages, colorations, soins keratine, shampoings traitants et massages capillaires.',
-  },
-  {
-    name: 'Tresses & coiffures africaines',
-    description:
-      'Box braids, tresses collees, cornrows, vanilles, goddess braids, twists et toutes les techniques de tressage africain.',
-  },
-  {
-    name: 'Locks & dreadlocks',
-    description:
-      'Pose, entretien, retamage et soins des locks, sisterlocks et dreadlocks.',
-  },
-  {
-    name: 'Extensions & pose de perruques',
-    description:
-      "Pose de tissages, wigs, extensions a la colle, a l'aiguille ou au clip.",
-  },
-  {
-    name: 'Manucure & ongles',
-    description:
-      "Manucure classique, pose de gel, resine, polygel, nail art, extensions d'ongles.",
-  },
-  {
-    name: 'Pedicure & soins des pieds',
-    description:
-      'Pedicure esthetique et medicale, pose de vernis semi-permanent, soins des callosites.',
-  },
-  {
-    name: 'Maquillage',
-    description:
-      'Maquillage du quotidien, de soiree, de mariee et pour evenements.',
-  },
-  {
-    name: 'Epilation',
-    description:
-      'Epilation a la cire chaude, froide ou orientale, au fil, a la creme ou au laser.',
-  },
-  {
-    name: 'Soins du visage & esthetique',
-    description:
-      'Nettoyage de peau, hydratation, peeling, gommage, soin anti-age et masques.',
-  },
-  {
-    name: 'Massage & relaxation',
-    description:
-      "Massage suedois, californien, sportif, aux pierres chaudes et drainage lymphatique.",
-  },
-  {
-    name: 'Extensions de cils',
-    description:
-      'Pose de cils en volume russe, naturel, classique, mega volume et retouches.',
-  },
-  {
-    name: 'Sourcils & microblading',
-    description:
-      'Design et mise en forme, epilation au fil, microblading et lamine de sourcils.',
-  },
-  {
-    name: 'Soins du corps & enveloppements',
-    description:
-      'Gommages corporels, enveloppements au karite, argile ou algues.',
-  },
-  {
-    name: 'Barbier & soins homme',
-    description:
-      'Coupe homme, degrade, rasage au couteau, taille de barbe, soin du cuir chevelu.',
-  },
-  {
-    name: 'Henne & tatouage temporaire',
-    description:
-      "Henne naturel et noir pour les mains, pieds et corps.",
-  },
-  {
-    name: 'Bien-etre & therapies douces',
-    description:
-      'Yoga, meditation guidee, sophrologie, sonotherapie et seances de respiration.',
-  },
-  {
-    name: 'Maquillage permanent & semi-permanent',
-    description:
-      "Tatouage cosmetique des levres, des sourcils et du contour des yeux.",
-  },
-  {
-    name: 'Coloration & balayage',
-    description:
-      'Coloration complete, meches, balayage, ombre hair, tie and dye et decoloration.',
-  },
-  {
-    name: 'Soins capillaires specialises',
-    description:
-      'Traitements en profondeur : botox capillaire, proteines, lissage bresilien.',
-  },
-  {
-    name: 'Coiffure & beaute mariage',
-    description:
-      "Offre packagee dediee aux mariees : essais coiffure, maquillage de ceremonie.",
-  },
-  {
-    name: 'Spa & soins premium',
-    description:
-      'Journees spa, rituels corps complets, soins en duo, hammam et bain de vapeur.',
-  },
-  {
-    name: 'Medecine esthetique & injections',
-    description:
-      'Injections de botox, acide hyaluronique, mesotherapie et PRP capillaire.',
-  },
-  {
-    name: 'Tatouage & piercing',
-    description:
-      'Tatouages artistiques temporaires ou permanents, piercing du corps et des oreilles.',
-  },
-  {
-    name: 'Soins prenataux & postnatal',
-    description:
-      "Massage de grossesse, soins du ventre, preparation a l'accouchement.",
-  },
-  {
-    name: 'Consultation beaute & coaching',
-    description:
-      "Diagnostic capillaire, conseil en colorimetrie, coaching image et relooking.",
-  },
-  {
-    name: 'Coiffure & soins enfants',
-    description:
-      'Coupes pour enfants, tresses pour petites filles, premiers soins capillaires.',
-  },
-  {
-    name: 'Soins des mains & paraffine',
-    description:
-      'Bains de paraffine, soins hydratants intensifs des mains et massages.',
-  },
-  {
-    name: 'Minceur & remodelage corporel',
-    description:
-      'Cryolipolyse, ultrasons, radiofrequence et drainage amincissants.',
-  },
-  {
-    name: 'Formation & masterclass beaute',
-    description:
-      'Cours et formations professionnelles en tressage, nail art et maquillage.',
-  },
-];
-
-function toSlug(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/&/g, ' et ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-}
-
 async function seedCategories(): Promise<Map<string, string>> {
-  const categoryMap = new Map<string, string>(); // name -> id
-
-  for (const cat of DEFAULT_CATEGORIES) {
-    const slug = toSlug(cat.name);
-    const existing = await prisma.serviceCategory.findFirst({
-      where: {
-        OR: [{ slug }, { name: { equals: cat.name, mode: 'insensitive' } }],
-      },
-      select: { id: true, name: true },
-    });
-
-    if (existing) {
-      await prisma.serviceCategory.update({
-        where: { id: existing.id },
-        data: { name: cat.name, slug, description: cat.description, isActive: true, deletedAt: null, metadata: { seededBy: SEED_TAG } },
-      });
-      categoryMap.set(cat.name, existing.id);
-    } else {
-      const created = await prisma.serviceCategory.create({
-        data: { id: randomUUID(), name: cat.name, slug, description: cat.description, isActive: true, metadata: { seededBy: SEED_TAG } },
-      });
-      categoryMap.set(cat.name, created.id);
-    }
-  }
-
+  // Canonical catalogue lives in ./categories (shared with scripts/sync-categories.ts).
+  const categoryMap = await syncCategories(prisma);
   console.log(`✓ Categories: ${DEFAULT_CATEGORIES.length}`);
   return categoryMap;
 }
@@ -455,7 +271,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Brushing & mise en plis',
       description: 'Lavage, soin, brushing professionnel et mise en forme. Résultat lisse et brillant durable.',
-      categoryName: 'Coiffure & soins capillaires',
+      categoryName: 'Coupe femme',
       durationMin: 90,
       basePrice: 8000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Plateau', travelFee: 1500 }, { commune: 'Marcory', travelFee: 2000 }, { commune: 'Yopougon', travelFee: 3000 }],
@@ -463,7 +279,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Soin kératine',
       description: 'Lissage brésilien à la kératine. Cheveux lisses, brillants et sans frisottis pendant 3 à 4 mois.',
-      categoryName: 'Soins capillaires specialises',
+      categoryName: 'Coupe femme',
       durationMin: 180,
       basePrice: 35000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Plateau', travelFee: 2000 }, { commune: 'Marcory', travelFee: 2500 }],
@@ -471,7 +287,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Coupe + soin + brushing',
       description: 'Forfait complet : coupe personnalisée, soin hydratant et brushing finition.',
-      categoryName: 'Coiffure & soins capillaires',
+      categoryName: 'Coupe femme',
       durationMin: 120,
       basePrice: 15000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Riviera', travelFee: 500 }, { commune: 'Plateau', travelFee: 2000 }],
@@ -482,7 +298,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Box braids medium',
       description: 'Box braids de taille medium, extensions de qualité incluses. Durée de tenue : 4 à 8 semaines.',
-      categoryName: 'Tresses & coiffures africaines',
+      categoryName: 'Coupe femme',
       durationMin: 300,
       basePrice: 25000,
       communes: [{ commune: 'Plateau', travelFee: 0 }, { commune: 'Cocody', travelFee: 1000 }, { commune: 'Marcory', travelFee: 2000 }, { commune: 'Treichville', travelFee: 1500 }],
@@ -490,7 +306,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Knotless braids',
       description: 'Tresses sans nœuds, plus légères et plus naturelles. Moins de tension sur le cuir chevelu.',
-      categoryName: 'Tresses & coiffures africaines',
+      categoryName: 'Coupe femme',
       durationMin: 360,
       basePrice: 30000,
       communes: [{ commune: 'Plateau', travelFee: 0 }, { commune: 'Cocody', travelFee: 1000 }, { commune: 'Abobo', travelFee: 3000 }],
@@ -498,7 +314,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Cornrows',
       description: 'Tresses plaquées au cuir chevelu, multiples designs possibles. Avec ou sans extensions.',
-      categoryName: 'Tresses & coiffures africaines',
+      categoryName: 'Coupe femme',
       durationMin: 120,
       basePrice: 12000,
       communes: [{ commune: 'Plateau', travelFee: 0 }, { commune: 'Cocody', travelFee: 1000 }, { commune: 'Treichville', travelFee: 1500 }],
@@ -509,7 +325,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Pose gel complète',
       description: 'Pose de gel sur capsules ou ongles naturels. Finition french, couleur unie ou nail art simple inclus.',
-      categoryName: 'Manucure & ongles',
+      categoryName: 'Ongle',
       durationMin: 90,
       basePrice: 12000,
       communes: [{ commune: 'Marcory', travelFee: 0 }, { commune: 'Treichville', travelFee: 1000 }, { commune: 'Koumassi', travelFee: 1500 }, { commune: 'Plateau', travelFee: 2000 }],
@@ -517,7 +333,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Nail art premium',
       description: "Decoration avancee : degrades, motifs floraux, pierres, feuilles d'or. Oeuvre unique sur chaque ongle.",
-      categoryName: 'Manucure & ongles',
+      categoryName: 'Ongle',
       durationMin: 120,
       basePrice: 18000,
       communes: [{ commune: 'Marcory', travelFee: 0 }, { commune: 'Cocody', travelFee: 2000 }],
@@ -525,7 +341,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Manucure + pédicure',
       description: 'Soin complet des mains et des pieds : lime, repousse cuticules, vernis semi-permanent.',
-      categoryName: 'Pedicure & soins des pieds',
+      categoryName: 'Ongle',
       durationMin: 120,
       basePrice: 14000,
       communes: [{ commune: 'Marcory', travelFee: 0 }, { commune: 'Treichville', travelFee: 1000 }, { commune: 'Plateau', travelFee: 2500 }],
@@ -536,7 +352,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Dégradé américain',
       description: 'Dégradé précis au clipper, contours nets au razor. Finition avec produits de soin premium.',
-      categoryName: 'Barbier & soins homme',
+      categoryName: 'Coupe de cheveux homme',
       durationMin: 60,
       basePrice: 5000,
       communes: [{ commune: 'Yopougon', travelFee: 0 }, { commune: 'Plateau', travelFee: 2000 }, { commune: 'Abobo', travelFee: 1500 }],
@@ -544,7 +360,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Taille de barbe',
       description: 'Taille et mise en forme de la barbe, rasage des contours, huile de soin appliquée en finition.',
-      categoryName: 'Barbier & soins homme',
+      categoryName: 'Coupe de cheveux homme',
       durationMin: 30,
       basePrice: 3000,
       communes: [{ commune: 'Yopougon', travelFee: 0 }, { commune: 'Plateau', travelFee: 2000 }],
@@ -552,7 +368,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Forfait complet homme',
       description: 'Coupe + dégradé + barbe + soin du cuir chevelu. Le tout en une session.',
-      categoryName: 'Barbier & soins homme',
+      categoryName: 'Coupe de cheveux homme',
       durationMin: 90,
       basePrice: 10000,
       communes: [{ commune: 'Yopougon', travelFee: 0 }, { commune: 'Plateau', travelFee: 2500 }, { commune: 'Cocody', travelFee: 3000 }],
@@ -563,7 +379,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Maquillage soirée',
       description: 'Maquillage glamour pour soirée, gala ou remise de diplôme. Résistant, longue tenue.',
-      categoryName: 'Maquillage',
+      categoryName: 'Visage',
       durationMin: 60,
       basePrice: 15000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Riviera', travelFee: 500 }, { commune: 'Plateau', travelFee: 2000 }, { commune: 'Marcory', travelFee: 2500 }],
@@ -571,7 +387,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Maquillage mariée',
       description: 'Maquillage complet pour le jour J. Essai inclus. Produits haute définition, résistant à la chaleur.',
-      categoryName: 'Coiffure & beaute mariage',
+      categoryName: 'Coupe femme',
       durationMin: 120,
       basePrice: 45000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Riviera', travelFee: 1000 }, { commune: 'Plateau', travelFee: 3000 }],
@@ -579,7 +395,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Maquillage naturel quotidien',
       description: 'Look nude et naturel adapté au quotidien. Léger, lumineux, effet peau parfaite.',
-      categoryName: 'Maquillage',
+      categoryName: 'Visage',
       durationMin: 45,
       basePrice: 8000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Riviera', travelFee: 500 }],
@@ -590,7 +406,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Extensions cils volume russe',
       description: 'Pose complète en volume russe pour un regard intense et dramatique. Duree 2h30.',
-      categoryName: 'Extensions de cils',
+      categoryName: 'Visage',
       durationMin: 150,
       basePrice: 22000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Angré', travelFee: 0 }, { commune: 'Riviera', travelFee: 1000 }, { commune: 'Plateau', travelFee: 2000 }],
@@ -598,7 +414,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Extensions cils naturel',
       description: 'Pose en style naturel, allonge et ouvre le regard sans effet dramatique. Idéal pour le quotidien.',
-      categoryName: 'Extensions de cils',
+      categoryName: 'Visage',
       durationMin: 90,
       basePrice: 15000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Angré', travelFee: 0 }, { commune: 'Marcory', travelFee: 2000 }],
@@ -606,7 +422,7 @@ const PRO_SERVICES: ServiceDef[][] = [
     {
       name: 'Retouche cils',
       description: 'Retouche des cils posés (3 à 4 semaines après la pose initiale). Résultat comme au premier jour.',
-      categoryName: 'Extensions de cils',
+      categoryName: 'Visage',
       durationMin: 60,
       basePrice: 10000,
       communes: [{ commune: 'Cocody', travelFee: 0 }, { commune: 'Angré', travelFee: 0 }, { commune: 'Riviera', travelFee: 1000 }],
@@ -771,45 +587,45 @@ async function seedAvailability(proIds: string[]): Promise<void> {
 const PRO_GALLERY: { imageUrl: string; caption: string; category: string }[][] = [
   // Awa — Coiffure
   [
-    { imageUrl: 'https://picsum.photos/seed/awa1/800/600', caption: 'Brushing sur cheveux naturels', category: 'Coiffure & soins capillaires' },
-    { imageUrl: 'https://picsum.photos/seed/awa2/800/600', caption: 'Soin kératine - avant/après', category: 'Soins capillaires specialises' },
-    { imageUrl: 'https://picsum.photos/seed/awa3/800/600', caption: 'Coupe et brushing élégant', category: 'Coiffure & soins capillaires' },
-    { imageUrl: 'https://picsum.photos/seed/awa4/800/600', caption: 'Mise en plis longue durée', category: 'Coiffure & soins capillaires' },
+    { imageUrl: 'https://picsum.photos/seed/awa1/800/600', caption: 'Brushing sur cheveux naturels', category: 'Coupe femme' },
+    { imageUrl: 'https://picsum.photos/seed/awa2/800/600', caption: 'Soin kératine - avant/après', category: 'Coupe femme' },
+    { imageUrl: 'https://picsum.photos/seed/awa3/800/600', caption: 'Coupe et brushing élégant', category: 'Coupe femme' },
+    { imageUrl: 'https://picsum.photos/seed/awa4/800/600', caption: 'Mise en plis longue durée', category: 'Coupe femme' },
   ],
   // Fatoumata — Tresses
   [
-    { imageUrl: 'https://picsum.photos/seed/fatou1/800/600', caption: 'Box braids medium - résultat final', category: 'Tresses & coiffures africaines' },
-    { imageUrl: 'https://picsum.photos/seed/fatou2/800/600', caption: 'Knotless braids avec accessoires', category: 'Tresses & coiffures africaines' },
-    { imageUrl: 'https://picsum.photos/seed/fatou3/800/600', caption: 'Cornrows motifs géométriques', category: 'Tresses & coiffures africaines' },
-    { imageUrl: 'https://picsum.photos/seed/fatou4/800/600', caption: 'Goddess braids avec bun', category: 'Tresses & coiffures africaines' },
+    { imageUrl: 'https://picsum.photos/seed/fatou1/800/600', caption: 'Box braids medium - résultat final', category: 'Coupe femme' },
+    { imageUrl: 'https://picsum.photos/seed/fatou2/800/600', caption: 'Knotless braids avec accessoires', category: 'Coupe femme' },
+    { imageUrl: 'https://picsum.photos/seed/fatou3/800/600', caption: 'Cornrows motifs géométriques', category: 'Coupe femme' },
+    { imageUrl: 'https://picsum.photos/seed/fatou4/800/600', caption: 'Goddess braids avec bun', category: 'Coupe femme' },
   ],
   // Aminata — Ongles
   [
-    { imageUrl: 'https://picsum.photos/seed/ami1/800/600', caption: 'Nail art floral printemps', category: 'Manucure & ongles' },
-    { imageUrl: 'https://picsum.photos/seed/ami2/800/600', caption: 'French gel longue durée', category: 'Manucure & ongles' },
-    { imageUrl: 'https://picsum.photos/seed/ami3/800/600', caption: 'Ombré rose dorée', category: 'Manucure & ongles' },
-    { imageUrl: 'https://picsum.photos/seed/ami4/800/600', caption: 'Manucure + pédicure assortis', category: 'Pedicure & soins des pieds' },
+    { imageUrl: 'https://picsum.photos/seed/ami1/800/600', caption: 'Nail art floral printemps', category: 'Ongle' },
+    { imageUrl: 'https://picsum.photos/seed/ami2/800/600', caption: 'French gel longue durée', category: 'Ongle' },
+    { imageUrl: 'https://picsum.photos/seed/ami3/800/600', caption: 'Ombré rose dorée', category: 'Ongle' },
+    { imageUrl: 'https://picsum.photos/seed/ami4/800/600', caption: 'Manucure + pédicure assortis', category: 'Ongle' },
   ],
   // Ibrahim — Barbier
   [
-    { imageUrl: 'https://picsum.photos/seed/ibra1/800/600', caption: 'Dégradé peau + barbe sculptée', category: 'Barbier & soins homme' },
-    { imageUrl: 'https://picsum.photos/seed/ibra2/800/600', caption: 'Dégradé américain classique', category: 'Barbier & soins homme' },
-    { imageUrl: 'https://picsum.photos/seed/ibra3/800/600', caption: 'Taille barbe full', category: 'Barbier & soins homme' },
-    { imageUrl: 'https://picsum.photos/seed/ibra4/800/600', caption: 'Contours razor précis', category: 'Barbier & soins homme' },
+    { imageUrl: 'https://picsum.photos/seed/ibra1/800/600', caption: 'Dégradé peau + barbe sculptée', category: 'Coupe de cheveux homme' },
+    { imageUrl: 'https://picsum.photos/seed/ibra2/800/600', caption: 'Dégradé américain classique', category: 'Coupe de cheveux homme' },
+    { imageUrl: 'https://picsum.photos/seed/ibra3/800/600', caption: 'Taille barbe full', category: 'Coupe de cheveux homme' },
+    { imageUrl: 'https://picsum.photos/seed/ibra4/800/600', caption: 'Contours razor précis', category: 'Coupe de cheveux homme' },
   ],
   // Mariam — Maquillage
   [
-    { imageUrl: 'https://picsum.photos/seed/mariam1/800/600', caption: 'Maquillage mariée naturel', category: 'Maquillage' },
-    { imageUrl: 'https://picsum.photos/seed/mariam2/800/600', caption: 'Look soirée smoky eyes', category: 'Maquillage' },
-    { imageUrl: 'https://picsum.photos/seed/mariam3/800/600', caption: 'Maquillage baptême élégant', category: 'Maquillage' },
-    { imageUrl: 'https://picsum.photos/seed/mariam4/800/600', caption: 'Look naturel quotidien', category: 'Maquillage' },
+    { imageUrl: 'https://picsum.photos/seed/mariam1/800/600', caption: 'Maquillage mariée naturel', category: 'Visage' },
+    { imageUrl: 'https://picsum.photos/seed/mariam2/800/600', caption: 'Look soirée smoky eyes', category: 'Visage' },
+    { imageUrl: 'https://picsum.photos/seed/mariam3/800/600', caption: 'Maquillage baptême élégant', category: 'Visage' },
+    { imageUrl: 'https://picsum.photos/seed/mariam4/800/600', caption: 'Look naturel quotidien', category: 'Visage' },
   ],
   // Kadidia — Cils
   [
-    { imageUrl: 'https://picsum.photos/seed/kadi1/800/600', caption: 'Volume russe - regard intense', category: 'Extensions de cils' },
-    { imageUrl: 'https://picsum.photos/seed/kadi2/800/600', caption: 'Extensions naturelles - douceur', category: 'Extensions de cils' },
-    { imageUrl: 'https://picsum.photos/seed/kadi3/800/600', caption: 'Mega volume dramatique', category: 'Extensions de cils' },
-    { imageUrl: 'https://picsum.photos/seed/kadi4/800/600', caption: 'Mix naturel-volume', category: 'Extensions de cils' },
+    { imageUrl: 'https://picsum.photos/seed/kadi1/800/600', caption: 'Volume russe - regard intense', category: 'Visage' },
+    { imageUrl: 'https://picsum.photos/seed/kadi2/800/600', caption: 'Extensions naturelles - douceur', category: 'Visage' },
+    { imageUrl: 'https://picsum.photos/seed/kadi3/800/600', caption: 'Mega volume dramatique', category: 'Visage' },
+    { imageUrl: 'https://picsum.photos/seed/kadi4/800/600', caption: 'Mix naturel-volume', category: 'Visage' },
   ],
 ];
 

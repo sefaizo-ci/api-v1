@@ -11,6 +11,7 @@
     "db:seed:mobile-demo:api": "tsx scripts/seed-mobile-via-api.ts",
     "db:seed:mobile-demo:api:reset": "SEED_DEMO_RESET=true tsx scripts/seed-mobile-via-api.ts",
     "db:sync:preprod": "bash scripts/sync-preprod-db.sh",
+    "db:migrate:categories7": "tsx scripts/migrate-categories-to-7.ts",
     "hooks:install": "bash scripts/install-hooks.sh",
     "postinstall": "npm run hooks:install",
     "prestart:dev": "npm run hooks:install",
