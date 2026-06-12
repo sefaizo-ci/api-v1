@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { BookingStatus } from '@prisma/client';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import { CancelBookingCommand } from '../professional/interface/commands/booking.commands';
@@ -93,6 +94,23 @@ export class ClientController {
     return this.queryBus.execute<GetMyBookingsQuery, unknown>(
       new GetMyBookingsQuery(req.user.id, status, page, limit),
     );
+  }
+
+  @Get('me/bookings/statuses')
+  listBookingStatuses() {
+    const labels: Record<BookingStatus, string> = {
+      [BookingStatus.PENDING]: 'En attente',
+      [BookingStatus.CONFIRMED]: 'Confirmée',
+      [BookingStatus.REJECTED]: 'Refusée',
+      [BookingStatus.CANCELLED]: 'Annulée',
+      [BookingStatus.COMPLETED]: 'Terminée',
+      [BookingStatus.NO_SHOW]: 'Absence',
+    };
+
+    return Object.values(BookingStatus).map((value) => ({
+      value,
+      label: labels[value],
+    }));
   }
 
   @Get('me/bookings/:bookingId')
