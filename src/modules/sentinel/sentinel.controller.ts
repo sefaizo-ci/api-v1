@@ -405,12 +405,13 @@ export class SentinelController {
   @ApiBody({ type: LogoutDto })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
   logout(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { id: string; role: string },
     @Body() dto: LogoutDto,
     @Req() req?: Request,
     @Res({ passthrough: true }) res?: Response,
   ) {
     const refreshToken = dto.refreshToken ?? readRefreshTokenFromCookies(req);
+    const app = dto.app ?? resolveLoginApp(user.role);
     res?.clearCookie(AUTH.COOKIE.REFRESH.NAME, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -418,7 +419,7 @@ export class SentinelController {
       path: AUTH.COOKIE.REFRESH.PATH,
     });
     return this.commandBus.execute<LogoutCommand, MessageResult>(
-      new LogoutCommand(user.id, refreshToken, dto.allDevices),
+      new LogoutCommand(user.id, refreshToken, dto.allDevices, app),
     );
   }
 

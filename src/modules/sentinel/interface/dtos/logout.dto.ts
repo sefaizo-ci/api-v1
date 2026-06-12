@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
+import { LOGIN_APPS, type LoginApp } from '../../core/enums/auth.enums';
 
 export class LogoutDto {
   @ApiPropertyOptional({
@@ -9,6 +10,16 @@ export class LogoutDto {
   @IsOptional()
   @IsString()
   refreshToken?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'App context (CLIENT or PROFESSIONAL). Defaults to the bearer token role if omitted.',
+    enum: LOGIN_APPS,
+    example: 'PROFESSIONAL',
+  })
+  @IsOptional()
+  @IsIn(LOGIN_APPS)
+  app?: LoginApp;
 
   @ApiPropertyOptional({
     description: 'Revoke all user sessions on all devices.',
