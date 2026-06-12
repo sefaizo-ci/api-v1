@@ -22,11 +22,7 @@ import {
   CreateClientBookingDto,
   RequestBookingCancellationDto,
 } from './interface/dtos';
-import {
-  GetBookingStatusesQuery,
-  GetMyBookingByIdQuery,
-  GetMyBookingsQuery,
-} from './interface/queries';
+import { GetMyBookingByIdQuery, GetMyBookingsQuery } from './interface/queries';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -96,13 +92,6 @@ export class ClientController {
   ) {
     return this.queryBus.execute<GetMyBookingsQuery, unknown>(
       new GetMyBookingsQuery(req.user.id, status, page, limit),
-    );
-  }
-
-  @Get('me/bookings/statuses')
-  async listBookingStatuses() {
-    return this.queryBus.execute<GetBookingStatusesQuery, unknown>(
-      new GetBookingStatusesQuery(),
     );
   }
 

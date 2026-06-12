@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { BookingReferenceController } from './booking-reference.controller';
 import { ClientController } from './client.controller';
 import {
   ClientCommandHandlers,
@@ -8,7 +9,7 @@ import {
 
 @Module({
   imports: [CqrsModule],
-  controllers: [ClientController],
+  controllers: [ClientController, BookingReferenceController],
   providers: [...ClientCommandHandlers, ...ClientQueryHandlers],
 })
 export class ClientModule {}
