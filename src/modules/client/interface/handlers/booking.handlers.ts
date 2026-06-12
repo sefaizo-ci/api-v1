@@ -20,10 +20,23 @@ import {
   BookingCancellationRequestedEvent,
   BookingCreatedEvent,
 } from '../events/booking.events';
-import { GetMyBookingByIdQuery, GetMyBookingsQuery } from '../queries';
+import {
+  GetBookingStatusesQuery,
+  GetMyBookingByIdQuery,
+  GetMyBookingsQuery,
+} from '../queries';
 
 const BOOKING_CANCELLATION_REQUEST_STATUS_NONE = 'NONE' as const;
 const BOOKING_CANCELLATION_REQUEST_STATUS_PENDING = 'PENDING' as const;
+
+const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+  [BookingStatus.PENDING]: 'En attente',
+  [BookingStatus.CONFIRMED]: 'Confirmée',
+  [BookingStatus.REJECTED]: 'Refusée',
+  [BookingStatus.CANCELLED]: 'Annulée',
+  [BookingStatus.COMPLETED]: 'Terminée',
+  [BookingStatus.NO_SHOW]: 'Absence',
+};
 
 @CommandHandler(CreateClientBookingCommand)
 @Injectable()
@@ -352,6 +365,19 @@ export class GetMyBookingByIdHandler implements IQueryHandler<GetMyBookingByIdQu
     }
 
     return booking;
+  }
+}
+
+@QueryHandler(GetBookingStatusesQuery)
+@Injectable()
+export class GetBookingStatusesHandler implements IQueryHandler<GetBookingStatusesQuery> {
+  execute() {
+    return Promise.resolve(
+      Object.values(BookingStatus).map((value) => ({
+        value,
+        label: BOOKING_STATUS_LABELS[value],
+      })),
+    );
   }
 }
 

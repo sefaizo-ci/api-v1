@@ -1,5 +1,6 @@
 import {
   CreateClientBookingHandler,
+  GetBookingStatusesHandler,
   GetMyBookingByIdHandler,
   GetMyBookingsHandler,
   RequestBookingCancellationHandler,
@@ -13,6 +14,7 @@ export const ClientCommandHandlers = [
 export const ClientQueryHandlers = [
   GetMyBookingsHandler,
   GetMyBookingByIdHandler,
+  GetBookingStatusesHandler,
 ];
 
 export * from './booking.handlers';

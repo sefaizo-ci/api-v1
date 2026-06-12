@@ -15,3 +15,5 @@ export class GetMyBookingByIdQuery implements IQuery {
     public readonly clientId: string,
   ) {}
 }
+
+export class GetBookingStatusesQuery implements IQuery {}

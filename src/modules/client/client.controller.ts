@@ -10,7 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { BookingStatus } from '@prisma/client';
 import type { Request } from 'express';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import { CancelBookingCommand } from '../professional/interface/commands/booking.commands';
@@ -23,7 +22,11 @@ import {
   CreateClientBookingDto,
   RequestBookingCancellationDto,
 } from './interface/dtos';
-import { GetMyBookingByIdQuery, GetMyBookingsQuery } from './interface/queries';
+import {
+  GetBookingStatusesQuery,
+  GetMyBookingByIdQuery,
+  GetMyBookingsQuery,
+} from './interface/queries';
 
 type AuthenticatedRequest = Request & {
   user: {
@@ -97,20 +100,10 @@ export class ClientController {
   }
 
   @Get('me/bookings/statuses')
-  listBookingStatuses() {
-    const labels: Record<BookingStatus, string> = {
-      [BookingStatus.PENDING]: 'En attente',
-      [BookingStatus.CONFIRMED]: 'Confirmée',
-      [BookingStatus.REJECTED]: 'Refusée',
-      [BookingStatus.CANCELLED]: 'Annulée',
-      [BookingStatus.COMPLETED]: 'Terminée',
-      [BookingStatus.NO_SHOW]: 'Absence',
-    };
-
-    return Object.values(BookingStatus).map((value) => ({
-      value,
-      label: labels[value],
-    }));
+  async listBookingStatuses() {
+    return this.queryBus.execute<GetBookingStatusesQuery, unknown>(
+      new GetBookingStatusesQuery(),
+    );
   }
 
   @Get('me/bookings/:bookingId')
