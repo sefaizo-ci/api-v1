@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
   IsArray,
   IsEnum,
   IsNumber,
@@ -59,23 +58,19 @@ export class CreateProfessionalProfileDto {
 
   @ApiPropertyOptional({
     example: ['WiFi', 'Parking', 'Climatisation'],
-    maxItems: 3,
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(3)
   @IsString({ each: true })
   @MaxLength(35, { each: true })
   amenities?: string[];
 
   @ApiPropertyOptional({
     example: ['uuid-categorie-1', 'uuid-categorie-2'],
-    description: 'IDs des catégories principales (max 3)',
-    maxItems: 3,
+    description: 'IDs des catégories principales',
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(3)
   @IsString({ each: true })
   mainCategories?: string[];
 }
@@ -121,22 +116,19 @@ export class UpdateProfessionalProfileDto {
   @Max(180)
   longitude?: number;
 
-  @ApiPropertyOptional({ example: ['WiFi', 'Parking'], maxItems: 3 })
+  @ApiPropertyOptional({ example: ['WiFi', 'Parking'] })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(3)
   @IsString({ each: true })
   @MaxLength(35, { each: true })
   amenities?: string[];
 
   @ApiPropertyOptional({
     example: ['uuid-categorie-1'],
-    description: 'IDs des catégories principales (max 3)',
-    maxItems: 3,
+    description: 'IDs des catégories principales',
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(3)
   @IsString({ each: true })
   mainCategories?: string[];
 }

@@ -125,14 +125,6 @@ export class ProfessionalEntity {
     if (!props.agencyName || props.agencyName.trim().length === 0) {
       throw new BadRequestException('Agency name is required');
     }
-    if (props.mainCategories && props.mainCategories.length > 3) {
-      throw new BadRequestException(
-        'Maximum 3 catégories principales autorisées',
-      );
-    }
-    if (props.amenities && props.amenities.length > 3) {
-      throw new BadRequestException('Maximum 3 commodités autorisées');
-    }
 
     return new ProfessionalEntity({
       ...props,
@@ -163,14 +155,6 @@ export class ProfessionalEntity {
       props.agencyName.trim().length === 0
     ) {
       throw new BadRequestException('Agency name cannot be empty');
-    }
-    if (props.mainCategories && props.mainCategories.length > 3) {
-      throw new BadRequestException(
-        'Maximum 3 catégories principales autorisées',
-      );
-    }
-    if (props.amenities && props.amenities.length > 3) {
-      throw new BadRequestException('Maximum 3 commodités autorisées');
     }
 
     if (props.agencyName) this.agencyName = props.agencyName;
