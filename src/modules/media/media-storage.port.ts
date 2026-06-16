@@ -1,3 +1,6 @@
+/** Kind of media a professional can upload, used to namespace storage paths. */
+export type MediaUploadKind = 'gallery' | 'avatar' | 'service';
+
 export type MediaUploadResult = {
   fileId: string;
   filePath: string;
@@ -21,7 +24,7 @@ export type MediaFileInfo = {
 
 export type ListMediaFilesInput = {
   professionalId: string;
-  type: 'gallery' | 'avatar' | 'service';
+  type: MediaUploadKind;
   page?: number;
   limit?: number;
 };
