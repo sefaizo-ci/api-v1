@@ -509,6 +509,7 @@ export class GetMyOnboardingStateHandler implements IQueryHandler<GetMyOnboardin
         longitude: professional.longitude ?? null,
         mainCategories: professional.mainCategories,
         amenities: professional.amenities,
+        profileImageUrls: professional.profileImageUrls,
       },
       services: services.map((s) => ({
         id: s.id,

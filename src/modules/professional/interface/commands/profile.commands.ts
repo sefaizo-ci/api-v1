@@ -133,3 +133,47 @@ export class UpdateProfessionalSettingsCommand implements ICommand {
 export class RemoveAvatarCommand implements ICommand {
   constructor(public readonly professionalId: string) {}
 }
+
+/**
+ * AddProfileImageCommand
+ * Adds an image to the professional's profile images (distinct from the gallery).
+ */
+export class AddProfileImageCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly imageUrl: string,
+  ) {}
+}
+
+/**
+ * RemoveProfileImageCommand
+ * Removes an image from the professional's profile images.
+ */
+export class RemoveProfileImageCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly imageUrl: string,
+  ) {}
+}
+
+/**
+ * SetProfileImagesCommand
+ * Replaces the whole profile images list at once.
+ */
+export class SetProfileImagesCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly imageUrls: string[],
+  ) {}
+}
+
+/**
+ * SetPrimaryProfileImageCommand
+ * Promotes one profile image as the primary image (avatar).
+ */
+export class SetPrimaryProfileImageCommand implements ICommand {
+  constructor(
+    public readonly professionalId: string,
+    public readonly imageUrl: string,
+  ) {}
+}

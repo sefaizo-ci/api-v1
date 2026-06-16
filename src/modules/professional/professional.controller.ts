@@ -70,7 +70,13 @@ import {
   MarkNoShowCommand,
   RejectBookingCancellationRequestCommand,
 } from './interface/commands/booking.commands';
-import { UpdateProfessionalSettingsCommand } from './interface/commands/profile.commands';
+import {
+  AddProfileImageCommand,
+  RemoveProfileImageCommand,
+  SetPrimaryProfileImageCommand,
+  SetProfileImagesCommand,
+  UpdateProfessionalSettingsCommand,
+} from './interface/commands/profile.commands';
 import {
   AddServiceDto,
   CreateProfessionalProfileDto,
@@ -91,6 +97,8 @@ import {
   UpsertServicesBulkDto,
 } from './interface/dtos';
 import {
+  ProfileImageDto,
+  SetProfileImagesDto,
   SuspendProfessionalDto,
   UpdateProfessionalSettingsDto,
 } from './interface/dtos/profile.dto';
@@ -1049,6 +1057,75 @@ export class ProfessionalController {
       maxSizeBytes: MAX_IMAGE_UPLOAD_BYTES,
       acceptedFormats: Array.from(ALLOWED_IMAGE_MIME_TYPES),
     };
+  }
+
+  /**
+   * Add one image to the profile images list (distinct from the gallery).
+   * avatarUrl stays the primary image; max 5 profile images.
+   */
+  @Post(':professionalId/profile-images')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async addProfileImage(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ProfileImageDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<AddProfileImageCommand, unknown>(
+      new AddProfileImageCommand(professionalId, body.imageUrl),
+    );
+  }
+
+  /**
+   * Replace the whole profile images list at once (max 5).
+   */
+  @Put(':professionalId/profile-images')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async setProfileImages(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: SetProfileImagesDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<SetProfileImagesCommand, unknown>(
+      new SetProfileImagesCommand(professionalId, body.imageUrls),
+    );
+  }
+
+  /**
+   * Promote one profile image as the primary image (updates avatarUrl).
+   */
+  @Put(':professionalId/profile-images/primary')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async setPrimaryProfileImage(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ProfileImageDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<SetPrimaryProfileImageCommand, unknown>(
+      new SetPrimaryProfileImageCommand(professionalId, body.imageUrl),
+    );
+  }
+
+  /**
+   * Remove one image from the profile images list.
+   */
+  @Delete(':professionalId/profile-images')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async removeProfileImage(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ProfileImageDto,
+  ) {
+    await this.assertProfessionalOwnership(professionalId, req.user.id);
+    return this.commandBus.execute<RemoveProfileImageCommand, unknown>(
+      new RemoveProfileImageCommand(professionalId, body.imageUrl),
+    );
   }
 
   /**

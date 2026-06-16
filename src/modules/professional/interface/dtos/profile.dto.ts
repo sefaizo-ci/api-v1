@@ -163,3 +163,28 @@ export class UpdateProfessionalSettingsDto {
   @Max(120)
   travelBufferMin!: number;
 }
+
+export class ProfileImageDto {
+  @ApiProperty({
+    example: 'https://cdn.sefaizo.com/profiles/abc.jpg',
+    description: "URL de l'image de profil",
+  })
+  @IsString()
+  @MaxLength(2048)
+  imageUrl!: string;
+}
+
+export class SetProfileImagesDto {
+  @ApiProperty({
+    example: [
+      'https://cdn.sefaizo.com/profiles/a.jpg',
+      'https://cdn.sefaizo.com/profiles/b.jpg',
+    ],
+    description: 'Liste complète des images de profil (max 5)',
+    maxItems: 5,
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(2048, { each: true })
+  imageUrls!: string[];
+}

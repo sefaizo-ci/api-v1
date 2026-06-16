@@ -18,6 +18,10 @@ import {
   ResumeBookingsCommand,
   SuspendProfessionalCommand,
   RemoveAvatarCommand,
+  AddProfileImageCommand,
+  RemoveProfileImageCommand,
+  SetProfileImagesCommand,
+  SetPrimaryProfileImageCommand,
   ToggleListingCommand,
   UpdateProfessionalProfileCommand,
   UpdateProfessionalSettingsCommand,
@@ -376,5 +380,89 @@ export class RemoveAvatarHandler implements ICommandHandler<RemoveAvatarCommand>
       where: { id: command.professionalId },
       data: { avatarUrl: null },
     });
+  }
+}
+
+/**
+ * AddProfileImageHandler
+ * Appends an image to the professional's profile images list.
+ */
+@CommandHandler(AddProfileImageCommand)
+@Injectable()
+export class AddProfileImageHandler implements ICommandHandler<AddProfileImageCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: AddProfileImageCommand): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+    professional.addProfileImage(command.imageUrl);
+    await this.repository.save(professional);
+    return professional;
+  }
+}
+
+/**
+ * RemoveProfileImageHandler
+ * Removes an image from the professional's profile images list.
+ */
+@CommandHandler(RemoveProfileImageCommand)
+@Injectable()
+export class RemoveProfileImageHandler implements ICommandHandler<RemoveProfileImageCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(
+    command: RemoveProfileImageCommand,
+  ): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+    professional.removeProfileImage(command.imageUrl);
+    await this.repository.save(professional);
+    return professional;
+  }
+}
+
+/**
+ * SetProfileImagesHandler
+ * Replaces the whole profile images list at once.
+ */
+@CommandHandler(SetProfileImagesCommand)
+@Injectable()
+export class SetProfileImagesHandler implements ICommandHandler<SetProfileImagesCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(command: SetProfileImagesCommand): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+    professional.setProfileImages(command.imageUrls);
+    await this.repository.save(professional);
+    return professional;
+  }
+}
+
+/**
+ * SetPrimaryProfileImageHandler
+ * Promotes one profile image as the primary image (avatar).
+ */
+@CommandHandler(SetPrimaryProfileImageCommand)
+@Injectable()
+export class SetPrimaryProfileImageHandler implements ICommandHandler<SetPrimaryProfileImageCommand> {
+  constructor(private readonly repository: ProfessionalRepository) {}
+
+  async execute(
+    command: SetPrimaryProfileImageCommand,
+  ): Promise<ProfessionalEntity> {
+    const professional = await findProfessionalOrFail(
+      this.repository,
+      command.professionalId,
+    );
+    professional.setPrimaryImage(command.imageUrl);
+    await this.repository.save(professional);
+    return professional;
   }
 }

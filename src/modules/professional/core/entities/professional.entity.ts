@@ -9,6 +9,9 @@ import { AvailabilityEntity } from './availability.entity';
 import { GalleryItemEntity } from './gallery-item.entity';
 import { ServiceOfferingEntity } from './service-offering.entity';
 
+/** Max number of profile images (avatar excluded) a professional can have. */
+export const MAX_PROFILE_IMAGES = 5;
+
 /**
  * Professional Aggregate Root
  * Represents a professional user with their complete business profile
@@ -28,6 +31,8 @@ export class ProfessionalEntity {
   longitude?: number;
   amenities: string[];
   mainCategories: string[];
+  /** Profile images shown on the pro profile, distinct from the portfolio gallery. avatarUrl is the primary image. */
+  profileImageUrls: string[];
 
   // Status
   status: ProfessionalStatus;
@@ -63,6 +68,7 @@ export class ProfessionalEntity {
     longitude?: number;
     amenities?: string[];
     mainCategories?: string[];
+    profileImageUrls?: string[];
     status?: ProfessionalStatus;
     isVerified?: boolean;
     rejectionReason?: string;
@@ -89,6 +95,7 @@ export class ProfessionalEntity {
     this.longitude = props.longitude;
     this.amenities = props.amenities ?? [];
     this.mainCategories = props.mainCategories ?? [];
+    this.profileImageUrls = props.profileImageUrls ?? [];
     this.status = props.status ?? ProfessionalStatus.PENDING;
     this.isVerified = props.isVerified ?? false;
     this.rejectionReason = props.rejectionReason;
@@ -262,6 +269,72 @@ export class ProfessionalEntity {
   resumeBookings(): void {
     this.isAcceptingBookings = true;
     this.bookingsPausedUntil = undefined;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Add an image to the profile images list (distinct from the gallery).
+   * Ignores duplicates; enforces the MAX_PROFILE_IMAGES cap.
+   */
+  addProfileImage(imageUrl: string): void {
+    const url = imageUrl?.trim();
+    if (!url) {
+      throw new BadRequestException("L'URL de l'image est requise");
+    }
+    if (this.profileImageUrls.includes(url)) {
+      return;
+    }
+    if (this.profileImageUrls.length >= MAX_PROFILE_IMAGES) {
+      throw new BadRequestException(
+        `Maximum ${MAX_PROFILE_IMAGES} images de profil autorisées`,
+      );
+    }
+    this.profileImageUrls.push(url);
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Remove an image from the profile images list.
+   */
+  removeProfileImage(imageUrl: string): void {
+    const index = this.profileImageUrls.indexOf(imageUrl);
+    if (index === -1) {
+      throw new NotFoundException('Image de profil non trouvée');
+    }
+    this.profileImageUrls.splice(index, 1);
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Replace the whole profile images list at once.
+   * Deduplicates while preserving order; enforces the MAX_PROFILE_IMAGES cap.
+   */
+  setProfileImages(imageUrls: string[]): void {
+    const cleaned = Array.from(
+      new Set(imageUrls.map((u) => u?.trim()).filter((u): u is string => !!u)),
+    );
+    if (cleaned.length > MAX_PROFILE_IMAGES) {
+      throw new BadRequestException(
+        `Maximum ${MAX_PROFILE_IMAGES} images de profil autorisées`,
+      );
+    }
+    this.profileImageUrls = cleaned;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Promote one of the profile images as the primary image (avatar).
+   * The chosen image is added to the list if it is not already part of it.
+   */
+  setPrimaryImage(imageUrl: string): void {
+    const url = imageUrl?.trim();
+    if (!url) {
+      throw new BadRequestException("L'URL de l'image est requise");
+    }
+    if (!this.profileImageUrls.includes(url)) {
+      this.addProfileImage(url);
+    }
+    this.avatarUrl = url;
     this.updatedAt = new Date();
   }
 
@@ -572,6 +645,7 @@ export class ProfessionalEntity {
       profileCompletion: this.getProfileCompletion(),
       canAcceptBookings: this.canAcceptBookings(),
       mainCategories: this.mainCategories,
+      profileImageUrls: this.profileImageUrls,
     };
   }
 }
