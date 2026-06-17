@@ -9,10 +9,13 @@ import {
   Query,
   Role,
   Storage,
+  Users,
 } from 'node-appwrite';
 import { InputFile } from 'node-appwrite/file';
 import { randomUUID } from 'node:crypto';
 import {
+  CreateDirectUploadInput,
+  DirectUploadTarget,
   ListMediaFilesInput,
   ListMediaFilesResult,
   MediaFileInfo,
@@ -22,6 +25,9 @@ import {
   PreviewOptions,
 } from './media-storage.port';
 
+/** Lifetime of the direct-upload JWT handed to the mobile client. */
+const DIRECT_UPLOAD_TTL_SECONDS = 15 * 60;
+
 @Injectable()
 export class AppwriteMediaService implements MediaStoragePort {
   private readonly logger = new Logger(AppwriteMediaService.name);
@@ -29,6 +35,7 @@ export class AppwriteMediaService implements MediaStoragePort {
   private readonly projectId: string;
   private readonly apiKey: string;
   private readonly bucketId: string;
+  private readonly uploaderUserId: string;
 
   constructor(private readonly configService: ConfigService) {
     this.endpoint =
@@ -42,6 +49,52 @@ export class AppwriteMediaService implements MediaStoragePort {
     this.bucketId =
       this.configService.get<string>('APPWRITE_STORAGE_BUCKET_ID') ??
       'fake-bucket-id';
+    // Dedicated Appwrite user the client impersonates (via a short-lived JWT)
+    // to upload directly to the bucket. The bucket must grant this user the
+    // `create` permission; nothing else.
+    this.uploaderUserId =
+      this.configService.get<string>('APPWRITE_UPLOADER_USER_ID') ??
+      'fake-uploader-user-id';
+  }
+
+  async createDirectUpload(
+    args: CreateDirectUploadInput,
+  ): Promise<DirectUploadTarget> {
+    const extension = this.extensionFromMimeType(args.mimeType);
+    const fileId = ID.unique();
+    const path = `professionals/${args.professionalId}/${args.type}/${randomUUID()}.${extension}`;
+    const viewUrl = this.buildFileViewUrl(fileId);
+    const expiresAt = new Date(
+      Date.now() + DIRECT_UPLOAD_TTL_SECONDS * 1000,
+    ).toISOString();
+
+    const base = {
+      fileId,
+      path,
+      viewUrl,
+      endpoint: this.endpoint,
+      projectId: this.projectId,
+      bucketId: this.bucketId,
+      expiresAt,
+    };
+
+    if (this.isDryRunEnabled() || this.isFakeValue(this.apiKey)) {
+      this.logger.log(
+        `[APPWRITE][DRY_RUN] direct-upload intent bucket=${this.bucketId} fileId=${fileId} path=${path}`,
+      );
+      return { ...base, uploadToken: 'dry-run-upload-jwt' };
+    }
+
+    const users = new Users(this.createClient());
+    const { jwt } = await users.createJWT({
+      userId: this.uploaderUserId,
+      duration: DIRECT_UPLOAD_TTL_SECONDS,
+    });
+
+    this.logger.log(
+      `[APPWRITE][LIVE] direct-upload intent bucket=${this.bucketId} fileId=${fileId} path=${path}`,
+    );
+    return { ...base, uploadToken: jwt };
   }
 
   async uploadGalleryImage(args: MediaUploadInput): Promise<MediaUploadResult> {
@@ -251,13 +304,15 @@ export class AppwriteMediaService implements MediaStoragePort {
     };
   }
 
-  private createStorageClient(): Storage {
-    const client = new Client()
+  private createClient(): Client {
+    return new Client()
       .setEndpoint(this.endpoint)
       .setProject(this.projectId)
       .setKey(this.apiKey);
+  }
 
-    return new Storage(client);
+  private createStorageClient(): Storage {
+    return new Storage(this.createClient());
   }
 
   private buildFileViewUrl(fileId: string): string {

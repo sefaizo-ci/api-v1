@@ -114,6 +114,10 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  APPWRITE_UPLOADER_USER_ID?: string;
+
+  @IsOptional()
+  @IsString()
   ALLOWED_ORIGINS?: string;
 
   @IsOptional()
