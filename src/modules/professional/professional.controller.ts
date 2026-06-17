@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Inject,
   Param,
   ParseIntPipe,
@@ -27,6 +28,7 @@ import { Public } from '../../libs/decorators/public.decorator';
 import { Roles } from '../../libs/decorators/roles.decorator';
 import type { MediaStoragePort } from '../media/media-storage.port';
 import { MEDIA_STORAGE_SERVICE } from '../media/media-storage.port';
+import { MediaUploadTokenService } from '../media/media-upload-token.service';
 import { RolesGuard } from '../sentinel/infrastructure/guards/roles.guard';
 import { ProfessionalEntity } from './core/entities/professional.entity';
 import { ProfessionalRepository } from './infrastructure/persistence/professional.repository';
@@ -79,8 +81,10 @@ import {
 } from './interface/commands/profile.commands';
 import {
   AddServiceDto,
+  ConfirmUploadDto,
   CreateProfessionalProfileDto,
   CreateServiceCategoryRequestDto,
+  CreateUploadIntentDto,
   RejectBookingDto,
   ReplaceGalleryDto,
   ReviewCancellationRequestDto,
@@ -127,7 +131,16 @@ import {
 } from './interface/queries';
 import { ListBookingCancellationRequestsQuery } from './interface/queries/professional.queries';
 
-const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+// Vercel serverless functions reject any request body > 4.5 MB at the platform
+// level (HTTP 413) before our handler runs, so a per-file limit above that is a
+// lie: the upload fails silently with no chance to surface a clean error.
+// We cap below that wall and leave headroom for multipart overhead. For the
+// gallery `upload-bulk` endpoint the *total* body must also stay under the wall
+// (sum of files), so heavy galleries must move to direct-to-storage uploads.
+const MAX_IMAGE_UPLOAD_BYTES = 4 * 1024 * 1024;
+// Direct-to-storage uploads bypass the Vercel function entirely, so they are
+// only bound by what we consider a reasonable image — not the 4.5 MB wall.
+const MAX_DIRECT_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_GALLERY_IMAGES = 15;
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/jpg',
@@ -158,6 +171,7 @@ export class ProfessionalController {
     private readonly professionalRepository: ProfessionalRepository,
     @Inject(MEDIA_STORAGE_SERVICE)
     private readonly mediaStorageService: MediaStoragePort,
+    private readonly uploadTokenService: MediaUploadTokenService,
   ) {}
 
   /**
@@ -478,6 +492,13 @@ export class ProfessionalController {
 
   @Get('services/categories')
   @Public()
+  // Canonical 7-bucket catalogue: changes at most a few times a year.
+  // Cacheable at the edge; `stale-while-revalidate` keeps responses instant
+  // while the cache refreshes in the background. Express adds a weak ETag.
+  @Header(
+    'Cache-Control',
+    'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+  )
   async listServiceCategories(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
@@ -1129,6 +1150,185 @@ export class ProfessionalController {
   }
 
   /**
+   * Phase 1 of direct-to-storage upload. The client uploads the image bytes
+   * itself (straight to Appwrite), so they never transit the API — bypassing
+   * Vercel's 4.5 MB request-body limit. We hand back a short-lived upload
+   * credential plus a server-signed `uploadToken` that binds the reserved
+   * fileId to this professional; phase 2 (`/media/confirm`) trusts that token.
+   */
+  @Post(':professionalId/media/upload-intent')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async createUploadIntent(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: CreateUploadIntentDto,
+  ) {
+    const owner = await this.assertProfessionalOwnership(
+      professionalId,
+      req.user.id,
+    );
+
+    if (body.type === 'service') {
+      if (!body.serviceId) {
+        throw new BadRequestException(
+          'serviceId est requis pour un upload de type "service".',
+        );
+      }
+      if (!owner.getService(body.serviceId)) {
+        throw new NotFoundException('Service non trouve');
+      }
+    }
+
+    const target = await this.mediaStorageService.createDirectUpload({
+      professionalId,
+      type: body.type,
+      mimeType: body.mimeType,
+    });
+
+    const uploadToken = this.uploadTokenService.issue({
+      professionalId,
+      fileId: target.fileId,
+      type: body.type,
+      serviceId: body.serviceId,
+    });
+
+    return {
+      // Everything the client needs to POST the file straight to Appwrite.
+      upload: {
+        endpoint: target.endpoint,
+        projectId: target.projectId,
+        bucketId: target.bucketId,
+        fileId: target.fileId,
+        path: target.path,
+        jwt: target.uploadToken,
+        expiresAt: target.expiresAt,
+      },
+      // Opaque token to hand back to /media/confirm once the upload succeeds.
+      uploadToken,
+    };
+  }
+
+  /**
+   * Phase 2 of direct-to-storage upload. Validates the uploaded file and
+   * persists it (gallery item / service image / avatar) based on the binding
+   * carried by `uploadToken`. The client's claimed file path is never trusted.
+   */
+  @Post(':professionalId/media/confirm')
+  @UseGuards(RolesGuard)
+  @Roles('PROFESSIONAL')
+  async confirmUpload(
+    @Param('professionalId') professionalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ConfirmUploadDto,
+  ) {
+    const owner = await this.assertProfessionalOwnership(
+      professionalId,
+      req.user.id,
+    );
+
+    const payload = this.uploadTokenService.verify(body.uploadToken);
+    if (payload.professionalId !== professionalId) {
+      throw new ForbiddenException('Ce jeton d’upload ne vous appartient pas.');
+    }
+
+    // Confirm the bytes actually landed, and re-validate type/size server-side
+    // (the upload bypassed our request pipeline, so this is the only gate).
+    const info = await this.mediaStorageService.getFileInfo(payload.fileId);
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(info.mimeType.toLowerCase())) {
+      throw new BadRequestException(
+        `Format non supporte (${info.mimeType}). Formats autorises: jpg, jpeg, png, webp.`,
+      );
+    }
+    if (info.sizeOriginal > MAX_DIRECT_UPLOAD_BYTES) {
+      throw new BadRequestException(
+        `Image trop lourde. Taille maximale: ${Math.round(MAX_DIRECT_UPLOAD_BYTES / (1024 * 1024))}MB.`,
+      );
+    }
+
+    const imageUrl = info.viewUrl;
+
+    switch (payload.type) {
+      case 'avatar':
+        await this.commandBus.execute<
+          UpdateProfessionalProfileCommand,
+          unknown
+        >(
+          new UpdateProfessionalProfileCommand(
+            professionalId,
+            undefined,
+            undefined,
+            imageUrl,
+          ),
+        );
+        return { avatarUrl: imageUrl, fileId: payload.fileId };
+
+      case 'service': {
+        const serviceId = payload.serviceId;
+        const service = serviceId ? owner.getService(serviceId) : undefined;
+        if (!serviceId || !service) {
+          throw new NotFoundException('Service non trouve');
+        }
+        const previousImageUrl = service.imageUrl;
+        await this.professionalRepository.updateServiceImage(
+          serviceId,
+          imageUrl,
+        );
+        if (previousImageUrl && previousImageUrl !== imageUrl) {
+          await this.mediaStorageService
+            .deleteFileByUrl(previousImageUrl)
+            .catch(() => {});
+        }
+        return {
+          imageUrl,
+          imageThumbUrl: this.mediaStorageService.buildPreviewUrl(imageUrl, {
+            width: 200,
+            quality: 70,
+          }),
+          imageCardUrl: this.mediaStorageService.buildPreviewUrl(imageUrl, {
+            width: 600,
+            quality: 75,
+          }),
+          fileId: payload.fileId,
+        };
+      }
+
+      case 'profile': {
+        const professional = await this.commandBus.execute<
+          AddProfileImageCommand,
+          ProfessionalEntity
+        >(new AddProfileImageCommand(professionalId, imageUrl));
+        return {
+          imageUrl,
+          imageThumbUrl: this.mediaStorageService.buildPreviewUrl(imageUrl, {
+            width: 200,
+            quality: 70,
+          }),
+          fileId: payload.fileId,
+          profileImageUrls: professional.profileImageUrls,
+        };
+      }
+
+      case 'gallery':
+      default: {
+        const galleryItem = await this.commandBus.execute<
+          UploadGalleryItemCommand,
+          unknown
+        >(new UploadGalleryItemCommand(professionalId, imageUrl));
+        return {
+          imageUrl,
+          imageThumbUrl: this.mediaStorageService.buildPreviewUrl(imageUrl, {
+            width: 200,
+            quality: 70,
+          }),
+          fileId: payload.fileId,
+          galleryItem,
+        };
+      }
+    }
+  }
+
+  /**
    * Replace-all gallery: keeps only items in keepIds, soft-deletes the rest.
    * Call this before uploading new items to set the desired state.
    */
@@ -1411,7 +1611,7 @@ export class ProfessionalController {
 
     if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       throw new BadRequestException(
-        `Image trop lourde. Taille maximale: ${MAX_IMAGE_UPLOAD_BYTES} octets (10MB).`,
+        `Image trop lourde. Taille maximale: ${MAX_IMAGE_UPLOAD_BYTES} octets (${Math.round(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024))}MB).`,
       );
     }
 

@@ -1,6 +1,3 @@
-/** Kind of media a professional can upload, used to namespace storage paths. */
-export type MediaUploadKind = 'gallery' | 'avatar' | 'service';
-
 export type MediaUploadResult = {
   fileId: string;
   filePath: string;
@@ -22,9 +19,37 @@ export type MediaFileInfo = {
   downloadUrl: string;
 };
 
-export type ListMediaFilesInput = {
+export type MediaUploadKind = 'gallery' | 'avatar' | 'service' | 'profile';
+
+export type CreateDirectUploadInput = {
   professionalId: string;
   type: MediaUploadKind;
+  mimeType: string;
+};
+
+/**
+ * Everything the mobile client needs to upload an image straight to the
+ * storage backend, without the bytes ever passing through the API (which on
+ * Vercel is capped at a 4.5 MB request body). The server dictates `fileId` and
+ * `path` so the eventual file is predictable and ownership can be enforced at
+ * confirm time; `uploadToken` is a short-lived credential scoped to the bucket.
+ */
+export type DirectUploadTarget = {
+  fileId: string;
+  path: string;
+  /** Canonical public view URL the file will have once uploaded. */
+  viewUrl: string;
+  endpoint: string;
+  projectId: string;
+  bucketId: string;
+  /** Short-lived JWT authorizing the direct upload to the bucket. */
+  uploadToken: string;
+  expiresAt: string;
+};
+
+export type ListMediaFilesInput = {
+  professionalId: string;
+  type: 'gallery' | 'avatar' | 'service';
   page?: number;
   limit?: number;
 };
@@ -40,6 +65,13 @@ export type ListMediaFilesResult = {
 };
 
 export interface MediaStoragePort {
+  /**
+   * Issue a direct-to-storage upload target so the client can upload the bytes
+   * itself. The API only sees the (small) confirmation afterwards.
+   */
+  createDirectUpload(
+    args: CreateDirectUploadInput,
+  ): Promise<DirectUploadTarget>;
   uploadGalleryImage(args: MediaUploadInput): Promise<MediaUploadResult>;
   uploadAvatarImage(args: MediaUploadInput): Promise<MediaUploadResult>;
   uploadServiceImage(args: MediaUploadInput): Promise<MediaUploadResult>;
