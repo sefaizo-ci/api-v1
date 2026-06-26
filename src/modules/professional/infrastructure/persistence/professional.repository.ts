@@ -470,6 +470,7 @@ export class ProfessionalRepository implements IProfessionalRepository {
         avatarUrl: { not: null },
         bio: { not: null },
         services: { some: { deletedAt: null, isActive: true } },
+        availabilities: { some: { deletedAt: null, isActive: true } },
       },
       include: {
         services: {

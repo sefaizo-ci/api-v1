@@ -22,6 +22,11 @@ import {
   presentServices,
 } from '../presenters/service.presenter';
 import {
+  buildSchedule,
+  computeOpenNow,
+  daySlotsFromAvailabilities,
+} from '../presenters/schedule.presenter';
+import {
   GetAvailableSlotsQuery,
   GetMyOnboardingStateQuery,
   GetMyProfessionalProfileQuery,
@@ -67,6 +72,8 @@ type DiscoveryItem = {
   availabilityCount: number;
   galleryCount: number;
   canAcceptBookings: boolean;
+  isOpen: boolean;
+  closingTime: string | null;
   distanceKm: number | null;
 };
 
@@ -180,6 +187,17 @@ async function runGeoDiscovery(
         rating: true,
         reviewCount: true,
         deletedAt: true,
+        availabilities: {
+          where: { deletedAt: null, isActive: true, status: 'OPEN' },
+          select: {
+            dayOfWeek: true,
+            status: true,
+            startTime: true,
+            endTime: true,
+            breakStartTime: true,
+            breakEndTime: true,
+          },
+        },
         _count: {
           select: {
             services: { where: { deletedAt: null, isActive: true } },
@@ -228,6 +246,7 @@ async function runGeoDiscovery(
           !p.deletedAt &&
           p._count.services > 0 &&
           p._count.availabilities > 0,
+        ...computeOpenNow(p.availabilities),
         distanceKm: distMap.get(id) ?? null,
       };
     });
@@ -547,10 +566,72 @@ export class GetMyOnboardingStateHandler implements IQueryHandler<GetMyOnboardin
   }
 }
 
+/** Number of latest reviews embedded in the all-in-one profile payload. */
+const PROFILE_REVIEWS_PREVIEW_LIMIT = 5;
+
+/** Privacy-preserving display name, e.g. "Awa D." */
+function maskReviewerName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName ? `${lastName.charAt(0)}.` : ''}`.trim();
+}
+
 @QueryHandler(GetProfessionalProfileQuery)
 @Injectable()
 export class GetProfessionalProfileHandler implements IQueryHandler<GetProfessionalProfileQuery> {
-  constructor(private readonly repository: ProfessionalRepository) {}
+  constructor(
+    private readonly repository: ProfessionalRepository,
+    private readonly prisma: PrismaService,
+    @Inject(MEDIA_STORAGE_SERVICE)
+    private readonly media: MediaStoragePort,
+  ) {}
+
+  /**
+   * Latest client reviews + summary, embedded so the mobile detail screen can
+   * render the "Avis" tab from a single profile request. The full, paginated
+   * list stays available at GET /reviews/professionals/:id.
+   */
+  private async getReviewsPreview(professionalId: string) {
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        professionalId,
+        reviewerType: ReviewerType.CLIENT,
+        isVisible: true,
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: PROFILE_REVIEWS_PREVIEW_LIMIT,
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        isEdited: true,
+        createdAt: true,
+        reviewerId: true,
+      },
+    });
+
+    const reviewerIds = [...new Set(reviews.map((r) => r.reviewerId))];
+    const users = reviewerIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: reviewerIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return reviews.map((r) => {
+      const user = userMap.get(r.reviewerId);
+      return {
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        isEdited: r.isEdited,
+        createdAt: r.createdAt,
+        reviewerName: user
+          ? maskReviewerName(user.firstName, user.lastName)
+          : 'Anonyme',
+      };
+    });
+  }
 
   async execute(query: GetProfessionalProfileQuery) {
     const professional = await this.repository.findById(query.professionalId);
@@ -558,15 +639,24 @@ export class GetProfessionalProfileHandler implements IQueryHandler<GetProfessio
       throw new NotFoundException('Professionnel non trouvé');
     }
 
+    const availabilities = professional.getActiveAvailabilities();
+    const slots = daySlotsFromAvailabilities(availabilities);
+    const reviewsPreview = await this.getReviewsPreview(professional.id);
+
     return {
       ...professional.getSummary(),
+      ...computeOpenNow(slots),
       bio: professional.bio,
       avatarUrl: professional.avatarUrl,
       location: professional.location,
       address: professional.address,
-      services: professional.getActiveServices(),
-      availability: professional.getActiveAvailabilities(),
+      // `categories` mirrors `mainCategories` for client-side clarity.
+      categories: professional.mainCategories,
+      services: presentServices(this.media, professional.getActiveServices()),
+      availability: availabilities,
+      schedule: buildSchedule(slots),
       gallery: professional.getPublicGallery(),
+      reviewsPreview,
     };
   }
 }
@@ -593,7 +683,12 @@ export class ListProfessionalsHandler implements IQueryHandler<ListProfessionals
     );
 
     return {
-      data: data.map((p) => p.getSummary()),
+      data: data.map((p) => ({
+        ...p.getSummary(),
+        ...computeOpenNow(
+          daySlotsFromAvailabilities(p.getActiveAvailabilities()),
+        ),
+      })),
       pagination: {
         page,
         limit,
@@ -1006,7 +1101,12 @@ export class SearchProfessionalsHandler implements IQueryHandler<SearchProfessio
     );
 
     return {
-      data: data.map((p) => p.getSummary()),
+      data: data.map((p) => ({
+        ...p.getSummary(),
+        ...computeOpenNow(
+          daySlotsFromAvailabilities(p.getActiveAvailabilities()),
+        ),
+      })),
       pagination: {
         page,
         limit,
