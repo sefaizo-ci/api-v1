@@ -518,6 +518,8 @@ export class GetMyOnboardingStateHandler implements IQueryHandler<GetMyOnboardin
 
     return {
       professionalId: professional.id,
+      status: professional.status,
+      isVerified: professional.isVerified,
       profile: {
         agencyName: professional.agencyName,
         bio: professional.bio ?? null,
